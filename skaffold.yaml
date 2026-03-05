@@ -1,0 +1,46 @@
+apiVersion: skaffold/v4beta7
+kind: Config
+metadata:
+  name: realtime-bidding-microservices
+
+build:
+  # Using Docker locally to build images
+  local:
+    push: false # Don't push to remote registry during local development
+  artifacts:
+    # Example for the NestJS API Gateway
+    - image: api-gateway
+      context: api-gateway
+      docker:
+        dockerfile: Dockerfile
+      sync:
+        # Hot-reload: sync changes in src folder directly without rebuilding the container
+        manual:
+          - src: 'src/**/*.ts'
+            dest: .
+    
+    # Example for the Go Auction Service
+    - image: auction-service
+      context: auction-service
+      docker:
+        dockerfile: Dockerfile
+
+    # (You will add the other services here as we build them)
+
+manifests:
+  kustomize:
+    paths:
+      - k8s/base # Assuming we use Kustomize, or replace with helm / raw yaml k8s/*.yaml
+  # Or simply point to raw manifests:
+  # rawYaml:
+  #   - k8s/**/*.yaml
+
+deploy:
+  kubectl: {}
+
+portForward:
+  - resourceType: Service
+    resourceName: api-gateway
+    namespace: default
+    port: 3000
+    localPort: 3000
