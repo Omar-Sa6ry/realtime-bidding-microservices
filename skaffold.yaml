@@ -6,6 +6,15 @@ metadata:
 build:
   local:
     push: false
+  artifacts:
+    - image: bidding/user
+      context: user-service
+      docker:
+        dockerfile: Dockerfile
+      sync:
+        manual:
+          - src: 'src/**/*.ts'
+            dest: .
 
 manifests:
   rawYaml:
@@ -13,8 +22,6 @@ manifests:
 
 
 
-# docker build -t bidding/ooooooooooo:latest .
-# docker pull node:24.11.0
 
 # minikube start --driver=docker --image-mirror-country=all --base-image=docker.io/kicbase/stable:v0.0.48
 
