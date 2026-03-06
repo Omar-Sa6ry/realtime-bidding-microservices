@@ -4,7 +4,7 @@ WORKDIR /usr/src/app
 
 COPY package*.json ./
 
-RUN npm install --legacy-peer-deps
+RUN npm cache clean --force && npm install --legacy-peer-deps --no-audit
 
 COPY . .
 
