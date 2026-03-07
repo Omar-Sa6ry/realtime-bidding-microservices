@@ -22,6 +22,7 @@
   "dependencies": {
     "@apollo/server": "^5.4.0",
     "@as-integrations/express5": "^1.1.2",
+    "@bidding-micro/shared": "^1.0.0",
     "@bts-soft/core": "^2.2.6",
     "@grpc/grpc-js": "^1.14.3",
     "@grpc/proto-loader": "^0.8.0",
@@ -38,8 +39,8 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "graphql": "^16.13.1",
-    "nestjs-i18n": "^10.6.0",
     "nats": "^2.28.2",
+    "nestjs-i18n": "^10.6.0",
     "pg": "^8.20.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",

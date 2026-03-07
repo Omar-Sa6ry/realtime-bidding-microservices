@@ -1,7 +1,7 @@
 import { I18nService } from 'nestjs-i18n';
-import { UserService } from 'src/modules/users/users.service';
+import { UserService } from '../users/users.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { User } from 'src/modules/users/entity/user.entity';
+import { User } from '../users/entity/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AuthResponse } from './dto/AuthRes.dto';
 import { MoreThan, Repository } from 'typeorm';

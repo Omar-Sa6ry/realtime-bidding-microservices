@@ -1,7 +1,7 @@
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { I18nService } from 'nestjs-i18n';
-import { Role } from 'src/common/constant/enum.constant';
-import { User } from 'src/modules/users/entity/user.entity';
+import { Role } from '@bidding-micro/shared';
+import { User } from '../../users/entity/user.entity';
 import { IValidator } from '../interfaces/IValidator.interface';
 import { PasswordServiceAdapter } from '../adapter/password.adapter';
 

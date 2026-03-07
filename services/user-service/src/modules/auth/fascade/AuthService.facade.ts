@@ -1,14 +1,14 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { I18nService } from 'nestjs-i18n';
-import { UserService } from 'src/modules/users/users.service';
+import { UserService } from '../../users/users.service';
 import { TokenService } from '../jwt/jwt.service';
-import { User } from 'src/modules/users/entity/user.entity';
+import { User } from '../../users/entity/user.entity';
 import { AuthResponse } from '../dto/AuthRes.dto';
 import { LoginDto } from '../inputs/Login.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from '../inputs/CreateUserData.dto';
-import { Role } from 'src/common/constant/enum.constant';
+import { Role } from '@bidding-micro/shared';
 import { PasswordServiceAdapter } from '../adapter/password.adapter';
 import { Transactional } from 'typeorm-transactional';
 import { RedisService } from '@bts-soft/core';

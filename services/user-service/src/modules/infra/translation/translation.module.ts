@@ -11,7 +11,7 @@ import {
     I18nModule.forRoot({
       fallbackLanguage: 'ar',
       loaderOptions: {
-        path: path.join(process.cwd(), 'src/common/translation/locales/'),
+        path: path.join(process.cwd(), 'src/modules/infra/translation/locales/'),
         watch: true,
       },
       resolvers: [new HeaderResolver(['x-lang']), new AcceptLanguageResolver()],

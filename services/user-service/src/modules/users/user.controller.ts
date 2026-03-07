@@ -1,7 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { UserService } from './users.service';
-import { UserEvents } from 'src/common/constant/user.type';
+import { UserEvents } from '@bidding-micro/shared';
 
 @Controller()
 export class UserNatsController {

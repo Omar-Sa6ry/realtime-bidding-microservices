@@ -1,4 +1,4 @@
-import { User } from 'src/modules/users/entity/user.entity';
+import { User } from '../../users/entity/user.entity';
 import { IPasswordResetState } from '../interfaces/IPasswordReset.interface';
 
 export class InitialResetState implements IPasswordResetState {

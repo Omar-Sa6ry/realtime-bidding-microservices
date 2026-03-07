@@ -1,4 +1,4 @@
-import { User } from 'src/modules/users/entity/user.entity';
+import { User } from '../entity/user.entity';
 
 export interface IUserRoleState {
   promote(user: User): Promise<User>;

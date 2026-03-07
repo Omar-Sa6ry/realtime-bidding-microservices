@@ -1,10 +1,10 @@
-import { registerEnumType } from '@nestjs/graphql';
-
+// Enums & Roles
 export enum Role {
   ADMIN = 'admin',
   INSTRUCTOR = 'instructor',
   USER = 'user',
 }
+
 export const AllRoles: Role[] = Object.values(Role);
 
 export enum Permission {
@@ -93,23 +93,3 @@ export enum RequestStatus {
   CANCELED = 'canceled',
   COMPLETED = 'completed',
 }
-
-registerEnumType(RequestStatus, {
-  name: 'RequestStatus',
-  description: 'Detailed status of requests in the system',
-});
-
-registerEnumType(Permission, {
-  name: 'Permission',
-  description: 'Detailed permissions in the system',
-});
-
-registerEnumType(Role, {
-  name: 'Role',
-  description: 'User roles in the system',
-});
-
-registerEnumType(CourseLevel, {
-  name: 'CourseLevel',
-  description: 'Detailed CourseLevel in the system',
-});

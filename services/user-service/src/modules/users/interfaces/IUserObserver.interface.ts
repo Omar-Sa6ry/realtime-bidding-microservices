@@ -1,4 +1,4 @@
-import { User } from 'src/modules/users/entity/user.entity';
+import { User } from '../entity/user.entity';
 
 export interface IUserObserver {
   onUserUpdate(user: User): Promise<void>;

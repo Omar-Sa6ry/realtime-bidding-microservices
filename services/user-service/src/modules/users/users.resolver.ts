@@ -1,9 +1,8 @@
-import { UserService } from 'src/modules/users/users.service';
+import { UserService } from './users.service';
 import { Args, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { UpdateUserDto } from './inputs/UpdateUser.dto';
-import { Permission } from 'src/common/constant/enum.constant';
-import { CurrentUser } from 'src/common/decorator/currentUser.decorator';
-import { Auth } from 'src/common/decorator/auth.decorator';
+import { CurrentUser, Permission } from '@bidding-micro/shared';
+import { Auth } from '../auth/decorators/auth.decorator';
 import { EmailInput, UserIdInput } from './inputs/user.input';
 import { User } from './entity/user.entity';
 import { CurrentUserDto } from '@bts-soft/core';

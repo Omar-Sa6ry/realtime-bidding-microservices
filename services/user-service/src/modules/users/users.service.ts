@@ -13,8 +13,7 @@ import { UploadService } from '@bts-soft/upload';
 
 import { User } from './entity/user.entity';
 import { UpdateUserDto } from './inputs/UpdateUser.dto';
-import { Limit, Page } from 'src/common/constant/messages.constant';
-import { Role } from 'src/common/constant/enum.constant';
+import { DEFAULT_LIMIT, DEFAULT_PAGE, Role } from '@bidding-micro/shared';
 import {
   UserCountPercentageResponse,
   UserResponse,
@@ -64,8 +63,8 @@ export class UserService {
   }
 
   async findUsers(
-    page: number = Page,
-    limit: number = Limit,
+    page: number = DEFAULT_PAGE,
+    limit: number = DEFAULT_LIMIT,
   ): Promise<UsersResponse> {
     const [items, total] = await this.userRepo.findAndCount({
       where: { role: Role.USER },

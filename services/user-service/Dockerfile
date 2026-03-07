@@ -1,11 +1,12 @@
-FROM node:24.11.0-alpine
+FROM node:24.11.0
 
 WORKDIR /usr/src/app
 
-COPY package*.json ./
+COPY package.json ./
 
-RUN npm install --legacy-peer-deps --no-audit --prefer-offline
+RUN npm install --legacy-peer-deps
 
 COPY . .
 
 CMD ["npm", "run", "start:dev"]
+

@@ -1,8 +1,12 @@
 import { BaseEntity, CapitalTextField, EmailField } from '@bts-soft/core';
-import { Field, ObjectType } from '@nestjs/graphql';
+import { Field, ObjectType, registerEnumType } from '@nestjs/graphql';
 import { Exclude } from 'class-transformer';
-import { Role } from 'src/common/constant/enum.constant';
+import { Role } from '@bidding-micro/shared';
 import { Entity, Column, Index, Check } from 'typeorm';
+
+registerEnumType(Role, {
+  name: 'Role',
+});
 
 @ObjectType()
 @Entity('users')
