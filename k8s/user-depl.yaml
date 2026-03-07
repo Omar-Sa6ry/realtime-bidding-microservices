@@ -16,8 +16,10 @@ spec:
         - name: user
           image: bidding/user 
           ports:
-            - containerPort: 3001 
+            - containerPort: 3000 
           env:
+            - name: PORT_USER
+              value: '3000'
             - name: DB_HOST
               value: 'user-db-srv'
             - name: DB_PORT
@@ -33,16 +35,22 @@ spec:
                   key: JWT_SECRET
             - name: JWT_EXPIRE
               value: '36000s'
-            - name: DB_USER
+            - name: DB_USERNAME
               valueFrom:
                 secretKeyRef:
                   name: user-secrets
                   key: POSTGRES_USER
-            - name: DB_PASSWORD
+            - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: user-secrets
                   key: POSTGRES_PASSWORD
+            - name: REDIS_HOST
+              value: 'redis-srv'
+            - name: REDIS_PORT
+              value: '6379'
+            - name: NATS_URL
+              value: 'nats://nats-srv:4222'
 ---
 apiVersion: v1
 kind: Service
