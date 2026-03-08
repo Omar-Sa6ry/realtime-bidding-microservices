@@ -31,3 +31,9 @@ build:
 manifests:
   rawYaml:
     - k8s/*.yaml
+portForward:
+  - resourceType: Service
+    resourceName: api-gateway-srv
+    namespace: default
+    port: 3001
+    localPort: 4001
