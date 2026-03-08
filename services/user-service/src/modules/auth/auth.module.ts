@@ -10,6 +10,7 @@ import { TokenService } from './jwt/jwt.service';
 import { AuthServiceFacade } from './fascade/AuthService.facade';
 import { PasswordServiceAdapter } from './adapter/password.adapter';
 import { UploadModule } from '@bts-soft/upload';
+import { AuthGrpcController } from './auth.controller';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { UploadModule } from '@bts-soft/upload';
     NotificationModule,
     JwtModule,
   ],
+  controllers: [AuthGrpcController],
   providers: [
     AuthResolver,
     AuthService,

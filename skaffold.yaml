@@ -17,6 +17,16 @@ build:
             dest: services/user-service/src
           - src: 'proto/**/*.proto'
             dest: proto
+    - image: bidding/api-gateway
+      context: .
+      docker:
+        dockerfile: services/api-gateway/Dockerfile
+      sync:
+        manual:
+          - src: 'services/api-gateway/src/**/*.ts'
+            dest: services/api-gateway/src
+          - src: 'proto/**/*.proto'
+            dest: proto
 
 manifests:
   rawYaml:
