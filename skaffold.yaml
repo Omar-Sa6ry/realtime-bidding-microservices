@@ -8,13 +8,15 @@ build:
     push: false
   artifacts:
     - image: bidding/user
-      context: services/user-service
+      context: .
       docker:
-        dockerfile: Dockerfile
+        dockerfile: services/user-service/Dockerfile
       sync:
         manual:
-          - src: 'src/**/*.ts'
-            dest: .
+          - src: 'services/user-service/src/**/*.ts'
+            dest: services/user-service/src
+          - src: 'proto/**/*.proto'
+            dest: proto
 
 manifests:
   rawYaml:

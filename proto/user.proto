@@ -51,3 +51,16 @@ message GetUserRequest {
 message GetUserResponse {
   User user = 1;
 }
+
+// Messages for UpdateBalance
+message UpdateBalanceRequest {
+  string user_id = 1;
+  double amount = 2;
+  string transaction_type = 3; // "add" or "deduct"
+}
+
+message UpdateBalanceResponse {
+  bool success = 1;
+  double new_balance = 2;
+  string message = 3;
+}

@@ -1,3 +1,4 @@
+import { join } from 'path';
 import { json } from 'express';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
@@ -41,6 +42,15 @@ async function bootstrap() {
       options: {
         servers: [process.env.NATS_URL || 'nats://localhost:4222'],
         queue: 'user-service',
+      },
+    });
+
+    app.connectMicroservice<MicroserviceOptions>({
+      transport: Transport.GRPC,
+      options: {
+        package: 'user',
+        protoPath: join(process.cwd(), '../../proto/user.proto'),
+        url: '0.0.0.0:50051',
       },
     });
 

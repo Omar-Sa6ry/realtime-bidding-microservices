@@ -190,6 +190,50 @@ export class UserService {
     return { data: user, message: await this.i18n.t('user.UPDATED') };
   }
 
+  @Transactional()
+  async updateBalance(
+    userId: string,
+    amount: number,
+    transactionType: string,
+  ): Promise<{ success: boolean; new_balance: number; message: string }> {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) {
+      return { success: false, new_balance: 0, message: 'User not found' };
+    }
+
+    let balance = Number(user.balance || 0);
+    const parsedAmount = Number(amount);
+
+    if (transactionType === 'deduct') {
+      if (balance < parsedAmount) {
+        return {
+          success: false,
+          new_balance: balance,
+          message: 'Insufficient balance',
+        };
+      }
+      balance -= parsedAmount;
+    } else if (transactionType === 'add') {
+      balance += parsedAmount;
+    } else {
+      return {
+        success: false,
+        new_balance: balance,
+        message: 'Invalid transaction type',
+      };
+    }
+
+    user.balance = balance;
+    await this.userRepo.save(user);
+    await this.notifyUpdate(user);
+
+    return {
+      success: true,
+      new_balance: balance,
+      message: 'Balance updated successfully',
+    };
+  }
+
   private async notifyUpdate(user: User): Promise<void> {
     await this.redisService.set(`user:${user.id}`, user);
     await this.redisService.set(`user:email:${user.email}`, user);

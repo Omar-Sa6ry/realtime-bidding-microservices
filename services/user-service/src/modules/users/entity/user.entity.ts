@@ -59,4 +59,8 @@ export class User extends BaseEntity {
   @Exclude()
   @Column({ type: 'timestamp', nullable: true })
   resetTokenExpiry?: Date | null;
+
+  @Field(() => Number, { defaultValue: 0 })
+  @Column('decimal', { precision: 12, scale: 2, default: 0 })
+  balance: number;
 }

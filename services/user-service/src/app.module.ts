@@ -13,7 +13,8 @@ import { ApolloDriver } from '@nestjs/apollo';
 import { GraphQLModule } from '@nestjs/graphql';
 
 @Module({
-  imports: [    ConfigModule.forRoot({ isGlobal: true }),
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
     ThrottlerModule,
     TranslationModule,
     GraphQLModule.forRoot({
@@ -52,11 +53,19 @@ import { GraphQLModule } from '@nestjs/graphql';
           },
         };
       },
-    }),DatabaseModule, TranslationModule, UserModule, AuthModule],
-  providers: [AppService, AppResolver,
+    }),
+    DatabaseModule,
+    TranslationModule,
+    UserModule,
+    AuthModule,
+  ],
+  providers: [
+    AppService,
+    AppResolver,
     {
       provide: APP_FILTER,
       useClass: HttpExceptionFilter,
-    },],
+    },
+  ],
 })
 export class AppModule {}

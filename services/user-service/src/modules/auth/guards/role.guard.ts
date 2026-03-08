@@ -3,7 +3,12 @@ import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { BaseRoleGuard, Permission, Role, rolePermissionsMap } from '@bidding-micro/shared';
+import {
+  BaseRoleGuard,
+  Permission,
+  Role,
+  rolePermissionsMap,
+} from '@bidding-micro/shared';
 import { User } from '../../users/entity/user.entity';
 
 @Injectable()
