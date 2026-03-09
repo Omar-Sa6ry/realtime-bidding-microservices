@@ -1,0 +1,76 @@
+# === GraphQL Examples for API Gateway ===
+# You can copy and paste these into the GraphQL Playground at:
+# http://localhost:4001/graphql
+
+# ---------------------------------------------------------
+# 1. Health Check
+# Use this to verify that the API Gateway is running and able to process requests.
+# ---------------------------------------------------------
+query CheckGatewayHealth {
+  healthCheck
+}
+
+# ---------------------------------------------------------
+# 2. Register a New User
+# Creates a new user in the User Service and returns the user data along with a JWT token.
+# ---------------------------------------------------------
+mutation RegisterNewUser {
+  register(input: {
+    username: "omar_sa6ry",
+    email: "omar@bidding.dev",
+    password: "Password123!"
+  }) {
+    statusCode
+    message
+    data {
+      token
+      user {
+        id
+        username
+        email
+        balance
+      }
+    }
+  }
+}
+
+# ---------------------------------------------------------
+# 3. Login an Existing User
+# Authenticates a user and returns a new JWT token.
+# ---------------------------------------------------------
+mutation LoginExistingUser {
+  login(input: {
+    email: "omar@bidding.dev",
+    password: "Password123!"
+  }) {
+    statusCode
+    message
+    data {
+      token
+      user {
+        id
+        username
+        email
+        balance
+      }
+    }
+  }
+}
+
+# ---------------------------------------------------------
+# 4. Get a Specific User by ID
+# Fetch a user's details using their unique ID.
+# Replace the ID below with the actual ID returned from the Register/Login response.
+# ---------------------------------------------------------
+query GetUserDetails {
+  getUser(id: "YOUR_USER_ID_HERE") {
+    statusCode
+    message
+    data {
+      id
+      username
+      email
+      balance
+    }
+  }
+}

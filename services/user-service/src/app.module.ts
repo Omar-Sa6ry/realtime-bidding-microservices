@@ -9,7 +9,7 @@ import { TranslationModule } from './modules/infra/translation/translation.modul
 import { APP_FILTER } from '@nestjs/core';
 import { HttpExceptionFilter, ThrottlerModule } from '@bts-soft/core';
 import { ConfigModule } from '@nestjs/config';
-import { ApolloDriver } from '@nestjs/apollo';
+import { ApolloFederationDriver, ApolloFederationDriverConfig } from '@nestjs/apollo';
 import { GraphQLModule } from '@nestjs/graphql';
 
 @Module({
@@ -17,11 +17,37 @@ import { GraphQLModule } from '@nestjs/graphql';
     ConfigModule.forRoot({ isGlobal: true }),
     ThrottlerModule,
     TranslationModule,
-    GraphQLModule.forRoot({
-      driver: ApolloDriver,
+    GraphQLModule.forRoot<ApolloFederationDriverConfig>({
+      driver: ApolloFederationDriver,
       path: '/user/graphql',
 
-      autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
+      autoSchemaFile: {
+        path: join(process.cwd(), 'src/schema.gql'),
+        federation: 2,
+      },
+      buildSchemaOptions: {
+        orphanedTypes: [],
+        directives: [
+          {
+            name: 'tag',
+            locations: [
+              'FIELD_DEFINITION',
+              'OBJECT',
+              'INTERFACE',
+              'UNION',
+              'ARGUMENT_DEFINITION',
+              'SCALAR',
+              'ENUM',
+              'ENUM_VALUE',
+              'INPUT_OBJECT',
+              'INPUT_FIELD_DEFINITION',
+            ],
+            args: {
+              name: { type: 'String!' },
+            },
+          } as any,
+        ],
+      },
       context: ({ req }) => ({
         req,
         user: req.user,
@@ -30,7 +56,6 @@ import { GraphQLModule } from '@nestjs/graphql';
 
       playground: true,
       debug: false,
-      uploads: false,
       csrfPrevention: false,
 
       installSubscriptionHandlers: true,

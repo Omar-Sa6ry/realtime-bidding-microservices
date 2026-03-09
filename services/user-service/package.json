@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@apollo/server": "^5.4.0",
+    "@apollo/subgraph": "^2.13.1",
     "@as-integrations/express5": "^1.1.2",
     "@bidding-micro/shared": "^1.0.0",
     "@bts-soft/core": "^2.2.6",

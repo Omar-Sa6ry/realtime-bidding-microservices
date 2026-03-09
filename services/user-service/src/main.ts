@@ -30,7 +30,7 @@ async function bootstrap() {
     );
 
     // app.use('/google/callback', bodyParser.raw({ type: 'application/json' }));
-    app.use(json());
+    // app.use(json());
 
     const dataSource = app.get(DataSource);
     if (!dataSource.isInitialized) {
