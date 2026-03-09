@@ -4,19 +4,22 @@ import { AppService } from './app.service';
 import { AppResolver } from './app.resolver';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/users/users.module';
-import { DatabaseModule } from './modules/infra/database/database';
-import { TranslationModule } from './modules/infra/translation/translation.module';
 import { APP_FILTER } from '@nestjs/core';
 import { HttpExceptionFilter, ThrottlerModule } from '@bts-soft/core';
 import { ConfigModule } from '@nestjs/config';
 import { ApolloFederationDriver, ApolloFederationDriverConfig } from '@nestjs/apollo';
 import { GraphQLModule } from '@nestjs/graphql';
+import { GraphQLDirective, GraphQLNonNull, GraphQLString, DirectiveLocation } from 'graphql';
+import { DatabaseModule } from './common/database/database';
+import { TranslationModule } from './common/translation/translation.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ThrottlerModule,
     TranslationModule,
+    DatabaseModule,
+
     GraphQLModule.forRoot<ApolloFederationDriverConfig>({
       driver: ApolloFederationDriver,
       path: '/user/graphql',
@@ -28,24 +31,24 @@ import { GraphQLModule } from '@nestjs/graphql';
       buildSchemaOptions: {
         orphanedTypes: [],
         directives: [
-          {
+          new GraphQLDirective({
             name: 'tag',
             locations: [
-              'FIELD_DEFINITION',
-              'OBJECT',
-              'INTERFACE',
-              'UNION',
-              'ARGUMENT_DEFINITION',
-              'SCALAR',
-              'ENUM',
-              'ENUM_VALUE',
-              'INPUT_OBJECT',
-              'INPUT_FIELD_DEFINITION',
+              DirectiveLocation.FIELD_DEFINITION,
+              DirectiveLocation.OBJECT,
+              DirectiveLocation.INTERFACE,
+              DirectiveLocation.UNION,
+              DirectiveLocation.ARGUMENT_DEFINITION,
+              DirectiveLocation.SCALAR,
+              DirectiveLocation.ENUM,
+              DirectiveLocation.ENUM_VALUE,
+              DirectiveLocation.INPUT_OBJECT,
+              DirectiveLocation.INPUT_FIELD_DEFINITION,
             ],
             args: {
-              name: { type: 'String!' },
+              name: { type: new GraphQLNonNull(GraphQLString) },
             },
-          } as any,
+          }),
         ],
       },
       context: ({ req }) => ({
@@ -79,8 +82,6 @@ import { GraphQLModule } from '@nestjs/graphql';
         };
       },
     }),
-    DatabaseModule,
-    TranslationModule,
     UserModule,
     AuthModule,
   ],

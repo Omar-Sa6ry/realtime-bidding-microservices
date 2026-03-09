@@ -17,6 +17,7 @@ spec:
           image: bidding/user 
           ports:
             - containerPort: 3000 
+            - containerPort: 50051
           env:
             - name: PORT_USER
               value: '3000'
@@ -64,3 +65,7 @@ spec:
       protocol: TCP
       port: 3000
       targetPort: 3000
+    - name: grpc
+      protocol: TCP
+      port: 50051
+      targetPort: 50051

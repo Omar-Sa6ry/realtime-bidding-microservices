@@ -6,6 +6,7 @@ metadata:
 build:
   local:
     push: false
+    concurrency: 1
   artifacts:
     - image: bidding/user
       context: .
@@ -17,6 +18,7 @@ build:
             dest: services/user-service/src
           - src: 'proto/**/*.proto'
             dest: proto
+
     - image: bidding/api-gateway
       context: .
       docker:
@@ -31,9 +33,10 @@ build:
 manifests:
   rawYaml:
     - k8s/*.yaml
+
 portForward:
   - resourceType: Service
     resourceName: api-gateway-srv
     namespace: default
     port: 3001
-    localPort: 4001
+    localPort: 3001

@@ -20,9 +20,11 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@apollo/gateway": "^2.13.1",
     "@apollo/server": "^5.4.0",
     "@apollo/subgraph": "^2.13.1",
     "@as-integrations/express5": "^1.1.2",
+    "@as-integrations/fastify": "^3.1.0",
     "@bidding-micro/shared": "^1.0.0",
     "@bts-soft/core": "^2.2.6",
     "@grpc/grpc-js": "^1.14.3",
@@ -45,12 +47,14 @@
     "hbs": "^4.2.0",
     "ioredis": "^5.10.0",
     "kafka-node": "^5.0.0",
+    "kafkajs": "^2.2.4",
     "mqtt": "^5.15.0",
     "nats": "^2.29.3",
     "nestjs-i18n": "^10.6.0",
     "pg": "^8.20.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
+    "ts-morph": "^25.0.0",
     "typeorm": "^0.3.28",
     "typeorm-transactional": "^0.5.0"
   },

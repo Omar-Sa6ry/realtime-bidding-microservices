@@ -13,7 +13,7 @@ import {
       loaderOptions: {
         path: path.join(
           process.cwd(),
-          'src/modules/infra/translation/locales/',
+          'src/common/translation/locales/',
         ),
         watch: true,
       },
