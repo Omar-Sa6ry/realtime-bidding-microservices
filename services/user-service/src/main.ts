@@ -5,10 +5,10 @@ import { AppModule } from './app.module';
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { initializeTransactionalContext } from 'typeorm-transactional';
 import { setupInterceptors } from '@bts-soft/core';
-import { setupGraphqlUpload } from '@bts-soft/upload';
 import { I18nValidationException } from 'nestjs-i18n';
 import { DataSource } from 'typeorm';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { graphqlUploadExpress } from 'graphql-upload-minimal';
 
 async function bootstrap() {
   try {
@@ -17,15 +17,18 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule);
     app.enableCors();
 
-    setupGraphqlUpload(app as any, 1_000_000, 1);
-    setupInterceptors(app as any);
+    app.use(graphqlUploadExpress({ maxFileSize: 100_000_000, maxFiles: 5 })); // 100 MB max
+    setupInterceptors(app as any); 
 
     app.useGlobalPipes(
       new ValidationPipe({
         transform: true,
         whitelist: true,
         stopAtFirstError: true,
-        exceptionFactory: (errors) => new I18nValidationException(errors),
+        exceptionFactory: (errors) => {
+          console.log('=== VALIDATION FAILED FOR:', JSON.stringify(errors, null, 2));
+          return new I18nValidationException(errors);
+        },
       }),
     );
 

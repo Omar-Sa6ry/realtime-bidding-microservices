@@ -1,6 +1,5 @@
 import { CapitalTextField, IdField } from '@bts-soft/core';
 import { Field, InputType } from '@nestjs/graphql';
-import { CreateImageDto } from '@bts-soft/upload';
 import { IsOptional, IsString } from 'class-validator';
 
 @InputType()
@@ -18,7 +17,4 @@ export class UpdateUserDto {
   @IsString()
   @IsOptional()
   country?: string;
-
-  @Field(() => CreateImageDto, { nullable: true })
-  avatar?: CreateImageDto;
 }

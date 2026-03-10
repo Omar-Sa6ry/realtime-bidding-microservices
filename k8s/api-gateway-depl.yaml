@@ -16,10 +16,10 @@ spec:
         - name: api-gateway
           image: bidding/api-gateway
           ports:
-            - containerPort: 3001
+            - containerPort: 4000
           env:
             - name: PORT_GATEWAY
-              value: '3001'
+              value: '4000'
             - name: USER_SERVICE_URL
               value: 'user-srv:50051'
             - name: NODE_ENV
@@ -35,5 +35,5 @@ spec:
   ports:
     - name: http
       protocol: TCP
-      port: 3001
-      targetPort: 3001
+      port: 4000
+      targetPort: 4000

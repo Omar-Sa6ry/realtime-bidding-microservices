@@ -9,8 +9,6 @@ import { LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
 import { Transactional } from 'typeorm-transactional';
 import { I18nService } from 'nestjs-i18n';
 import { RedisService } from '@bts-soft/core';
-import { UploadService } from '@bts-soft/upload';
-
 import { User } from './entity/user.entity';
 import { UpdateUserDto } from './inputs/UpdateUser.dto';
 import { DEFAULT_LIMIT, DEFAULT_PAGE, Role } from '@bidding-micro/shared';
@@ -27,7 +25,6 @@ export class UserService {
   constructor(
     private readonly i18n: I18nService,
     private readonly redisService: RedisService,
-    private readonly uploadService: UploadService,
     @InjectRepository(User) private readonly userRepo: Repository<User>,
   ) {}
 
@@ -135,26 +132,7 @@ export class UserService {
     if (!user)
       throw new BadRequestException(await this.i18n.t('user.NOT_FOUND'));
 
-    if (updateUserDto.avatar) {
-      const oldPath = user.avatar;
-      const filename = await this.uploadService.uploadImage(
-        updateUserDto.avatar as any,
-      );
-
-      if (typeof filename === 'string') {
-        try {
-          if (oldPath) await this.uploadService.deleteImage(oldPath);
-        } catch (e) {
-          this.logger.warn(
-            `Failed to delete old avatar ${oldPath}: ${e.message}`,
-          );
-        }
-        user.avatar = filename;
-      }
-    }
-
-    const { avatar, ...otherData } = updateUserDto;
-    Object.assign(user, otherData);
+    Object.assign(user, updateUserDto);
 
     await this.userRepo.save(user);
 
@@ -170,7 +148,6 @@ export class UserService {
     if (!user)
       throw new BadRequestException(await this.i18n.t('user.NOT_FOUND'));
 
-    if (user.avatar) await this.uploadService.deleteImage(user.avatar);
     await this.userRepo.remove(user);
     await this.notifyDelete(user.id, user.email);
 

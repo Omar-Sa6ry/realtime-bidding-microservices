@@ -5,7 +5,7 @@ import { AppResolver } from './app.resolver';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/users/users.module';
 import { APP_FILTER } from '@nestjs/core';
-import { HttpExceptionFilter, ThrottlerModule } from '@bts-soft/core';
+import { HttpExceptionFilter,ThrottlerModule } from '@bts-soft/core';
 import { ConfigModule } from '@nestjs/config';
 import { ApolloFederationDriver, ApolloFederationDriverConfig } from '@nestjs/apollo';
 import { GraphQLModule } from '@nestjs/graphql';
@@ -70,15 +70,14 @@ import { TranslationModule } from './common/translation/translation.module';
         'graphql-ws': true,
       },
 
-      formatError: (error) => {
+      formatError: (error: any) => {
         return {
           message: error.message,
-          extensions: {
-            ...error.extensions,
-            stacktrace: undefined,
-            locations: undefined,
-            path: undefined,
-          },
+          success: false,
+          statusCode: error.extensions?.statusCode || 400,
+          error: error.extensions?.error || error.name || 'GraphQL Error',
+          timeStamp: new Date().toISOString(),
+          path: error.path,
         };
       },
     }),

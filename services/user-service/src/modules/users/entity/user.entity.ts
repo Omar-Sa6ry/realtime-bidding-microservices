@@ -44,10 +44,6 @@ export class User extends BaseEntity {
   @Column({ nullable: true, unique: true })
   googleId?: string;
 
-  @Field({ nullable: true })
-  @Column({ length: 255, nullable: true })
-  avatar?: string;
-
   @Field(() => String)
   @Column({ length: 100 })
   country: string;

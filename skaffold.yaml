@@ -1,12 +1,14 @@
-apiVersion: skaffold/v4beta7
+apiVersion: skaffold/v4beta3
 kind: Config
-metadata:
-  name: realtime-bidding-microservices
+
+manifests:
+  rawYaml:
+    - ./k8s/*
 
 build:
   local:
     push: false
-    concurrency: 1
+
   artifacts:
     - image: bidding/user
       context: .
@@ -15,9 +17,9 @@ build:
       sync:
         manual:
           - src: 'services/user-service/src/**/*.ts'
-            dest: services/user-service/src
+            dest: src
           - src: 'proto/**/*.proto'
-            dest: proto
+            dest: ../../proto
 
     - image: bidding/api-gateway
       context: .
@@ -26,17 +28,6 @@ build:
       sync:
         manual:
           - src: 'services/api-gateway/src/**/*.ts'
-            dest: services/api-gateway/src
+            dest: src
           - src: 'proto/**/*.proto'
-            dest: proto
-
-manifests:
-  rawYaml:
-    - k8s/*.yaml
-
-portForward:
-  - resourceType: Service
-    resourceName: api-gateway-srv
-    namespace: default
-    port: 3001
-    localPort: 3001
+            dest: ../../proto

@@ -2,19 +2,21 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: ingress-service
-  annotations:
-    kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - bidding.test
+      secretName: bidding-tls
   rules:
-    - host: bidding.dev
+    - host: bidding.test
       http:
         paths:
-          # 1. API Gateway Route
+          # gateway-service routes
           - path: /graphql
             pathType: Prefix
             backend:
               service:
                 name: api-gateway-srv
                 port:
-                  number: 3001
+                  number: 4000

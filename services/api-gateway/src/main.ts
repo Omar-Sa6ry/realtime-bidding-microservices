@@ -31,9 +31,9 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors();
 
-  const port = process.env.PORT_GATEWAY || 3001;
+  const port = process.env.PORT_GATEWAY || 4000;
   await app.listen(port);
-  console.log(`API Gateway is running on: http://localhost:${port}/graphql`);
+  console.log(`API Gateway is running on: https://bidding.test/graphql`);
 }
 
 bootstrap().catch((err) => {

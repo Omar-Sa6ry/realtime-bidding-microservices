@@ -12,7 +12,6 @@ import { Role } from '@bidding-micro/shared';
 import { PasswordServiceAdapter } from '../adapter/password.adapter';
 import { Transactional } from 'typeorm-transactional';
 import { RedisService } from '@bts-soft/core';
-import { UploadService, CreateImageDto } from '@bts-soft/upload';
 import {
   PasswordValidator,
   RoleValidator,
@@ -26,12 +25,12 @@ export class AuthServiceFacade {
     private readonly tokenService: TokenService,
     private readonly passwordAdapter: PasswordServiceAdapter,
     private readonly redisService: RedisService,
-    private readonly uploadService: UploadService,
     @InjectRepository(User) private readonly userRepo: Repository<User>,
   ) {}
 
   @Transactional()
   async register(createUserDto: CreateUserDto): Promise<AuthResponse> {
+    console.log('===> REGISTRATION STARTED WITH:', createUserDto);
     const user = await this.createUser(createUserDto);
 
     const token = await this.tokenService.generate(user.email, user.id);
@@ -120,20 +119,16 @@ export class AuthServiceFacade {
 
   @Transactional()
   private async createUser(createUserDto: CreateUserDto): Promise<User> {
-    const checkIfEmailExisted = await this.userService.findByEmail(
-      createUserDto.email,
-    );
+    const checkIfEmailExisted = await this.userRepo.findOne({
+      where: { email: createUserDto.email },
+    });
 
     if (checkIfEmailExisted)
       throw new BadRequestException(await this.i18n.t('user.EMAIL_EXISTED'));
 
     const password = await this.passwordAdapter.hash(createUserDto.password);
 
-    let avatar;
-    if (createUserDto.avatar) {
-      avatar = await this.handleAvatarUpload(createUserDto.avatar);
-      createUserDto.avatar = avatar;
-    }
+
 
     const user = await this.userRepo.create({ ...createUserDto, password });
     await this.userRepo.save(user);
@@ -141,8 +136,5 @@ export class AuthServiceFacade {
     return user;
   }
 
-  private async handleAvatarUpload(avatar: CreateImageDto): Promise<string> {
-    const filename = await this.uploadService.uploadImage(avatar);
-    return typeof filename === 'string' ? filename : '';
-  }
+
 }

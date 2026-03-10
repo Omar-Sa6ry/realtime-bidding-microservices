@@ -9,7 +9,6 @@ import { JwtModule } from './jwt/jwt.module';
 import { TokenService } from './jwt/jwt.service';
 import { AuthServiceFacade } from './fascade/AuthService.facade';
 import { PasswordServiceAdapter } from './adapter/password.adapter';
-import { UploadModule } from '@bts-soft/upload';
 import { AuthGrpcController } from './auth.controller';
 
 @Module({
@@ -17,7 +16,6 @@ import { AuthGrpcController } from './auth.controller';
     TypeOrmModule.forFeature([User]),
     UserModule,
     RedisModule,
-    UploadModule,
     NotificationModule,
     JwtModule,
   ],
