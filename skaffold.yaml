@@ -31,3 +31,14 @@ build:
             dest: src
           - src: 'proto/**/*.proto'
             dest: ../../proto
+
+    - image: bidding/auction
+      context: .
+      docker:
+        dockerfile: services/auction-service/Dockerfile
+      sync:
+        manual:
+          - src: 'services/auction-service/**/*.go'
+            dest: .
+          - src: 'proto/**/*.proto'
+            dest: proto
