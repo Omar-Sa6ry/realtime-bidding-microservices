@@ -1,5 +1,4 @@
 import { join } from 'path';
-import { json } from 'express';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
@@ -18,7 +17,7 @@ async function bootstrap() {
     app.enableCors();
 
     app.use(graphqlUploadExpress({ maxFileSize: 100_000_000, maxFiles: 5 })); // 100 MB max
-    setupInterceptors(app as any); 
+    setupInterceptors(app as any);
 
     app.useGlobalPipes(
       new ValidationPipe({
@@ -26,7 +25,6 @@ async function bootstrap() {
         whitelist: true,
         stopAtFirstError: true,
         exceptionFactory: (errors) => {
-          console.log('=== VALIDATION FAILED FOR:', JSON.stringify(errors, null, 2));
           return new I18nValidationException(errors);
         },
       }),
@@ -58,7 +56,7 @@ async function bootstrap() {
     });
 
     await app.startAllMicroservices();
-    await app.listen(process.env.PORT_USER ?? 3000);
+    await app.listen(process.env.PORT_USER ?? 3000, '0.0.0.0');
   } catch (error) {
     console.error(error);
     throw new BadRequestException(error);

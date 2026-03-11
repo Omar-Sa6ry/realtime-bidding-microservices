@@ -1,0 +1,109 @@
+
+
+
+query {
+  getUserByOfMe {
+    success
+    statusCode
+    message
+    data {
+      id
+      firstName
+      lastName
+      email
+    
+    }
+  }
+}
+
+
+query {
+  getUserById(id: { UserId: "01K5EJKN01W3Y0K0MY7V473RZR" }) {
+    success
+    statusCode
+    message
+    data {
+      id
+      firstName
+      lastName
+      email
+    
+    }
+  }
+}
+
+
+query {
+  getUserByEmail(email: { email: "omarsabry.dev@gmail.com" }) {
+    success
+    statusCode
+    message
+    data {
+      id
+      firstName
+      lastName
+
+      email
+    }
+  }
+}
+
+query{
+getUsers{
+    success
+    message
+    items {
+      id
+      firstName
+      email
+    }
+  }
+}
+
+query{
+getUsers(page:1,limit:10){
+    success
+    message
+    items {
+      id
+      firstName
+      email
+    }
+  }
+}
+
+mutation {
+  updateUser(updateUserDto: {id:"01K5EJVPE2K7BT5YRHFZF1PHPE" lastName: "Ahmed sabry" }) {
+    success
+    statusCode
+    message
+    data {
+      id
+ 
+      email
+    }
+  }
+}
+
+
+mutation{
+  UpdateUserRoleToAdmin(id:{UserId:"01K5EJVPE2K7BT5YRHFZF1PHPE"}){
+    success
+    statusCode
+    message
+    data{
+        id
+        firstName
+        lastName
+        email
+    }
+  }
+}
+
+query {
+  deleteUser(id:{UserId:"01K5EJT5AXVT3HF5Q0KPMWWDTV"}) {
+    success
+    statusCode
+    message
+  }
+}

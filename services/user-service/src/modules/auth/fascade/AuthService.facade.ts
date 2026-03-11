@@ -30,7 +30,6 @@ export class AuthServiceFacade {
 
   @Transactional()
   async register(createUserDto: CreateUserDto): Promise<AuthResponse> {
-    console.log('===> REGISTRATION STARTED WITH:', createUserDto);
     const user = await this.createUser(createUserDto);
 
     const token = await this.tokenService.generate(user.email, user.id);
@@ -128,13 +127,9 @@ export class AuthServiceFacade {
 
     const password = await this.passwordAdapter.hash(createUserDto.password);
 
-
-
     const user = await this.userRepo.create({ ...createUserDto, password });
     await this.userRepo.save(user);
 
     return user;
   }
-
-
 }

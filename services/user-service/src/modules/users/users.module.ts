@@ -5,11 +5,29 @@ import { UserResolver } from './users.resolver';
 import { User } from './entity/user.entity';
 import { RedisModule } from '@bts-soft/core';
 import { UserNatsController } from './user.controller';
+import { TranslationModule } from '../../common/translation/translation.module';
+import { AuthCommonModule } from '@bidding-micro/shared';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User]), RedisModule],
-  providers: [UserService, UserResolver],
+  imports: [
+    TypeOrmModule.forFeature([User]),
+    RedisModule,
+    AuthCommonModule.register({
+      userService: UserService,
+      imports: [TypeOrmModule.forFeature([User]), RedisModule, TranslationModule],
+    }),
+  ],
+
+  providers: [
+    UserService,
+    UserResolver,
+    {
+      provide: 'USER_SERVICE',
+      useClass: UserService,
+    },
+  ],
+
   controllers: [UserNatsController],
-  exports: [UserService, TypeOrmModule],
+  exports: [UserService, TypeOrmModule, 'USER_SERVICE'],
 })
 export class UserModule {}

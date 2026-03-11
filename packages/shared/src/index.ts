@@ -1,14 +1,20 @@
 // Constants
-export * from './constant/enum.constant';
-export * from './constant/messages.constant';
-export * from './constant/rolePermissionsMap.constant';
+export * from './constants/enum.constant';
+export * from './constants/messages.constant';
+export * from './constants/rolePermissionsMap.constant';
 
 // Decorators
-export * from './decorator/auth.decorator';
-export * from './decorator/currentUser.decorator';
+export * from './decorators/auth.decorator';
+export * from './decorators/currentUser.decorator';
 
 // Guards
-export * from './guard/base-role.guard';
+export * from './guard/role.guard';
+
+// Interfaces
+export * from './interfaces/user.interface';
+
+// Modules
+export * from './modules/auth.module';
 
 // NATS
 export * from './nats/events';

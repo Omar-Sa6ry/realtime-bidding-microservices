@@ -5,11 +5,13 @@ import { AppResolver } from './app.resolver';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/users/users.module';
 import { APP_FILTER } from '@nestjs/core';
-import { HttpExceptionFilter,ThrottlerModule } from '@bts-soft/core';
+import { HttpExceptionFilter, ThrottlerModule } from '@bts-soft/core';
 import { ConfigModule } from '@nestjs/config';
-import { ApolloFederationDriver, ApolloFederationDriverConfig } from '@nestjs/apollo';
+import {
+  ApolloFederationDriver,
+  ApolloFederationDriverConfig,
+} from '@nestjs/apollo';
 import { GraphQLModule } from '@nestjs/graphql';
-import { GraphQLDirective, GraphQLNonNull, GraphQLString, DirectiveLocation } from 'graphql';
 import { DatabaseModule } from './common/database/database';
 import { TranslationModule } from './common/translation/translation.module';
 
@@ -28,29 +30,8 @@ import { TranslationModule } from './common/translation/translation.module';
         path: join(process.cwd(), 'src/schema.gql'),
         federation: 2,
       },
-      buildSchemaOptions: {
-        orphanedTypes: [],
-        directives: [
-          new GraphQLDirective({
-            name: 'tag',
-            locations: [
-              DirectiveLocation.FIELD_DEFINITION,
-              DirectiveLocation.OBJECT,
-              DirectiveLocation.INTERFACE,
-              DirectiveLocation.UNION,
-              DirectiveLocation.ARGUMENT_DEFINITION,
-              DirectiveLocation.SCALAR,
-              DirectiveLocation.ENUM,
-              DirectiveLocation.ENUM_VALUE,
-              DirectiveLocation.INPUT_OBJECT,
-              DirectiveLocation.INPUT_FIELD_DEFINITION,
-            ],
-            args: {
-              name: { type: new GraphQLNonNull(GraphQLString) },
-            },
-          }),
-        ],
-      },
+      
+   
       context: ({ req }) => ({
         req,
         user: req.user,
@@ -71,16 +52,20 @@ import { TranslationModule } from './common/translation/translation.module';
       },
 
       formatError: (error: any) => {
+        const originalError = error.extensions?.originalError as any;
+        const msg = originalError?.message || error.message;
+        const code = error.extensions?.statusCode || originalError?.statusCode || 400;
+
         return {
-          message: error.message,
           success: false,
-          statusCode: error.extensions?.statusCode || 400,
-          error: error.extensions?.error || error.name || 'GraphQL Error',
+          statusCode: code,
+          message: Array.isArray(msg) ? msg[0] : msg,
           timeStamp: new Date().toISOString(),
-          path: error.path,
-        };
+        } as any;
       },
     }),
+    
+    
     UserModule,
     AuthModule,
   ],

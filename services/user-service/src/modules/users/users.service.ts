@@ -11,7 +11,7 @@ import { I18nService } from 'nestjs-i18n';
 import { RedisService } from '@bts-soft/core';
 import { User } from './entity/user.entity';
 import { UpdateUserDto } from './inputs/UpdateUser.dto';
-import { DEFAULT_LIMIT, DEFAULT_PAGE, Role } from '@bidding-micro/shared';
+import { Limit, Page, Role } from '@bidding-micro/shared';
 import {
   UserCountPercentageResponse,
   UserResponse,
@@ -60,8 +60,8 @@ export class UserService {
   }
 
   async findUsers(
-    page: number = DEFAULT_PAGE,
-    limit: number = DEFAULT_LIMIT,
+    page: number = Page,
+    limit: number = Limit,
   ): Promise<UsersResponse> {
     const [items, total] = await this.userRepo.findAndCount({
       where: { role: Role.USER },

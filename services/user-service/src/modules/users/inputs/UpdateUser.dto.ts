@@ -13,8 +13,8 @@ export class UpdateUserDto {
   @CapitalTextField('First name', 3, 100, true)
   lastName?: string;
 
-  @Field(() => String)
-  @IsString()
+  @Field(() => String,{nullable:true})
   @IsOptional()
+  @IsString()
   country?: string;
 }

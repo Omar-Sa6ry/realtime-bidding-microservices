@@ -1,8 +1,7 @@
 import { UserService } from './users.service';
 import { Args, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { UpdateUserDto } from './inputs/UpdateUser.dto';
-import { CurrentUser, Permission } from '@bidding-micro/shared';
-import { Auth } from '../auth/decorators/auth.decorator';
+import { Auth, CurrentUser, Permission } from '@bidding-micro/shared';
 import { EmailInput, UserIdInput } from './inputs/user.input';
 import { User } from './entity/user.entity';
 import { CurrentUserDto } from '@bts-soft/core';
@@ -51,14 +50,6 @@ export class UserResolver {
     return await this.userService.getUsersCount();
   }
 
-  @Query((returns) => UserResponse)
-  @Auth([])
-  async getMyProfile(
-    @CurrentUser() user: CurrentUserDto,
-  ): Promise<UserResponse> {
-    return await this.userService.findById(user.id);
-  }
-
   @Mutation((returns) => UserResponse)
   @Auth([])
   async updateProfile(
@@ -91,12 +82,4 @@ export class UserResolver {
     return await this.userService.editUserRole(id.UserId);
   }
 
-  @Mutation((returns) => UserResponse)
-  @Auth([Permission.UPDATE_USER])
-  async updateInstructor(
-    @Args('id') id: UserIdInput,
-    @Args('updateUserDto') updateUserDto: UpdateUserDto,
-  ): Promise<UserResponse> {
-    return this.userService.update(updateUserDto, id.UserId);
-  }
 }

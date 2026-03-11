@@ -10,6 +10,9 @@ import { TokenService } from './jwt/jwt.service';
 import { AuthServiceFacade } from './fascade/AuthService.facade';
 import { PasswordServiceAdapter } from './adapter/password.adapter';
 import { AuthGrpcController } from './auth.controller';
+import { AuthCommonModule } from '@bidding-micro/shared';
+import { UserService } from '../users/users.service';
+import { TranslationModule } from '../../common/translation/translation.module';
 
 @Module({
   imports: [
@@ -18,8 +21,13 @@ import { AuthGrpcController } from './auth.controller';
     RedisModule,
     NotificationModule,
     JwtModule,
+
+    AuthCommonModule.register({
+      userService: UserService,
+      imports: [TypeOrmModule.forFeature([User]), RedisModule, TranslationModule],
+    }),
   ],
-  controllers: [AuthGrpcController],
+
   providers: [
     AuthResolver,
     AuthService,
@@ -27,5 +35,8 @@ import { AuthGrpcController } from './auth.controller';
     PasswordServiceAdapter,
     TokenService,
   ],
+
+  controllers: [AuthGrpcController],
 })
+
 export class AuthModule {}
