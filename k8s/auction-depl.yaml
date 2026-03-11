@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auction-depl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auction
+  template:
+    metadata:
+      labels:
+        app: auction
+    spec:
+      containers:
+        - name: auction
+          image: bidding/auction
+          ports:
+            - containerPort: 3002
+          env:
+            - name: NODE_ENV
+              value: "development"
+            - name: NATS_URL
+              value: "nats://nats-srv:4222"
+            - name: JWT_EXPIRE
+              value: "36000s"
+            - name: REDIS_HOST
+              value: "redis-srv"
+            - name: REDIS_PORT
+              value: "6379"
+          envFrom:
+            - secretRef:
+                name: auction-secrets
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auction-srv
+spec:
+  selector:
+    app: auction
+  ports:
+    - name: http
+      protocol: TCP
+      port: 3002
+      targetPort: 3002

@@ -21,10 +21,9 @@ coverage/
 *.out
 vendor/
 
-
-
 # Kubernetes / Docker local
 k8s/secrets.yaml
+k8s/auction-secrets.yaml
 docker-compose.override.yml
 
 draft.md
