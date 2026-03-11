@@ -24,7 +24,11 @@ import { TranslationModule } from '../../common/translation/translation.module';
 
     AuthCommonModule.register({
       userService: UserService,
-      imports: [TypeOrmModule.forFeature([User]), RedisModule, TranslationModule],
+      imports: [
+        TypeOrmModule.forFeature([User]),
+        RedisModule,
+        TranslationModule,
+      ],
     }),
   ],
 
@@ -34,9 +38,12 @@ import { TranslationModule } from '../../common/translation/translation.module';
     AuthServiceFacade,
     PasswordServiceAdapter,
     TokenService,
+    {
+      provide: 'USER_SERVICE',
+      useExisting: UserService,
+    },
   ],
 
   controllers: [AuthGrpcController],
 })
-
 export class AuthModule {}

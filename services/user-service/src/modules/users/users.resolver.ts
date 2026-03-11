@@ -81,5 +81,4 @@ export class UserResolver {
   ): Promise<UserResponse> {
     return await this.userService.editUserRole(id.UserId);
   }
-
 }

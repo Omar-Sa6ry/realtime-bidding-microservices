@@ -14,11 +14,9 @@ import { IntrospectAndCompose, RemoteGraphQLDataSource } from '@apollo/gateway';
         playground: true,
         introspection: true,
 
-
-
         formatError: (error: any) => {
           const subgraphError = error.extensions?.response?.body?.errors?.[0];
-          
+
           if (subgraphError) {
             return {
               success: false,
@@ -30,7 +28,8 @@ import { IntrospectAndCompose, RemoteGraphQLDataSource } from '@apollo/gateway';
 
           const originalError = error.extensions?.originalError as any;
           const msg = originalError?.message || error.message;
-          const code = error.extensions?.statusCode || originalError?.statusCode || 400;
+          const code =
+            error.extensions?.statusCode || originalError?.statusCode || 400;
 
           return {
             success: false,
@@ -40,7 +39,7 @@ import { IntrospectAndCompose, RemoteGraphQLDataSource } from '@apollo/gateway';
           } as any;
         },
       },
-      
+
       gateway: {
         supergraphSdl: new IntrospectAndCompose({
           subgraphs: [
@@ -64,6 +63,6 @@ import { IntrospectAndCompose, RemoteGraphQLDataSource } from '@apollo/gateway';
       },
     } as ApolloGatewayDriverConfig),
   ],
-  providers: [  ],
+  providers: [],
 })
 export class AppModule {}

@@ -12,8 +12,6 @@ export const rolePermissionsMap: Record<Role, Permission[]> = {
     Permission.LOGOUT,
     Permission.VIEW_USER,
     Permission.CREATE_INSTRUCTOR,
-
- 
   ],
 
   [Role.USER]: [
@@ -23,8 +21,5 @@ export const rolePermissionsMap: Record<Role, Permission[]> = {
     Permission.CHANGE_PASSWORD,
     Permission.FORGOT_PASSWORD,
     Permission.LOGOUT,
-
   ],
-
-
 };

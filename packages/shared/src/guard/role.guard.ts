@@ -48,24 +48,26 @@ export class RoleGuard implements CanActivate {
     const requiredPermissions = this.getRequiredPermissions(context);
 
     const payload = (await this.verifyToken(token)) as IJwtPayload;
-    const user = await this.userService.findById(payload.sub);
+    const userId = payload.sub || payload.id;
 
-    const normalizedRole = user.role
-      ? (String(user.role).toLowerCase() as Role)
-      : ('' as Role);
+    if (!userId) {
+      throw new UnauthorizedException(await this.i18n.t('user.INVALID_TOKEN'));
+    }
 
-    const hasRole = this.validateRole(normalizedRole, requiredRoles);
-    const userPermissions = rolePermissionsMap[normalizedRole] ?? [];
+    const userResponse = await this.userService.findById(userId);
+    const user = (userResponse as any).data || userResponse;
+
+    const hasRole = this.validateRole(user.role as Role, requiredRoles);
+    const userPermissions = rolePermissionsMap[user.role as Role] ?? [];
     const hasPermissions = this.validatePermissions(
       userPermissions,
       requiredPermissions,
     );
 
-    if (!hasRole || !hasPermissions) {
+    if (!hasRole || !hasPermissions)
       throw new UnauthorizedException(
         await this.i18n.t('user.INSUFFICIENT_PERMISSIONS'),
       );
-    }
 
     request['user'] = {
       id: user.id,

@@ -30,8 +30,7 @@ import { TranslationModule } from './common/translation/translation.module';
         path: join(process.cwd(), 'src/schema.gql'),
         federation: 2,
       },
-      
-   
+
       context: ({ req }) => ({
         req,
         user: req.user,
@@ -54,7 +53,8 @@ import { TranslationModule } from './common/translation/translation.module';
       formatError: (error: any) => {
         const originalError = error.extensions?.originalError as any;
         const msg = originalError?.message || error.message;
-        const code = error.extensions?.statusCode || originalError?.statusCode || 400;
+        const code =
+          error.extensions?.statusCode || originalError?.statusCode || 400;
 
         return {
           success: false,
@@ -64,8 +64,7 @@ import { TranslationModule } from './common/translation/translation.module';
         } as any;
       },
     }),
-    
-    
+
     UserModule,
     AuthModule,
   ],

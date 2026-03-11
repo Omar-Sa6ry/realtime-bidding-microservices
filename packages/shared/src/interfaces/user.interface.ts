@@ -5,7 +5,8 @@ export interface IUser {
 }
 
 export interface IJwtPayload {
-  sub: string;
+  sub?: string;
+  id?: string;
   email: string;
   role: string;
   iat?: number;

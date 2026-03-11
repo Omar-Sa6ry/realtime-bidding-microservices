@@ -14,7 +14,11 @@ import { AuthCommonModule } from '@bidding-micro/shared';
     RedisModule,
     AuthCommonModule.register({
       userService: UserService,
-      imports: [TypeOrmModule.forFeature([User]), RedisModule, TranslationModule],
+      imports: [
+        TypeOrmModule.forFeature([User]),
+        RedisModule,
+        TranslationModule,
+      ],
     }),
   ],
 
@@ -23,11 +27,11 @@ import { AuthCommonModule } from '@bidding-micro/shared';
     UserResolver,
     {
       provide: 'USER_SERVICE',
-      useClass: UserService,
+      useExisting: UserService,
     },
   ],
 
   controllers: [UserNatsController],
-  exports: [UserService, TypeOrmModule, 'USER_SERVICE'],
+  exports: [UserService, TypeOrmModule],
 })
 export class UserModule {}

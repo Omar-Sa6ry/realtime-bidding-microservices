@@ -5,5 +5,11 @@
   "workspaces": [
     "services/*",
     "packages/*"
-  ]
+  ],
+  "scripts": {
+    "format": "prettier --write \"**/*.{ts,js,json}\""
+  },
+  "devDependencies": {
+    "prettier": "^3.0.0"
+  }
 }

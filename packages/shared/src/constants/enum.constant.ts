@@ -19,10 +19,7 @@ export enum Permission {
   CHANGE_PASSWORD = 'CHANGE_PASSWORD',
   FORGOT_PASSWORD = 'FORGOT_PASSWORD',
   LOGOUT = 'LOGOUT',
-
- 
 }
-
 
 registerEnumType(Permission, {
   name: 'Permission',
@@ -33,4 +30,3 @@ registerEnumType(Role, {
   name: 'Role',
   description: 'User roles in the system',
 });
-

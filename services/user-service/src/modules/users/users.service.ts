@@ -132,14 +132,9 @@ export class UserService {
     if (!user)
       throw new BadRequestException(await this.i18n.t('user.NOT_FOUND'));
 
-    Object.assign(user, updateUserDto);
+    const updatedUser = await this.userRepo.update(id, updateUserDto);
 
-    await this.userRepo.save(user);
-
-    const freshUser = await this.userRepo.findOneBy({ id: user.id });
-    if (freshUser) await this.notifyUpdate(freshUser);
-
-    return { data: freshUser || user };
+    return { data: updatedUser.raw || user , message: await this.i18n.t('user.UPDATED')};
   }
 
   @Transactional()
