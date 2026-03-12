@@ -40,5 +40,11 @@ build:
         manual:
           - src: 'services/auction-service/**/*.go'
             dest: .
+          - src: 'services/auction-service/go.mod'
+            dest: go.mod
+          - src: 'services/auction-service/go.sum'
+            dest: go.sum
+          - src: 'services/auction-service/.air.toml'
+            dest: .air.toml
           - src: 'proto/**/*.proto'
             dest: proto

@@ -1,16 +1,25 @@
 package main
 
 import (
-	"fmt"
-	"time"
+	"context"
+	"log"
+
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/config"
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/database"
 )
 
 func main() {
-	fmt.Println("Auction Service Started 🚀")
-	fmt.Println("Waiting for events...")
+	log.Println("Starting Auction Service")
+
+	cfg := config.LoadConfig()
+
+	_, disconnect := database.InitMongoDB(cfg.MongoURI)
+	defer disconnect()
+
+	log.Printf("Auction Service is running on port %s", cfg.Port)
 
 	// Keep the application running without deadlock
-	for {
-		time.Sleep(time.Hour)
-	}
+	forever := make(chan bool)
+	log.Println("Waiting for events/traffic...")
+	<-forever
 }

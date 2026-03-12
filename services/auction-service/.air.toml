@@ -5,7 +5,7 @@ tmp_dir = "tmp"
   # We will put our main.go inside cmd/server/ as per Clean Architecture
   cmd = "go build -o ./tmp/main ./cmd/server"
   bin = "./tmp/main"
-  include_ext = ["go", "tpl", "tmpl", "html", "graphqls", "env"]
+  include_ext = ["go", "tpl", "tmpl", "html", "graphqls", "env", "mod", "sum"]
   exclude_dir = ["assets", "tmp", "vendor"]
   delay = 1000 # ms
   kill_delay = 500 # ms

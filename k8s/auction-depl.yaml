@@ -20,6 +20,8 @@ spec:
           env:
             - name: NODE_ENV
               value: "development"
+            - name: PORT_AUCTION
+              value: "3002"
             - name: NATS_URL
               value: "nats://nats-srv:4222"
             - name: JWT_EXPIRE
