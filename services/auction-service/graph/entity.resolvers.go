@@ -16,7 +16,7 @@ func (r *entityResolver) FindAuctionByID(ctx context.Context, id string) (*model
 	// For testing, we can just return a dummy if we don't have FindByID implemented in repo yet
 	// or implement a basic FindByID in repo.
 	// For now, let's satisfy the interface.
-	return &model.Auction{ID: id}, nil 
+	return &model.Auction{ID: id}, nil
 }
 
 // Entity returns EntityResolver implementation.

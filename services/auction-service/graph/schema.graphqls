@@ -11,8 +11,10 @@ type Query {
   auctions: [Auction!]!
 }
 
+directive @auth on FIELD_DEFINITION
+
 type Mutation {
-  createAuction(input: CreateAuctionInput!): Auction!
+  createAuction(input: CreateAuctionInput!): Auction! @auth
 }
 
 type Auction @key(fields: "id") {

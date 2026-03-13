@@ -10,6 +10,7 @@ type Config struct {
 	DBName   string
 	Port     string
 	NatsURL  string
+	JWTSecret string
 }
 
 func LoadConfig() *Config {
@@ -18,6 +19,7 @@ func LoadConfig() *Config {
 		DBName:   getEnv("DB_NAME", "bidding_auction_db"),
 		Port:     getEnv("PORT_AUCTION", "3002"),
 		NatsURL:  getEnv("NATS_URL", "nats://localhost:4222"),
+		JWTSecret:  getEnv("JWT_SECRET", "f3c12be5d179b8d5690d4735a0b48b5d68e7b68e3cda6b3"),
 	}
 
 }

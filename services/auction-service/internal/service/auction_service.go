@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/domain"
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/middleware"
 )
 
 type AuctionService interface {
@@ -32,6 +33,8 @@ func NewAuctionService(repo domain.AuctionRepository) AuctionService {
 }
 
 func (s *auctionService) CreateAuction(ctx context.Context, input CreateAuctionParams) (*domain.Auction, error) {
+	userID := middleware.GetUserIDFromContext(ctx)
+
 	startTime, err := time.Parse(time.RFC3339, input.StartTime)
 	if err != nil {
 		return nil, fmt.Errorf("invalid startTime format: %w", err)
@@ -52,7 +55,7 @@ func (s *auctionService) CreateAuction(ctx context.Context, input CreateAuctionP
 		EndTime:       endTime,
 		Status:        domain.StatusPending,
 		Images:        []string{},
-		SellerID:      "test-seller-id",
+		SellerID:      userID,
 	}
 
 	if err := s.repo.Create(ctx, auction); err != nil {

@@ -15,7 +15,6 @@ import (
 	"github.com/99designs/gqlgen/graphql/introspection"
 	"github.com/99designs/gqlgen/plugin/federation/fedruntime"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/graph/model"
-	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/domain"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
 )
@@ -36,6 +35,7 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
+	Auth func(ctx context.Context, obj any, next graphql.Resolver) (res any, err error)
 }
 
 type ComplexityRoot struct {
@@ -721,7 +721,7 @@ func (ec *executionContext) _Auction_status(ctx context.Context, field graphql.C
 			return obj.Status, nil
 		},
 		nil,
-		ec.marshalNAuctionStatus2githubᚗcomᚋOmarᚑSa6ryᚋrealtimeᚑbiddingᚑmicroservicesᚋservicesᚋauctionᚑserviceᚋinternalᚋdomainᚐAuctionStatus,
+		ec.marshalNAuctionStatus2githubᚗcomᚋOmarᚑSa6ryᚋrealtimeᚑbiddingᚑmicroservicesᚋservicesᚋauctionᚑserviceᚋgraphᚋmodelᚐAuctionStatus,
 		true,
 		true,
 	)
@@ -995,7 +995,20 @@ func (ec *executionContext) _Mutation_createAuction(ctx context.Context, field g
 			fc := graphql.GetFieldContext(ctx)
 			return ec.Resolvers.Mutation().CreateAuction(ctx, fc.Args["input"].(model.CreateAuctionInput))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.Directives.Auth == nil {
+					var zeroVal *model.Auction
+					return zeroVal, errors.New("directive auth is not implemented")
+				}
+				return ec.Directives.Auth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
 		ec.marshalNAuction2ᚖgithubᚗcomᚋOmarᚑSa6ryᚋrealtimeᚑbiddingᚑmicroservicesᚋservicesᚋauctionᚑserviceᚋgraphᚋmodelᚐAuction,
 		true,
 		true,
@@ -3596,21 +3609,14 @@ func (ec *executionContext) marshalNAuction2ᚖgithubᚗcomᚋOmarᚑSa6ryᚋrea
 	return ec._Auction(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNAuctionStatus2githubᚗcomᚋOmarᚑSa6ryᚋrealtimeᚑbiddingᚑmicroservicesᚋservicesᚋauctionᚑserviceᚋinternalᚋdomainᚐAuctionStatus(ctx context.Context, v any) (domain.AuctionStatus, error) {
-	tmp, err := graphql.UnmarshalString(v)
-	res := domain.AuctionStatus(tmp)
+func (ec *executionContext) unmarshalNAuctionStatus2githubᚗcomᚋOmarᚑSa6ryᚋrealtimeᚑbiddingᚑmicroservicesᚋservicesᚋauctionᚑserviceᚋgraphᚋmodelᚐAuctionStatus(ctx context.Context, v any) (model.AuctionStatus, error) {
+	var res model.AuctionStatus
+	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNAuctionStatus2githubᚗcomᚋOmarᚑSa6ryᚋrealtimeᚑbiddingᚑmicroservicesᚋservicesᚋauctionᚑserviceᚋinternalᚋdomainᚐAuctionStatus(ctx context.Context, sel ast.SelectionSet, v domain.AuctionStatus) graphql.Marshaler {
-	_ = sel
-	res := graphql.MarshalString(string(v))
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
-		}
-	}
-	return res
+func (ec *executionContext) marshalNAuctionStatus2githubᚗcomᚋOmarᚑSa6ryᚋrealtimeᚑbiddingᚑmicroservicesᚋservicesᚋauctionᚑserviceᚋgraphᚋmodelᚐAuctionStatus(ctx context.Context, sel ast.SelectionSet, v model.AuctionStatus) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v any) (bool, error) {

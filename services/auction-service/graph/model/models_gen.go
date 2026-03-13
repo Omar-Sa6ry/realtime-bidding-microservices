@@ -3,24 +3,27 @@
 package model
 
 import (
-	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/domain"
+	"bytes"
+	"fmt"
+	"io"
+	"strconv"
 )
 
 type Auction struct {
-	ID            string               `json:"id"`
-	Title         string               `json:"title"`
-	Description   string               `json:"description"`
-	StartingPrice float64              `json:"startingPrice"`
-	CurrentPrice  float64              `json:"currentPrice"`
-	Currency      string               `json:"currency"`
-	Images        []string             `json:"images"`
-	Status        domain.AuctionStatus `json:"status"`
-	StartTime     string               `json:"startTime"`
-	EndTime       string               `json:"endTime"`
-	SellerID      string               `json:"sellerId"`
-	WinnerID      *string              `json:"winnerId,omitempty"`
-	CreatedAt     string               `json:"createdAt"`
-	UpdatedAt     string               `json:"updatedAt"`
+	ID            string        `json:"id"`
+	Title         string        `json:"title"`
+	Description   string        `json:"description"`
+	StartingPrice float64       `json:"startingPrice"`
+	CurrentPrice  float64       `json:"currentPrice"`
+	Currency      string        `json:"currency"`
+	Images        []string      `json:"images"`
+	Status        AuctionStatus `json:"status"`
+	StartTime     string        `json:"startTime"`
+	EndTime       string        `json:"endTime"`
+	SellerID      string        `json:"sellerId"`
+	WinnerID      *string       `json:"winnerId,omitempty"`
+	CreatedAt     string        `json:"createdAt"`
+	UpdatedAt     string        `json:"updatedAt"`
 }
 
 func (Auction) IsEntity() {}
@@ -38,4 +41,63 @@ type Mutation struct {
 }
 
 type Query struct {
+}
+
+type AuctionStatus string
+
+const (
+	AuctionStatusPending   AuctionStatus = "PENDING"
+	AuctionStatusActive    AuctionStatus = "ACTIVE"
+	AuctionStatusEnded     AuctionStatus = "ENDED"
+	AuctionStatusCancelled AuctionStatus = "CANCELLED"
+)
+
+var AllAuctionStatus = []AuctionStatus{
+	AuctionStatusPending,
+	AuctionStatusActive,
+	AuctionStatusEnded,
+	AuctionStatusCancelled,
+}
+
+func (e AuctionStatus) IsValid() bool {
+	switch e {
+	case AuctionStatusPending, AuctionStatusActive, AuctionStatusEnded, AuctionStatusCancelled:
+		return true
+	}
+	return false
+}
+
+func (e AuctionStatus) String() string {
+	return string(e)
+}
+
+func (e *AuctionStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = AuctionStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid AuctionStatus", str)
+	}
+	return nil
+}
+
+func (e AuctionStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *AuctionStatus) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e AuctionStatus) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/graph"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/config"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/database"
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/middleware"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/repository"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/service"
 )
@@ -28,10 +29,15 @@ func main() {
 	repo := repository.NewMongoAuctionRepository(db)
 	auctionService := service.NewAuctionService(repo)
 
-	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{AuctionService: auctionService}}))
+	// Configure gqlgen with the Auth directive
+	graphConfig := graph.Config{Resolvers: &graph.Resolver{AuctionService: auctionService}}
+	graphConfig.Directives.Auth = graph.AuthDirective
+
+	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graphConfig))
+
 
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
-	http.Handle("/query", srv)
+	http.Handle("/query", middleware.AuthMiddleware(cfg.JWTSecret)(srv))
 
 	log.Printf("Auction Service is running on port %s", cfg.Port)
 	log.Printf("Connect to http://localhost:%s/ for GraphQL playground", cfg.Port)

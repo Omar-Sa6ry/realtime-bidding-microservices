@@ -30,6 +30,11 @@ spec:
               value: "redis-srv"
             - name: REDIS_PORT
               value: "6379"
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: auction-secrets
+                  key: JWT_SECRET
           envFrom:
             - secretRef:
                 name: auction-secrets
