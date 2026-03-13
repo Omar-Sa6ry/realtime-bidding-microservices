@@ -2,23 +2,41 @@ package main
 
 import (
 	"log"
+	"net/http"
 
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/graph"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/config"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/database"
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/repository"
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/service"
 )
 
 func main() {
 	log.Println("Starting Auction Service")
 
+	// Load configuration
 	cfg := config.LoadConfig()
 
-	_, disconnect := database.InitMongoDB(cfg.MongoURI)
+	// Initialize MongoDB
+	client, disconnect := database.InitMongoDB(cfg.MongoURI)
 	defer disconnect()
 
-	log.Printf("Auction Service is running on port %s", cfg.Port)
+	// Initialize repository
+	db := client.Database(cfg.DBName)
+	repo := repository.NewMongoAuctionRepository(db)
+	auctionService := service.NewAuctionService(repo)
 
-	// Keep the application running without deadlock
-	forever := make(chan bool)
-	log.Println("Waiting for events/traffic...")
-	<-forever
+	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{AuctionService: auctionService}}))
+
+	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
+	http.Handle("/query", srv)
+
+	log.Printf("Auction Service is running on port %s", cfg.Port)
+	log.Printf("Connect to http://localhost:%s/ for GraphQL playground", cfg.Port)
+
+	if err := http.ListenAndServe(":"+cfg.Port, nil); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
 }

@@ -44,6 +44,7 @@ import { IntrospectAndCompose, RemoteGraphQLDataSource } from '@apollo/gateway';
         supergraphSdl: new IntrospectAndCompose({
           subgraphs: [
             { name: 'user', url: 'http://user-srv:3000/user/graphql' },
+            { name: 'auction', url: 'http://auction-srv:3002/query' },
           ],
         }),
 

@@ -1,0 +1,49 @@
+extend schema
+  @link(url: "https://specs.apollo.dev/federation/v2.0",
+        import: ["@key", "@shareable"])
+
+schema {
+  query: Query
+  mutation: Mutation
+}
+
+type Query {
+  auctions: [Auction!]!
+}
+
+type Mutation {
+  createAuction(input: CreateAuctionInput!): Auction!
+}
+
+type Auction @key(fields: "id") {
+  id: ID!
+  title: String!
+  description: String!
+  startingPrice: Float!
+  currentPrice: Float!
+  currency: String!
+  images: [String!]!
+  status: AuctionStatus!
+  startTime: String!
+  endTime: String!
+  sellerId: String!
+  winnerId: String
+  createdAt: String!
+  updatedAt: String!
+}
+
+enum AuctionStatus {
+  PENDING
+  ACTIVE
+  ENDED
+  CANCELLED
+}
+
+input CreateAuctionInput {
+  title: String!
+  description: String!
+  startingPrice: Float!
+  currency: String!
+  startTime: String!
+  endTime: String!
+}

@@ -1,0 +1,60 @@
+package graph
+
+import (
+	"context"
+	"time"
+
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/graph/model"
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/domain"
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/service"
+)
+
+// CreateAuction is the resolver for the createAuction field.
+func (r *mutationResolver) CreateAuction(ctx context.Context, input model.CreateAuctionInput) (*model.Auction, error) {
+	auction, err := r.AuctionService.CreateAuction(ctx, service.CreateAuctionParams{
+		Title:         input.Title,
+		Description:   input.Description,
+		StartingPrice: input.StartingPrice,
+		Currency:      input.Currency,
+		StartTime:     input.StartTime,
+		EndTime:       input.EndTime,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return mapDomainToModel(auction), nil
+}
+
+// Auctions is the resolver for the auctions field.
+func (r *queryResolver) Auctions(ctx context.Context) ([]*model.Auction, error) {
+	return []*model.Auction{}, nil
+}
+
+// Mutation returns MutationResolver implementation.
+func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
+
+// Query returns QueryResolver implementation.
+func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
+
+type mutationResolver struct{ *Resolver }
+type queryResolver struct{ *Resolver }
+
+func mapDomainToModel(d *domain.Auction) *model.Auction {
+	return &model.Auction{
+		ID:            d.ID.Hex(),
+		Title:         d.Title,
+		Description:   d.Description,
+		StartingPrice: d.StartingPrice,
+		CurrentPrice:  d.CurrentPrice,
+		Currency:      d.Currency,
+		Images:        d.Images,
+		Status:        domain.AuctionStatus(d.Status),
+		StartTime:     d.StartTime.Format(time.RFC3339),
+		EndTime:       d.EndTime.Format(time.RFC3339),
+		SellerID:      d.SellerID,
+		WinnerID:      d.WinnerID,
+		CreatedAt:     d.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:     d.UpdatedAt.Format(time.RFC3339),
+	}
+}

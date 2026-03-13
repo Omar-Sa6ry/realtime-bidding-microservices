@@ -24,7 +24,10 @@ async function waitForService(url: string, retries = 60, delay = 5000) {
 
 async function bootstrap() {
   // Wait for subgraph services to be available
-  await waitForService('http://user-srv:3000/user/graphql');
+  await Promise.all([
+    waitForService('http://user-srv:3000/user/graphql'),
+    waitForService('http://auction-srv:3002/query'),
+  ]);
 
   const app = await NestFactory.create(AppModule);
   app.enableCors();
