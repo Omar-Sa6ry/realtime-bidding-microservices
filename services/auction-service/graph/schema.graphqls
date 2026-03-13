@@ -13,8 +13,16 @@ type Query {
 
 directive @auth on FIELD_DEFINITION
 
+type AuctionResponse {
+  success: Boolean!
+  message: String!
+  statusCode: Int!
+  timeStamp: String!
+  data: Auction
+}
+
 type Mutation {
-  createAuction(input: CreateAuctionInput!): Auction! @auth
+  createAuction(input: CreateAuctionInput!): AuctionResponse! @auth
 }
 
 type Auction @key(fields: "id") {

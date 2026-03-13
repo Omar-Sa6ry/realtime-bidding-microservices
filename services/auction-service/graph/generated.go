@@ -56,6 +56,14 @@ type ComplexityRoot struct {
 		WinnerID      func(childComplexity int) int
 	}
 
+	AuctionResponse struct {
+		Data       func(childComplexity int) int
+		Message    func(childComplexity int) int
+		StatusCode func(childComplexity int) int
+		Success    func(childComplexity int) int
+		TimeStamp  func(childComplexity int) int
+	}
+
 	Entity struct {
 		FindAuctionByID func(childComplexity int, id string) int
 	}
@@ -79,7 +87,7 @@ type EntityResolver interface {
 	FindAuctionByID(ctx context.Context, id string) (*model.Auction, error)
 }
 type MutationResolver interface {
-	CreateAuction(ctx context.Context, input model.CreateAuctionInput) (*model.Auction, error)
+	CreateAuction(ctx context.Context, input model.CreateAuctionInput) (*model.AuctionResponse, error)
 }
 type QueryResolver interface {
 	Auctions(ctx context.Context) ([]*model.Auction, error)
@@ -183,6 +191,37 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Auction.WinnerID(childComplexity), true
+
+	case "AuctionResponse.data":
+		if e.ComplexityRoot.AuctionResponse.Data == nil {
+			break
+		}
+
+		return e.ComplexityRoot.AuctionResponse.Data(childComplexity), true
+	case "AuctionResponse.message":
+		if e.ComplexityRoot.AuctionResponse.Message == nil {
+			break
+		}
+
+		return e.ComplexityRoot.AuctionResponse.Message(childComplexity), true
+	case "AuctionResponse.statusCode":
+		if e.ComplexityRoot.AuctionResponse.StatusCode == nil {
+			break
+		}
+
+		return e.ComplexityRoot.AuctionResponse.StatusCode(childComplexity), true
+	case "AuctionResponse.success":
+		if e.ComplexityRoot.AuctionResponse.Success == nil {
+			break
+		}
+
+		return e.ComplexityRoot.AuctionResponse.Success(childComplexity), true
+	case "AuctionResponse.timeStamp":
+		if e.ComplexityRoot.AuctionResponse.TimeStamp == nil {
+			break
+		}
+
+		return e.ComplexityRoot.AuctionResponse.TimeStamp(childComplexity), true
 
 	case "Entity.findAuctionByID":
 		if e.ComplexityRoot.Entity.FindAuctionByID == nil {
@@ -914,6 +953,181 @@ func (ec *executionContext) fieldContext_Auction_updatedAt(_ context.Context, fi
 	return fc, nil
 }
 
+func (ec *executionContext) _AuctionResponse_success(ctx context.Context, field graphql.CollectedField, obj *model.AuctionResponse) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AuctionResponse_success,
+		func(ctx context.Context) (any, error) {
+			return obj.Success, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_AuctionResponse_success(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AuctionResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AuctionResponse_message(ctx context.Context, field graphql.CollectedField, obj *model.AuctionResponse) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AuctionResponse_message,
+		func(ctx context.Context) (any, error) {
+			return obj.Message, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_AuctionResponse_message(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AuctionResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AuctionResponse_statusCode(ctx context.Context, field graphql.CollectedField, obj *model.AuctionResponse) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AuctionResponse_statusCode,
+		func(ctx context.Context) (any, error) {
+			return obj.StatusCode, nil
+		},
+		nil,
+		ec.marshalNInt2int32,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_AuctionResponse_statusCode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AuctionResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AuctionResponse_timeStamp(ctx context.Context, field graphql.CollectedField, obj *model.AuctionResponse) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AuctionResponse_timeStamp,
+		func(ctx context.Context) (any, error) {
+			return obj.TimeStamp, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_AuctionResponse_timeStamp(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AuctionResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AuctionResponse_data(ctx context.Context, field graphql.CollectedField, obj *model.AuctionResponse) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AuctionResponse_data,
+		func(ctx context.Context) (any, error) {
+			return obj.Data, nil
+		},
+		nil,
+		ec.marshalOAuction2ᚖgithubᚗcomᚋOmarᚑSa6ryᚋrealtimeᚑbiddingᚑmicroservicesᚋservicesᚋauctionᚑserviceᚋgraphᚋmodelᚐAuction,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_AuctionResponse_data(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AuctionResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Auction_id(ctx, field)
+			case "title":
+				return ec.fieldContext_Auction_title(ctx, field)
+			case "description":
+				return ec.fieldContext_Auction_description(ctx, field)
+			case "startingPrice":
+				return ec.fieldContext_Auction_startingPrice(ctx, field)
+			case "currentPrice":
+				return ec.fieldContext_Auction_currentPrice(ctx, field)
+			case "currency":
+				return ec.fieldContext_Auction_currency(ctx, field)
+			case "images":
+				return ec.fieldContext_Auction_images(ctx, field)
+			case "status":
+				return ec.fieldContext_Auction_status(ctx, field)
+			case "startTime":
+				return ec.fieldContext_Auction_startTime(ctx, field)
+			case "endTime":
+				return ec.fieldContext_Auction_endTime(ctx, field)
+			case "sellerId":
+				return ec.fieldContext_Auction_sellerId(ctx, field)
+			case "winnerId":
+				return ec.fieldContext_Auction_winnerId(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Auction_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Auction_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Auction", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Entity_findAuctionByID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -1000,7 +1214,7 @@ func (ec *executionContext) _Mutation_createAuction(ctx context.Context, field g
 
 			directive1 := func(ctx context.Context) (any, error) {
 				if ec.Directives.Auth == nil {
-					var zeroVal *model.Auction
+					var zeroVal *model.AuctionResponse
 					return zeroVal, errors.New("directive auth is not implemented")
 				}
 				return ec.Directives.Auth(ctx, nil, directive0)
@@ -1009,7 +1223,7 @@ func (ec *executionContext) _Mutation_createAuction(ctx context.Context, field g
 			next = directive1
 			return next
 		},
-		ec.marshalNAuction2ᚖgithubᚗcomᚋOmarᚑSa6ryᚋrealtimeᚑbiddingᚑmicroservicesᚋservicesᚋauctionᚑserviceᚋgraphᚋmodelᚐAuction,
+		ec.marshalNAuctionResponse2ᚖgithubᚗcomᚋOmarᚑSa6ryᚋrealtimeᚑbiddingᚑmicroservicesᚋservicesᚋauctionᚑserviceᚋgraphᚋmodelᚐAuctionResponse,
 		true,
 		true,
 	)
@@ -1023,36 +1237,18 @@ func (ec *executionContext) fieldContext_Mutation_createAuction(ctx context.Cont
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_Auction_id(ctx, field)
-			case "title":
-				return ec.fieldContext_Auction_title(ctx, field)
-			case "description":
-				return ec.fieldContext_Auction_description(ctx, field)
-			case "startingPrice":
-				return ec.fieldContext_Auction_startingPrice(ctx, field)
-			case "currentPrice":
-				return ec.fieldContext_Auction_currentPrice(ctx, field)
-			case "currency":
-				return ec.fieldContext_Auction_currency(ctx, field)
-			case "images":
-				return ec.fieldContext_Auction_images(ctx, field)
-			case "status":
-				return ec.fieldContext_Auction_status(ctx, field)
-			case "startTime":
-				return ec.fieldContext_Auction_startTime(ctx, field)
-			case "endTime":
-				return ec.fieldContext_Auction_endTime(ctx, field)
-			case "sellerId":
-				return ec.fieldContext_Auction_sellerId(ctx, field)
-			case "winnerId":
-				return ec.fieldContext_Auction_winnerId(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Auction_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_Auction_updatedAt(ctx, field)
+			case "success":
+				return ec.fieldContext_AuctionResponse_success(ctx, field)
+			case "message":
+				return ec.fieldContext_AuctionResponse_message(ctx, field)
+			case "statusCode":
+				return ec.fieldContext_AuctionResponse_statusCode(ctx, field)
+			case "timeStamp":
+				return ec.fieldContext_AuctionResponse_timeStamp(ctx, field)
+			case "data":
+				return ec.fieldContext_AuctionResponse_data(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Auction", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type AuctionResponse", field.Name)
 		},
 	}
 	defer func() {
@@ -2979,6 +3175,62 @@ func (ec *executionContext) _Auction(ctx context.Context, sel ast.SelectionSet, 
 	return out
 }
 
+var auctionResponseImplementors = []string{"AuctionResponse"}
+
+func (ec *executionContext) _AuctionResponse(ctx context.Context, sel ast.SelectionSet, obj *model.AuctionResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, auctionResponseImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AuctionResponse")
+		case "success":
+			out.Values[i] = ec._AuctionResponse_success(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "message":
+			out.Values[i] = ec._AuctionResponse_message(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "statusCode":
+			out.Values[i] = ec._AuctionResponse_statusCode(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "timeStamp":
+			out.Values[i] = ec._AuctionResponse_timeStamp(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "data":
+			out.Values[i] = ec._AuctionResponse_data(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var entityImplementors = []string{"Entity"}
 
 func (ec *executionContext) _Entity(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -3609,6 +3861,20 @@ func (ec *executionContext) marshalNAuction2ᚖgithubᚗcomᚋOmarᚑSa6ryᚋrea
 	return ec._Auction(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNAuctionResponse2githubᚗcomᚋOmarᚑSa6ryᚋrealtimeᚑbiddingᚑmicroservicesᚋservicesᚋauctionᚑserviceᚋgraphᚋmodelᚐAuctionResponse(ctx context.Context, sel ast.SelectionSet, v model.AuctionResponse) graphql.Marshaler {
+	return ec._AuctionResponse(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAuctionResponse2ᚖgithubᚗcomᚋOmarᚑSa6ryᚋrealtimeᚑbiddingᚑmicroservicesᚋservicesᚋauctionᚑserviceᚋgraphᚋmodelᚐAuctionResponse(ctx context.Context, sel ast.SelectionSet, v *model.AuctionResponse) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._AuctionResponse(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNAuctionStatus2githubᚗcomᚋOmarᚑSa6ryᚋrealtimeᚑbiddingᚑmicroservicesᚋservicesᚋauctionᚑserviceᚋgraphᚋmodelᚐAuctionStatus(ctx context.Context, v any) (model.AuctionStatus, error) {
 	var res model.AuctionStatus
 	err := res.UnmarshalGQL(v)
@@ -3680,6 +3946,22 @@ func (ec *executionContext) unmarshalNID2string(ctx context.Context, v any) (str
 func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	_ = sel
 	res := graphql.MarshalID(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNInt2int32(ctx context.Context, v any) (int32, error) {
+	res, err := graphql.UnmarshalInt32(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInt2int32(ctx context.Context, sel ast.SelectionSet, v int32) graphql.Marshaler {
+	_ = sel
+	res := graphql.MarshalInt32(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
@@ -4091,6 +4373,13 @@ func (ec *executionContext) marshalNfederation__Scope2ᚕᚕstringᚄ(ctx contex
 	}
 
 	return ret
+}
+
+func (ec *executionContext) marshalOAuction2ᚖgithubᚗcomᚋOmarᚑSa6ryᚋrealtimeᚑbiddingᚑmicroservicesᚋservicesᚋauctionᚑserviceᚋgraphᚋmodelᚐAuction(ctx context.Context, sel ast.SelectionSet, v *model.Auction) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Auction(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v any) (bool, error) {

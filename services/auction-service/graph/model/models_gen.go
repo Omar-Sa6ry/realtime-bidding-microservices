@@ -28,6 +28,14 @@ type Auction struct {
 
 func (Auction) IsEntity() {}
 
+type AuctionResponse struct {
+	Success    bool     `json:"success"`
+	Message    string   `json:"message"`
+	StatusCode int32    `json:"statusCode"`
+	TimeStamp  string   `json:"timeStamp"`
+	Data       *Auction `json:"data,omitempty"`
+}
+
 type CreateAuctionInput struct {
 	Title         string  `json:"title"`
 	Description   string  `json:"description"`

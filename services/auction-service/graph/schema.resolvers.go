@@ -7,13 +7,14 @@ package graph
 
 import (
 	"context"
+	"time"
 
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/graph/model"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/service"
 )
 
 // CreateAuction is the resolver for the createAuction field.
-func (r *mutationResolver) CreateAuction(ctx context.Context, input model.CreateAuctionInput) (*model.Auction, error) {
+func (r *mutationResolver) CreateAuction(ctx context.Context, input model.CreateAuctionInput) (*model.AuctionResponse, error) {
 	auction, err := r.AuctionService.CreateAuction(ctx, service.CreateAuctionParams{
 		Title:         input.Title,
 		Description:   input.Description,
@@ -26,7 +27,13 @@ func (r *mutationResolver) CreateAuction(ctx context.Context, input model.Create
 		return nil, err
 	}
 
-	return mapDomainToModel(auction), nil
+	return &model.AuctionResponse{
+		Success:    true,
+		Message:    "Auction created successfully",
+		StatusCode: 201, // Created
+		TimeStamp:  time.Now().Format(time.RFC3339),
+		Data:       mapDomainToModel(auction),
+	}, nil
 }
 
 // Auctions is the resolver for the auctions field.
