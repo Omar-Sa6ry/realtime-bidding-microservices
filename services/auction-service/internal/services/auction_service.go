@@ -7,6 +7,7 @@ import (
 
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/domain"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/middleware"
+	"github.com/99designs/gqlgen/graphql"
 )
 
 type AuctionService interface {
@@ -20,15 +21,18 @@ type CreateAuctionParams struct {
 	Currency      string
 	StartTime     string
 	EndTime       string
+	Images        []*graphql.Upload
 }
 
 type auctionService struct {
-	repo domain.AuctionRepository
+	repo       domain.AuctionRepository
+	cloudinary CloudinaryService
 }
 
-func NewAuctionService(repo domain.AuctionRepository) AuctionService {
+func NewAuctionService(repo domain.AuctionRepository, cloudinary CloudinaryService) AuctionService {
 	return &auctionService{
-		repo: repo,
+		repo:       repo,
+		cloudinary: cloudinary,
 	}
 }
 
@@ -45,6 +49,11 @@ func (s *auctionService) CreateAuction(ctx context.Context, input CreateAuctionP
 		return nil, fmt.Errorf("invalid endTime format: %w", err)
 	}
 
+	imageURLs, err := s.cloudinary.UploadMultipleImages(ctx, input.Images)
+	if err != nil {
+		return nil, fmt.Errorf("failed to upload images: %w", err)
+	}
+
 	auction := &domain.Auction{
 		Title:         input.Title,
 		Description:   input.Description,
@@ -54,7 +63,7 @@ func (s *auctionService) CreateAuction(ctx context.Context, input CreateAuctionP
 		StartTime:     startTime,
 		EndTime:       endTime,
 		Status:        domain.StatusPending,
-		Images:        []string{},
+		Images:        imageURLs,
 		SellerID:      userID,
 	}
 

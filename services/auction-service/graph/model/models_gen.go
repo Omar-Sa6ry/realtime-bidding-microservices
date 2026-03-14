@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+
+	"github.com/99designs/gqlgen/graphql"
 )
 
 type Auction struct {
@@ -37,12 +39,13 @@ type AuctionResponse struct {
 }
 
 type CreateAuctionInput struct {
-	Title         string  `json:"title"`
-	Description   string  `json:"description"`
-	StartingPrice float64 `json:"startingPrice"`
-	Currency      string  `json:"currency"`
-	StartTime     string  `json:"startTime"`
-	EndTime       string  `json:"endTime"`
+	Title         string            `json:"title"`
+	Description   string            `json:"description"`
+	StartingPrice float64           `json:"startingPrice"`
+	Currency      string            `json:"currency"`
+	StartTime     string            `json:"startTime"`
+	EndTime       string            `json:"endTime"`
+	Images        []*graphql.Upload `json:"images,omitempty"`
 }
 
 type Mutation struct {

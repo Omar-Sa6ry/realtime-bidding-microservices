@@ -1,3 +1,5 @@
+scalar Upload
+
 extend schema
   @link(url: "https://specs.apollo.dev/federation/v2.0",
         import: ["@key", "@shareable"])
@@ -56,4 +58,5 @@ input CreateAuctionInput {
   currency: String!
   startTime: String!
   endTime: String!
+  images: [Upload!]
 }

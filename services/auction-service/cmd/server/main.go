@@ -11,7 +11,7 @@ import (
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/database"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/middleware"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/repository"
-	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/service"
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/services"
 )
 
 func main() {
@@ -27,7 +27,13 @@ func main() {
 	// Initialize repository
 	db := client.Database(cfg.DBName)
 	repo := repository.NewMongoAuctionRepository(db)
-	auctionService := service.NewAuctionService(repo)
+
+	cldService, err := service.NewCloudinaryService(cfg.CloudinaryCloudName, cfg.CloudinaryAPIKey, cfg.CloudinaryAPISecret)
+	if err != nil {
+		log.Fatalf("Failed to initialize CloudinaryService: %v", err)
+	}
+
+	auctionService := service.NewAuctionService(repo, cldService)
 
 	// Configure gqlgen with the Auth directive
 	graphConfig := graph.Config{Resolvers: &graph.Resolver{AuctionService: auctionService}}

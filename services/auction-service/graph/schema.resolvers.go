@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/graph/model"
-	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/service"
+	service "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/services"
 )
 
 // CreateAuction is the resolver for the createAuction field.
@@ -22,6 +22,7 @@ func (r *mutationResolver) CreateAuction(ctx context.Context, input model.Create
 		Currency:      input.Currency,
 		StartTime:     input.StartTime,
 		EndTime:       input.EndTime,
+		Images:        input.Images,
 	})
 	if err != nil {
 		return nil, err
@@ -30,7 +31,7 @@ func (r *mutationResolver) CreateAuction(ctx context.Context, input model.Create
 	return &model.AuctionResponse{
 		Success:    true,
 		Message:    "Auction created successfully",
-		StatusCode: 201, // Created
+		StatusCode: 201,
 		TimeStamp:  time.Now().Format(time.RFC3339),
 		Data:       mapDomainToModel(auction),
 	}, nil
