@@ -42,11 +42,11 @@ func main() {
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graphConfig))
 
 
-	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
-	http.Handle("/query", middleware.AuthMiddleware(cfg.JWTSecret)(srv))
+	http.Handle("/", playground.Handler("GraphQL playground", "/graphql"))
+	http.Handle("/graphql", middleware.AuthMiddleware(cfg.JWTSecret)(srv))
 
 	log.Printf("Auction Service is running on port %s", cfg.Port)
-	log.Printf("Connect to http://localhost:%s/ for GraphQL playground", cfg.Port)
+	log.Printf("Connect to http://localhost:%s/graphql for GraphQL playground", cfg.Port)
 
 	if err := http.ListenAndServe(":"+cfg.Port, nil); err != nil {
 		log.Fatalf("Failed to start server: %v", err)

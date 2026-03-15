@@ -4,6 +4,8 @@ metadata:
   name: user-db-depl
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: user-db

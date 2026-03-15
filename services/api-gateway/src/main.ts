@@ -26,7 +26,7 @@ async function bootstrap() {
   // Wait for subgraph services to be available
   await Promise.all([
     waitForService('http://user-srv:3000/user/graphql'),
-    waitForService('http://auction-srv:3002/query'),
+    waitForService('http://auction-srv:3002/graphql'),
   ]);
 
   const app = await NestFactory.create(AppModule);

@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloGatewayDriver, ApolloGatewayDriverConfig } from '@nestjs/apollo';
 import { IntrospectAndCompose, RemoteGraphQLDataSource } from '@apollo/gateway';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { SqlInjectionInterceptor } from './common/interceptors/sql-injection.interceptor';
 
 @Module({
   imports: [
@@ -44,7 +46,7 @@ import { IntrospectAndCompose, RemoteGraphQLDataSource } from '@apollo/gateway';
         supergraphSdl: new IntrospectAndCompose({
           subgraphs: [
             { name: 'user', url: 'http://user-srv:3000/user/graphql' },
-            { name: 'auction', url: 'http://auction-srv:3002/query' },
+            { name: 'auction', url: 'http://auction-srv:3002/graphql' },
           ],
         }),
 
@@ -64,6 +66,11 @@ import { IntrospectAndCompose, RemoteGraphQLDataSource } from '@apollo/gateway';
       },
     } as ApolloGatewayDriverConfig),
   ],
-  providers: [],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: SqlInjectionInterceptor,
+    },
+  ],
 })
 export class AppModule {}

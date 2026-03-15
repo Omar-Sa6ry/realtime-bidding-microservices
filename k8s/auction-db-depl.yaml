@@ -4,6 +4,8 @@ metadata:
   name: auction-db-depl
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: auction-db
