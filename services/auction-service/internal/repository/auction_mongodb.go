@@ -6,8 +6,10 @@ import (
 	"time"
 
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/domain"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type mongoAuctionRepository struct {
@@ -31,4 +33,51 @@ func (r *mongoAuctionRepository) Create(ctx context.Context, auction *domain.Auc
 	}
 
 	return nil
+}
+
+func (r *mongoAuctionRepository) FindByID(ctx context.Context, id string) (*domain.Auction, error) {
+	var auction domain.Auction
+	auctionId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, fmt.Errorf("invalid auction ID: %w", err)
+	}
+	
+	if err := r.collection.FindOne(ctx, bson.M{"_id": auctionId}).Decode(&auction); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to find auction: %w", err)
+	}
+
+	return &auction, nil
+}
+
+func (r *mongoAuctionRepository) FindAll(ctx context.Context, filter bson.M, limit, offset int64) ([]*domain.Auction, int64, error) {
+    var auctions []*domain.Auction
+
+    findOptions := options.Find()
+    findOptions.SetLimit(limit)
+    findOptions.SetSkip(offset)
+    findOptions.SetSort(bson.M{"createdAt": -1})
+
+    cursor, err := r.collection.Find(ctx, filter, findOptions)
+    if err != nil {
+        return nil, 0, fmt.Errorf("failed to find auctions: %w", err)
+    }
+    defer cursor.Close(ctx)
+
+    total, err := r.collection.CountDocuments(ctx, filter)
+    if err != nil {
+        return nil, 0, fmt.Errorf("failed to count auctions: %w", err)
+    }
+
+    for cursor.Next(ctx) {
+        var auction domain.Auction
+        if err := cursor.Decode(&auction); err != nil {
+            return nil, 0, fmt.Errorf("failed to decode auction: %w", err)
+        }
+        auctions = append(auctions, &auction)
+    }
+
+    return auctions, total, nil
 }

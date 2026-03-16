@@ -5,13 +5,17 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/graph/model"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/domain"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/middleware"
 	"github.com/99designs/gqlgen/graphql"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type AuctionService interface {
 	CreateAuction(ctx context.Context, input CreateAuctionParams) (*domain.Auction, error)
+	FindByID(ctx context.Context, id string) (*domain.Auction, error)
+	FindAll(ctx context.Context, input *model.FindAuctionsInput, pagination *model.PaginationInput) ([]*domain.Auction, int64, error)
 }
 
 type CreateAuctionParams struct {
@@ -72,4 +76,34 @@ func (s *auctionService) CreateAuction(ctx context.Context, input CreateAuctionP
 	}
 
 	return auction, nil
+}
+
+func (s *auctionService) FindByID(ctx context.Context, id string) (*domain.Auction, error) {
+	return s.repo.FindByID(ctx, id)
+}
+
+func (s *auctionService) FindAll(ctx context.Context, input *model.FindAuctionsInput, pagination *model.PaginationInput) ([]*domain.Auction, int64, error) {
+	filter := bson.M{}
+	if input != nil {
+		if input.Title != nil {
+			filter["title"] = bson.M{"$regex": *input.Title, "$options": "i"}
+		}
+
+		if input.Status != nil {
+			filter["status"] = *input.Status
+		}
+	}
+    
+    limit := int64(10)
+    offset := int64(0)
+    if pagination != nil {
+        if pagination.Limit != nil {
+            limit = int64(*pagination.Limit)
+        }
+        if pagination.Page != nil {
+            offset = int64(*pagination.Page-1) * limit
+        }
+    }
+
+	return s.repo.FindAll(ctx, filter, limit, offset)
 }

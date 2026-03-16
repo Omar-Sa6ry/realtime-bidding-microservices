@@ -11,7 +11,7 @@ import (
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/database"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/middleware"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/repository"
-	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/services"
+	service "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/services"
 )
 
 func main() {

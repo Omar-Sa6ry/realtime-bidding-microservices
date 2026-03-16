@@ -7,6 +7,7 @@ package graph
 
 import (
 	"context"
+	"math"
 	"time"
 
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/graph/model"
@@ -37,9 +38,53 @@ func (r *mutationResolver) CreateAuction(ctx context.Context, input model.Create
 	}, nil
 }
 
-// Auctions is the resolver for the auctions field.
-func (r *queryResolver) Auctions(ctx context.Context) ([]*model.Auction, error) {
-	return []*model.Auction{}, nil
+// FindAuctions is the resolver for the findAuctions field.
+func (r *queryResolver) FindAuctions(ctx context.Context, input *model.FindAuctionsInput, pagination *model.PaginationInput) (*model.AuctionsResponse, error) {
+	auctions, total, err := r.AuctionService.FindAll(ctx, input, pagination)
+	if err != nil {
+		return nil, err
+	}
+
+	limit := int32(10)
+	if pagination != nil && pagination.Limit != nil {
+		limit = *pagination.Limit
+	}
+
+	return &model.AuctionsResponse{
+		Success:     true,
+		Message:     "Auctions found successfully",
+		StatusCode:  200,
+		TimeStamp:   time.Now().Format(time.RFC3339),
+		Data:        mapAuctionsToModel(auctions),
+		TotalPages:  PtrInt32(int32(math.Ceil(float64(total) / float64(limit)))),
+		CurrentPage: pagination.Page,
+		TotalItems:  PtrInt32(int32(total)),
+	}, nil
+}
+
+// FindAuctionByID is the resolver for the findAuctionByID field.
+func (r *queryResolver) FindAuctionByID(ctx context.Context, id string) (*model.AuctionResponse, error) {
+	auction, err := r.AuctionService.FindByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if auction == nil {
+		return &model.AuctionResponse{
+			Success:    false,
+			Message:    "Auction not found",
+			StatusCode: 404,
+			TimeStamp:  time.Now().Format(time.RFC3339),
+		}, nil
+	}
+
+	return &model.AuctionResponse{
+		Success:    true,
+		Message:    "Auction found successfully",
+		StatusCode: 200,
+		TimeStamp:  time.Now().Format(time.RFC3339),
+		Data:       mapDomainToModel(auction),
+	}, nil
 }
 
 // Mutation returns MutationResolver implementation.
@@ -50,3 +95,15 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+/*
+	func (r *queryResolver) Auctions(ctx context.Context) ([]*model.Auction, error) {
+	return []*model.Auction{}, nil
+}
+*/

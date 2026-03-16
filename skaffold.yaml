@@ -17,9 +17,9 @@ build:
       sync:
         manual:
           - src: 'services/user-service/src/**/*.ts'
-            dest: /usr/src/app/services/user-service/src
+            dest: /usr/src/app
           - src: 'proto/**/*.proto'
-            dest: /usr/src/app/proto
+            dest: /usr/src/app
 
     - image: bidding/api-gateway
       context: .
@@ -28,9 +28,9 @@ build:
       sync:
         manual:
           - src: 'services/api-gateway/src/**/*.ts'
-            dest: /usr/src/app/services/api-gateway/src
+            dest: /usr/src/app
           - src: 'proto/**/*.proto'
-            dest: /usr/src/app/proto
+            dest: /usr/src/app
 
     - image: bidding/auction
       context: .
@@ -39,12 +39,22 @@ build:
       sync:
         manual:
           - src: 'services/auction-service/**/*.go'
-            dest: /usr/src/app/services/auction-service
+            dest: /usr/src/app
           - src: 'services/auction-service/go.mod'
-            dest: /usr/src/app/services/auction-service/go.mod
+            dest: /usr/src/app
           - src: 'services/auction-service/go.sum'
-            dest: /usr/src/app/services/auction-service/go.sum
+            dest: /usr/src/app
           - src: 'services/auction-service/.air.toml'
-            dest: /usr/src/app/services/auction-service/.air.toml
+            dest: /usr/src/app
           - src: 'proto/**/*.proto'
-            dest: /usr/src/app/proto
+            dest: /usr/src/app
+
+portForward:
+  - resourceType: service
+    resourceName: api-gateway-srv
+    port: 4000
+    localPort: 4000
+  - resourceType: service
+    resourceName: auction-srv
+    port: 3002
+    localPort: 3002

@@ -9,11 +9,6 @@ schema {
   mutation: Mutation
 }
 
-type Query {
-  auctions: [Auction!]!
-}
-
-directive @auth on FIELD_DEFINITION
 
 type AuctionResponse {
   success: Boolean!
@@ -22,6 +17,24 @@ type AuctionResponse {
   timeStamp: String!
   data: Auction
 }
+
+type AuctionsResponse {
+  success: Boolean!
+  message: String!
+  statusCode: Int!
+  timeStamp: String!
+  data: [Auction!]!
+  totalPages: Int
+  currentPage: Int
+  totalItems: Int
+}
+
+type Query {
+  findAuctions(input: FindAuctionsInput, pagination: PaginationInput): AuctionsResponse!
+  findAuctionByID(id: ID!): AuctionResponse
+}
+
+directive @auth on FIELD_DEFINITION
 
 type Mutation {
   createAuction(input: CreateAuctionInput!): AuctionResponse! @auth
@@ -51,6 +64,20 @@ enum AuctionStatus {
   CANCELLED
 }
 
+input FindAuctionsInput {
+  title: String
+  description: String
+  status: AuctionStatus
+  startTime: String
+  endTime: String
+  currency: String
+}
+
+input PaginationInput {
+  limit: Int = 10
+  page: Int = 1
+}
+
 input CreateAuctionInput {
   title: String!
   description: String!
@@ -60,3 +87,11 @@ input CreateAuctionInput {
   endTime: String!
   images: [Upload!]
 }
+
+# go get github.com/99designs/gqlgen/codegen/config@v0.17.88
+# go get github.com/99designs/gqlgen/internal/imports@v0.17.88
+# go get github.com/99designs/gqlgen/api@v0.17.88
+# go get github.com/99designs/gqlgen@v0.17.88
+
+# go mod download
+# go run github.com/99designs/gqlgen generate

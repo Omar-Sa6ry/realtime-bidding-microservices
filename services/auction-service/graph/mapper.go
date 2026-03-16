@@ -25,3 +25,16 @@ func mapDomainToModel(d *domain.Auction) *model.Auction {
 		UpdatedAt:     d.UpdatedAt.Format(time.RFC3339),
 	}
 }
+
+func mapAuctionsToModel(auctions []*domain.Auction) []*model.Auction {
+	result := make([]*model.Auction, len(auctions))
+	for i, a := range auctions {
+		result[i] = mapDomainToModel(a)
+	}
+	
+	return result
+}
+
+func PtrInt32(v int32) *int32 {
+	return &v
+}

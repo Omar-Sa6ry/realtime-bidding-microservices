@@ -38,6 +38,17 @@ type AuctionResponse struct {
 	Data       *Auction `json:"data,omitempty"`
 }
 
+type AuctionsResponse struct {
+	Success     bool       `json:"success"`
+	Message     string     `json:"message"`
+	StatusCode  int32      `json:"statusCode"`
+	TimeStamp   string     `json:"timeStamp"`
+	Data        []*Auction `json:"data"`
+	TotalPages  *int32     `json:"totalPages,omitempty"`
+	CurrentPage *int32     `json:"currentPage,omitempty"`
+	TotalItems  *int32     `json:"totalItems,omitempty"`
+}
+
 type CreateAuctionInput struct {
 	Title         string            `json:"title"`
 	Description   string            `json:"description"`
@@ -48,7 +59,21 @@ type CreateAuctionInput struct {
 	Images        []*graphql.Upload `json:"images,omitempty"`
 }
 
+type FindAuctionsInput struct {
+	Title       *string        `json:"title,omitempty"`
+	Description *string        `json:"description,omitempty"`
+	Status      *AuctionStatus `json:"status,omitempty"`
+	StartTime   *string        `json:"startTime,omitempty"`
+	EndTime     *string        `json:"endTime,omitempty"`
+	Currency    *string        `json:"currency,omitempty"`
+}
+
 type Mutation struct {
+}
+
+type PaginationInput struct {
+	Limit *int32 `json:"limit,omitempty"`
+	Page  *int32 `json:"page,omitempty"`
 }
 
 type Query struct {

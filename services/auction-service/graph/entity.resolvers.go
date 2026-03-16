@@ -13,10 +13,14 @@ import (
 
 // FindAuctionByID is the resolver for the findAuctionByID field.
 func (r *entityResolver) FindAuctionByID(ctx context.Context, id string) (*model.Auction, error) {
-	// For testing, we can just return a dummy if we don't have FindByID implemented in repo yet
-	// or implement a basic FindByID in repo.
-	// For now, let's satisfy the interface.
-	return &model.Auction{ID: id}, nil
+	auction, err := r.AuctionService.FindByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if auction == nil {
+		return nil, nil
+	}
+	return mapDomainToModel(auction), nil
 }
 
 // Entity returns EntityResolver implementation.
