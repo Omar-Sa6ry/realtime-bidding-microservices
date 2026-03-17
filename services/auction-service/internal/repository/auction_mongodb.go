@@ -41,7 +41,7 @@ func (r *mongoAuctionRepository) FindByID(ctx context.Context, id string) (*doma
 	if err != nil {
 		return nil, fmt.Errorf("invalid auction ID: %w", err)
 	}
-	
+
 	if err := r.collection.FindOne(ctx, bson.M{"_id": auctionId}).Decode(&auction); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
@@ -53,33 +53,33 @@ func (r *mongoAuctionRepository) FindByID(ctx context.Context, id string) (*doma
 }
 
 func (r *mongoAuctionRepository) FindAll(ctx context.Context, filter bson.M, limit, offset int64) ([]*domain.Auction, int64, error) {
-    var auctions []*domain.Auction
+	var auctions []*domain.Auction
 
-    findOptions := options.Find()
-    findOptions.SetLimit(limit)
-    findOptions.SetSkip(offset)
-    findOptions.SetSort(bson.M{"createdAt": -1})
+	findOptions := options.Find()
+	findOptions.SetLimit(limit)
+	findOptions.SetSkip(offset)
+	findOptions.SetSort(bson.M{"createdAt": -1})
 
-    cursor, err := r.collection.Find(ctx, filter, findOptions)
-    if err != nil {
-        return nil, 0, fmt.Errorf("failed to find auctions: %w", err)
-    }
-    defer cursor.Close(ctx)
+	cursor, err := r.collection.Find(ctx, filter, findOptions)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to find auctions: %w", err)
+	}
+	defer cursor.Close(ctx)
 
-    total, err := r.collection.CountDocuments(ctx, filter)
-    if err != nil {
-        return nil, 0, fmt.Errorf("failed to count auctions: %w", err)
-    }
+	total, err := r.collection.CountDocuments(ctx, filter)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to count auctions: %w", err)
+	}
 
-    for cursor.Next(ctx) {
-        var auction domain.Auction
-        if err := cursor.Decode(&auction); err != nil {
-            return nil, 0, fmt.Errorf("failed to decode auction: %w", err)
-        }
-        auctions = append(auctions, &auction)
-    }
+	for cursor.Next(ctx) {
+		var auction domain.Auction
+		if err := cursor.Decode(&auction); err != nil {
+			return nil, 0, fmt.Errorf("failed to decode auction: %w", err)
+		}
+		auctions = append(auctions, &auction)
+	}
 
-    return auctions, total, nil
+	return auctions, total, nil
 }
 
 func (r *mongoAuctionRepository) Update(ctx context.Context, auction *domain.Auction) error {
@@ -105,4 +105,25 @@ func (r *mongoAuctionRepository) Delete(ctx context.Context, id string) error {
 	}
 
 	return nil
+}
+
+func (r *mongoAuctionRepository) UpdateStatusBulk(ctx context.Context, currentStatus domain.AuctionStatus, newStatus domain.AuctionStatus, timeField string, cutoff time.Time) (int64, error) {
+	filter := bson.M{
+		"status":  currentStatus,
+		timeField: bson.M{"$lte": cutoff},
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"status":    newStatus,
+			"updatedAt": time.Now(),
+		},
+	}
+
+	res, err := r.collection.UpdateMany(ctx, filter, update)
+	if err != nil {
+		return 0, fmt.Errorf("failed to execute bulk update: %w", err)
+	}
+
+	return res.ModifiedCount, nil
 }

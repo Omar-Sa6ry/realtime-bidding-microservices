@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/cloudinary/cloudinary-go/v2"
 	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
-	"github.com/99designs/gqlgen/graphql"
 )
 
 type CloudinaryService interface {
@@ -51,7 +51,7 @@ func (s *cloudinaryService) UploadMultipleImages(ctx context.Context, files []*g
 		if err != nil {
 			return nil, err
 		}
-		
+
 		urls = append(urls, url)
 	}
 	return urls, nil

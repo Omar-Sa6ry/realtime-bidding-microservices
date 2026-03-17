@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -12,4 +13,5 @@ type AuctionRepository interface {
 	FindAll(ctx context.Context, filter bson.M, limit, offset int64) ([]*Auction, int64, error)
 	Update(ctx context.Context, auction *Auction) error
 	Delete(ctx context.Context, id string) error
+	UpdateStatusBulk(ctx context.Context, currentStatus AuctionStatus, newStatus AuctionStatus, timeField string, cutoff time.Time) (int64, error)
 }

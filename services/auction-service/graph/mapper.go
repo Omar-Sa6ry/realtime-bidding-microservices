@@ -31,7 +31,7 @@ func mapAuctionsToModel(auctions []*domain.Auction) []*model.Auction {
 	for i, a := range auctions {
 		result[i] = mapDomainToModel(a)
 	}
-	
+
 	return result
 }
 

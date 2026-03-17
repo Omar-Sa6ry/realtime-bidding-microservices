@@ -10,7 +10,7 @@ import (
 )
 
 func InitMongoDB(uri string) (*mongo.Client, func()) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10 * time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	clientOptions := options.Client().ApplyURI(uri)

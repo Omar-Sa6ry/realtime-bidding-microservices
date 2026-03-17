@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/graph/model"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/domain"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/middleware"
-	"github.com/99designs/gqlgen/graphql"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -18,6 +18,7 @@ type AuctionService interface {
 	FindAll(ctx context.Context, input *model.FindAuctionsInput, pagination *model.PaginationInput) ([]*domain.Auction, int64, error)
 	UpdateAuction(ctx context.Context, id string, input model.UpdateAuctionInput) (*domain.Auction, error)
 	DeleteAuction(ctx context.Context, id string) (*domain.Auction, error)
+	ProcessLifecycleTransitions(ctx context.Context) error
 }
 
 type CreateAuctionParams struct {
@@ -95,17 +96,17 @@ func (s *auctionService) FindAll(ctx context.Context, input *model.FindAuctionsI
 			filter["status"] = *input.Status
 		}
 	}
-    
-    limit := int64(10)
-    offset := int64(0)
-    if pagination != nil {
-        if pagination.Limit != nil {
-            limit = int64(*pagination.Limit)
-        }
-        if pagination.Page != nil {
-            offset = int64(*pagination.Page-1) * limit
-        }
-    }
+
+	limit := int64(10)
+	offset := int64(0)
+	if pagination != nil {
+		if pagination.Limit != nil {
+			limit = int64(*pagination.Limit)
+		}
+		if pagination.Page != nil {
+			offset = int64(*pagination.Page-1) * limit
+		}
+	}
 
 	return s.repo.FindAll(ctx, filter, limit, offset)
 }
@@ -193,4 +194,24 @@ func (s *auctionService) DeleteAuction(ctx context.Context, id string) (*domain.
 	}
 
 	return auction, nil
+}
+
+func (s *auctionService) ProcessLifecycleTransitions(ctx context.Context) error {
+	activated, err := s.repo.UpdateStatusBulk(ctx, domain.StatusPending, domain.StatusActive, "startTime", time.Now())
+	if err != nil {
+		return fmt.Errorf("failed to activate auctions: %w", err)
+	}
+	if activated > 0 {
+		fmt.Printf("Activated %d pending auctions\n", activated)
+	}
+
+	ended, err := s.repo.UpdateStatusBulk(ctx, domain.StatusActive, domain.StatusEnded, "endTime", time.Now())
+	if err != nil {
+		return fmt.Errorf("failed to end auctions: %w", err)
+	}
+	if ended > 0 {
+		fmt.Printf("Ended %d active auctions\n", ended)
+	}
+
+	return nil
 }
