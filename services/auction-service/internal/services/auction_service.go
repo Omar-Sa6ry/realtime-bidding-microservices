@@ -7,6 +7,7 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/graph/model"
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/broker"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/domain"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/middleware"
 	"go.mongodb.org/mongo-driver/bson"
@@ -34,12 +35,14 @@ type CreateAuctionParams struct {
 type auctionService struct {
 	repo       domain.AuctionRepository
 	cloudinary CloudinaryService
+	publisher  broker.Publisher
 }
 
-func NewAuctionService(repo domain.AuctionRepository, cloudinary CloudinaryService) AuctionService {
+func NewAuctionService(repo domain.AuctionRepository, cloudinary CloudinaryService, publisher broker.Publisher) AuctionService {
 	return &auctionService{
 		repo:       repo,
 		cloudinary: cloudinary,
+		publisher:  publisher,
 	}
 }
 
@@ -77,6 +80,12 @@ func (s *auctionService) CreateAuction(ctx context.Context, input CreateAuctionP
 	if err := s.repo.Create(ctx, auction); err != nil {
 		return nil, fmt.Errorf("failed to create auction: %w", err)
 	}
+
+	// Publish auction.create event
+	_ = s.publisher.Publish(ctx, broker.Event{
+		Subject: "auction.create",
+		Data:    auction,
+	})
 
 	return auction, nil
 }
@@ -197,20 +206,36 @@ func (s *auctionService) DeleteAuction(ctx context.Context, id string) (*domain.
 }
 
 func (s *auctionService) ProcessLifecycleTransitions(ctx context.Context) error {
-	activated, err := s.repo.UpdateStatusBulk(ctx, domain.StatusPending, domain.StatusActive, "startTime", time.Now())
-	if err != nil {
-		return fmt.Errorf("failed to activate auctions: %w", err)
-	}
-	if activated > 0 {
-		fmt.Printf("Activated %d pending auctions\n", activated)
+	now := time.Now()
+
+	pendingToActive, err := s.repo.FindByStatusAndCutoff(ctx, domain.StatusPending, "startTime", now)
+	if err == nil && len(pendingToActive) > 0 {
+		count, err := s.repo.UpdateStatusBulk(ctx, domain.StatusPending, domain.StatusActive, "startTime", now)
+		if err == nil && count > 0 {
+			fmt.Printf("Activated %d pending auctions\n", count)
+			for _, a := range pendingToActive {
+				a.Status = domain.StatusActive
+				_ = s.publisher.Publish(ctx, broker.Event{
+					Subject: "auction.active",
+					Data:    a,
+				})
+			}
+		}
 	}
 
-	ended, err := s.repo.UpdateStatusBulk(ctx, domain.StatusActive, domain.StatusEnded, "endTime", time.Now())
-	if err != nil {
-		return fmt.Errorf("failed to end auctions: %w", err)
-	}
-	if ended > 0 {
-		fmt.Printf("Ended %d active auctions\n", ended)
+	activeToEnded, err := s.repo.FindByStatusAndCutoff(ctx, domain.StatusActive, "endTime", now)
+	if err == nil && len(activeToEnded) > 0 {
+		count, err := s.repo.UpdateStatusBulk(ctx, domain.StatusActive, domain.StatusEnded, "endTime", now)
+		if err == nil && count > 0 {
+			fmt.Printf("Ended %d active auctions\n", count)
+			for _, a := range activeToEnded {
+				a.Status = domain.StatusEnded 
+				_ = s.publisher.Publish(ctx, broker.Event{
+					Subject: "auction.ended",
+					Data:    a,
+				})
+			}
+		}
 	}
 
 	return nil

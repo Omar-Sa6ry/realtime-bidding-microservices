@@ -9,6 +9,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/graph"
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/broker"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/config"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/database"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/middleware"
@@ -36,9 +37,19 @@ func main() {
 		log.Fatalf("Failed to initialize CloudinaryService: %v", err)
 	}
 
-	auctionService := service.NewAuctionService(repo, cldService)
+	auctionService := service.NewAuctionService(repo, cldService, nil) 
 
-	// Initialize background worker (Cron)
+	// Initialize NATS Publisher
+	natsPublisher, err := broker.NewNatsPublisher(cfg.NatsURL)
+	if err != nil {
+		log.Printf("Warning: Failed to connect to NATS: %v. Events will not be published.", err)
+	} else {
+		defer natsPublisher.Close()
+	}
+
+	auctionService = service.NewAuctionService(repo, cldService, natsPublisher)
+
+	// Initialize background worker
 	c := cron.New(cron.WithChain(
 		cron.SkipIfStillRunning(cron.DefaultLogger),
 	))

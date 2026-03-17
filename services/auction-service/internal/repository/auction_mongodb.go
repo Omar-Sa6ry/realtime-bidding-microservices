@@ -127,3 +127,23 @@ func (r *mongoAuctionRepository) UpdateStatusBulk(ctx context.Context, currentSt
 
 	return res.ModifiedCount, nil
 }
+
+func (r *mongoAuctionRepository) FindByStatusAndCutoff(ctx context.Context, status domain.AuctionStatus, timeField string, cutoff time.Time) ([]*domain.Auction, error) {
+	filter := bson.M{
+		"status":    status,
+		timeField: bson.M{"$lte": cutoff},
+	}
+
+	cursor, err := r.collection.Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find auctions for transition: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	var auctions []*domain.Auction
+	if err := cursor.All(ctx, &auctions); err != nil {
+		return nil, fmt.Errorf("failed to decode auctions: %w", err)
+	}
+
+	return auctions, nil
+}

@@ -14,4 +14,5 @@ type AuctionRepository interface {
 	Update(ctx context.Context, auction *Auction) error
 	Delete(ctx context.Context, id string) error
 	UpdateStatusBulk(ctx context.Context, currentStatus AuctionStatus, newStatus AuctionStatus, timeField string, cutoff time.Time) (int64, error)
+	FindByStatusAndCutoff(ctx context.Context, status AuctionStatus, timeField string, cutoff time.Time) ([]*Auction, error)
 }
