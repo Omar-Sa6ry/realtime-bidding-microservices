@@ -81,3 +81,28 @@ func (r *mongoAuctionRepository) FindAll(ctx context.Context, filter bson.M, lim
 
     return auctions, total, nil
 }
+
+func (r *mongoAuctionRepository) Update(ctx context.Context, auction *domain.Auction) error {
+	auction.UpdatedAt = time.Now()
+
+	_, err := r.collection.UpdateOne(ctx, bson.M{"_id": auction.ID}, bson.M{"$set": auction})
+	if err != nil {
+		return fmt.Errorf("failed to update auction: %w", err)
+	}
+
+	return nil
+}
+
+func (r *mongoAuctionRepository) Delete(ctx context.Context, id string) error {
+	auctionId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return fmt.Errorf("invalid auction ID: %w", err)
+	}
+
+	_, err = r.collection.DeleteOne(ctx, bson.M{"_id": auctionId})
+	if err != nil {
+		return fmt.Errorf("failed to delete auction: %w", err)
+	}
+
+	return nil
+}

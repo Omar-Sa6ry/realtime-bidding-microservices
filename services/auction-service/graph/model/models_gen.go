@@ -79,6 +79,17 @@ type PaginationInput struct {
 type Query struct {
 }
 
+type UpdateAuctionInput struct {
+	Title         *string           `json:"title,omitempty"`
+	Description   *string           `json:"description,omitempty"`
+	Status        *AuctionStatus    `json:"status,omitempty"`
+	StartTime     *string           `json:"startTime,omitempty"`
+	EndTime       *string           `json:"endTime,omitempty"`
+	Currency      *string           `json:"currency,omitempty"`
+	StartingPrice *float64          `json:"startingPrice,omitempty"`
+	Images        []*graphql.Upload `json:"images,omitempty"`
+}
+
 type AuctionStatus string
 
 const (

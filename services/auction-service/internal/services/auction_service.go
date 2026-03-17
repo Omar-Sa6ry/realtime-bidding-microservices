@@ -16,6 +16,8 @@ type AuctionService interface {
 	CreateAuction(ctx context.Context, input CreateAuctionParams) (*domain.Auction, error)
 	FindByID(ctx context.Context, id string) (*domain.Auction, error)
 	FindAll(ctx context.Context, input *model.FindAuctionsInput, pagination *model.PaginationInput) ([]*domain.Auction, int64, error)
+	UpdateAuction(ctx context.Context, id string, input model.UpdateAuctionInput) (*domain.Auction, error)
+	DeleteAuction(ctx context.Context, id string) (*domain.Auction, error)
 }
 
 type CreateAuctionParams struct {
@@ -106,4 +108,89 @@ func (s *auctionService) FindAll(ctx context.Context, input *model.FindAuctionsI
     }
 
 	return s.repo.FindAll(ctx, filter, limit, offset)
+}
+
+func (s *auctionService) UpdateAuction(ctx context.Context, id string, input model.UpdateAuctionInput) (*domain.Auction, error) {
+	userID := middleware.GetUserIDFromContext(ctx)
+
+	auction, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find auction: %w", err)
+	}
+
+	if auction == nil {
+		return nil, fmt.Errorf("auction not found")
+	}
+	if userID != auction.SellerID {
+		return nil, fmt.Errorf("you are not the seller of this auction")
+	}
+	if auction.Status != domain.StatusPending {
+		return nil, fmt.Errorf("auction is not pending")
+	}
+
+	if input.Title != nil {
+		auction.Title = *input.Title
+	}
+
+	if input.Description != nil {
+		auction.Description = *input.Description
+	}
+
+	if input.StartingPrice != nil {
+		auction.StartingPrice = *input.StartingPrice
+	}
+
+	if input.Currency != nil {
+		auction.Currency = *input.Currency
+	}
+
+	if input.StartTime != nil {
+		auction.StartTime, err = time.Parse(time.RFC3339, *input.StartTime)
+		if err != nil {
+			return nil, fmt.Errorf("invalid startTime format: %w", err)
+		}
+	}
+
+	if input.EndTime != nil {
+		auction.EndTime, err = time.Parse(time.RFC3339, *input.EndTime)
+		if err != nil {
+			return nil, fmt.Errorf("invalid endTime format: %w", err)
+		}
+	}
+
+	if input.Images != nil {
+		imageURLs, err := s.cloudinary.UploadMultipleImages(ctx, input.Images)
+		if err != nil {
+			return nil, fmt.Errorf("failed to upload images: %w", err)
+		}
+		auction.Images = imageURLs
+	}
+
+	if err := s.repo.Update(ctx, auction); err != nil {
+		return nil, fmt.Errorf("failed to update auction: %w", err)
+	}
+
+	return auction, nil
+}
+
+func (s *auctionService) DeleteAuction(ctx context.Context, id string) (*domain.Auction, error) {
+	userID := middleware.GetUserIDFromContext(ctx)
+
+	auction, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find auction: %w", err)
+	}
+
+	if auction == nil {
+		return nil, fmt.Errorf("auction not found")
+	}
+	if userID != auction.SellerID {
+		return nil, fmt.Errorf("you are not the seller of this auction")
+	}
+
+	if err := s.repo.Delete(ctx, id); err != nil {
+		return nil, fmt.Errorf("failed to delete auction: %w", err)
+	}
+
+	return auction, nil
 }

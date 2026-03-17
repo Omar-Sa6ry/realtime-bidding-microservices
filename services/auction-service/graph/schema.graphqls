@@ -38,6 +38,8 @@ directive @auth on FIELD_DEFINITION
 
 type Mutation {
   createAuction(input: CreateAuctionInput!): AuctionResponse! @auth
+  updateAuction(id: ID!, input: UpdateAuctionInput!): AuctionResponse! @auth
+  deleteAuction(id: ID!): AuctionResponse @auth
 }
 
 type Auction @key(fields: "id") {
@@ -76,6 +78,17 @@ input FindAuctionsInput {
 input PaginationInput {
   limit: Int = 10
   page: Int = 1
+}
+
+input UpdateAuctionInput {
+  title: String
+  description: String
+  status: AuctionStatus
+  startTime: String
+  endTime: String
+  currency: String
+  startingPrice: Float
+  images: [Upload]
 }
 
 input CreateAuctionInput {

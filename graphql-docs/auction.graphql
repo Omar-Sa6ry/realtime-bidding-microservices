@@ -1,0 +1,76 @@
+mutation{
+  createAuction(input: {
+    title: "Vintage Watch",
+    description: "A very rare watch from 1950",
+    startingPrice: 500.0,
+    currency: "USD",
+    startTime: "2026-04-01T10:00:00Z",
+    endTime: "2026-04-10T10:00:00Z",
+  }) {
+    success
+    message
+    data {
+      id
+      sellerId
+    }
+  }
+}
+
+
+query {
+  findAuctionByID(id: "69b5e583e7387e7a5cc8fd99") {
+    success
+    message
+    statusCode
+    data {
+      id
+      title
+    }
+  }
+}
+
+query{
+  findAuctions(
+    pagination:{page:1 limit:10}
+    input:{
+      title:"Vintage"
+      status:ACTIVE
+    }
+  ){
+    success
+    statusCode
+    message
+    totalPages
+    currentPage
+    totalItems
+    data{
+      title
+    }
+  }
+}
+
+mutation {
+  updateAuction(id: "69b5e583e7387e7a5cc8fd99", input: {
+    title: "Updated Title",
+    startingPrice: 600.0
+  }) {
+    success
+    message
+    data {
+      title
+      startingPrice
+      updatedAt
+    }
+  }
+}
+
+mutation {
+  deleteAuction(id: "69b5e583e7387e7a5cc8fd99") {
+    success
+    message
+    data {
+      id
+      title
+    }
+  }
+}

@@ -38,6 +38,38 @@ func (r *mutationResolver) CreateAuction(ctx context.Context, input model.Create
 	}, nil
 }
 
+// UpdateAuction is the resolver for the updateAuction field.
+func (r *mutationResolver) UpdateAuction(ctx context.Context, id string, input model.UpdateAuctionInput) (*model.AuctionResponse, error) {
+	auction, err := r.AuctionService.UpdateAuction(ctx, id, input)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.AuctionResponse{
+		Success:    true,
+		Message:    "Auction updated successfully",
+		StatusCode: 200,
+		TimeStamp:  time.Now().Format(time.RFC3339),
+		Data:       mapDomainToModel(auction),
+	}, nil
+}
+
+// DeleteAuction is the resolver for the deleteAuction field.
+func (r *mutationResolver) DeleteAuction(ctx context.Context, id string) (*model.AuctionResponse, error) {
+	auction, err := r.AuctionService.DeleteAuction(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.AuctionResponse{
+		Success:    true,
+		Message:    "Auction deleted successfully",
+		StatusCode: 200,
+		TimeStamp:  time.Now().Format(time.RFC3339),
+		Data:       mapDomainToModel(auction),
+	}, nil
+}
+
 // FindAuctions is the resolver for the findAuctions field.
 func (r *queryResolver) FindAuctions(ctx context.Context, input *model.FindAuctionsInput, pagination *model.PaginationInput) (*model.AuctionsResponse, error) {
 	auctions, total, err := r.AuctionService.FindAll(ctx, input, pagination)
@@ -95,15 +127,3 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//    it when you're done.
-//  - You have helper methods in this file. Move them out to keep these resolver files clean.
-/*
-	func (r *queryResolver) Auctions(ctx context.Context) ([]*model.Auction, error) {
-	return []*model.Auction{}, nil
-}
-*/
