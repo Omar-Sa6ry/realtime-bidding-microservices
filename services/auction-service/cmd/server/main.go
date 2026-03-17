@@ -10,6 +10,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/graph"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/broker"
+	user_client "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/client"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/config"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/database"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/middleware"
@@ -37,7 +38,14 @@ func main() {
 		log.Fatalf("Failed to initialize CloudinaryService: %v", err)
 	}
 
-	auctionService := service.NewAuctionService(repo, cldService, nil) 
+	// Initialize gRPC UserClient
+	userClient, err := user_client.NewUserClient(cfg.UserServiceURL)
+	if err != nil {
+		log.Fatalf("Failed to initialize User gRPC Client: %v", err)
+	}
+	defer userClient.Close()
+
+	auctionService := service.NewAuctionService(repo, cldService, nil, nil) // Temporary to allow compilation while typing
 
 	// Initialize NATS Publisher
 	natsPublisher, err := broker.NewNatsPublisher(cfg.NatsURL)
@@ -47,7 +55,7 @@ func main() {
 		defer natsPublisher.Close()
 	}
 
-	auctionService = service.NewAuctionService(repo, cldService, natsPublisher)
+	auctionService = service.NewAuctionService(repo, cldService, natsPublisher, userClient)
 
 	// Initialize background worker
 	c := cron.New(cron.WithChain(

@@ -14,6 +14,7 @@ type Config struct {
 	CloudinaryCloudName string
 	CloudinaryAPIKey    string
 	CloudinaryAPISecret string
+	UserServiceURL      string
 }
 
 func LoadConfig() *Config {
@@ -26,6 +27,7 @@ func LoadConfig() *Config {
 		CloudinaryCloudName: getEnv("CLOUDINARY_CLOUD_NAME", ""),
 		CloudinaryAPIKey:    getEnv("CLOUDINARY_API_KEY", ""),
 		CloudinaryAPISecret: getEnv("CLOUDINARY_API_SECRET", ""),
+		UserServiceURL:      getEnv("USER_SERVICE_URL", "user-srv:50051"),
 	}
 
 }

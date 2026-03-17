@@ -8,6 +8,7 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/graph/model"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/broker"
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/client"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/domain"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/middleware"
 	"go.mongodb.org/mongo-driver/bson"
@@ -36,18 +37,29 @@ type auctionService struct {
 	repo       domain.AuctionRepository
 	cloudinary CloudinaryService
 	publisher  broker.Publisher
+	userClient client.UserClient
 }
 
-func NewAuctionService(repo domain.AuctionRepository, cloudinary CloudinaryService, publisher broker.Publisher) AuctionService {
+func NewAuctionService(repo domain.AuctionRepository, cloudinary CloudinaryService, publisher broker.Publisher, userClient client.UserClient) AuctionService {
 	return &auctionService{
 		repo:       repo,
 		cloudinary: cloudinary,
 		publisher:  publisher,
+		userClient: userClient,
 	}
 }
 
 func (s *auctionService) CreateAuction(ctx context.Context, input CreateAuctionParams) (*domain.Auction, error) {
 	userID := middleware.GetUserIDFromContext(ctx)
+
+	// Validate seller existence via gRPC
+	user, err := s.userClient.GetUser(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to validate seller: %w", err)
+	}
+	if user == nil {
+		return nil, fmt.Errorf("seller profile not found in user service")
+	}
 
 	startTime, err := time.Parse(time.RFC3339, input.StartTime)
 	if err != nil {
@@ -123,6 +135,15 @@ func (s *auctionService) FindAll(ctx context.Context, input *model.FindAuctionsI
 func (s *auctionService) UpdateAuction(ctx context.Context, id string, input model.UpdateAuctionInput) (*domain.Auction, error) {
 	userID := middleware.GetUserIDFromContext(ctx)
 
+	// Validate seller existence via gRPC
+	user, err := s.userClient.GetUser(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to validate seller: %w", err)
+	}
+	if user == nil {
+		return nil, fmt.Errorf("seller profile not found in user service")
+	}
+
 	auction, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find auction: %w", err)
@@ -180,12 +201,26 @@ func (s *auctionService) UpdateAuction(ctx context.Context, id string, input mod
 		return nil, fmt.Errorf("failed to update auction: %w", err)
 	}
 
+	// Publish auction.update event
+	_ = s.publisher.Publish(ctx, broker.Event{
+		Subject: "auction.update",
+		Data:    auction,
+	})
+
 	return auction, nil
 }
 
 func (s *auctionService) DeleteAuction(ctx context.Context, id string) (*domain.Auction, error) {
 	userID := middleware.GetUserIDFromContext(ctx)
 
+	// Validate seller existence via gRPC
+	user, err := s.userClient.GetUser(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to validate seller: %w", err)
+	}
+	if user == nil {
+		return nil, fmt.Errorf("seller profile not found in user service")
+	}
 	auction, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find auction: %w", err)
@@ -201,6 +236,12 @@ func (s *auctionService) DeleteAuction(ctx context.Context, id string) (*domain.
 	if err := s.repo.Delete(ctx, id); err != nil {
 		return nil, fmt.Errorf("failed to delete auction: %w", err)
 	}
+
+	// Publish auction.delete event
+	_ = s.publisher.Publish(ctx, broker.Event{
+		Subject: "auction.delete",
+		Data:    auction,
+	})
 
 	return auction, nil
 }
