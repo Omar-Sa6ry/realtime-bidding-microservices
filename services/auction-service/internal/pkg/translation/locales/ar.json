@@ -1,0 +1,14 @@
+{
+  "AUCTION_NOT_FOUND": "المزاد غير موجود",
+  "UNAUTHORIZED_SELLER": "أنت لست البائع لهذا المزاد",
+  "SELLER_NOT_FOUND": "ملف البائع غير موجود في خدمة المستخدمين",
+  "INVALID_START_TIME": "صيغة وقت البدء غير صالحة",
+  "INVALID_END_TIME": "صيغة وقت الانتهاء غير صالحة",
+  "IMAGE_UPLOAD_FAILED": "فشل رفع الصور",
+  "AUCTION_NOT_PENDING": "المزاد ليس في حالة انتظار ولا يمكن تعديله",
+  "CREATE_SUCCESS": "تم إنشاء المزاد بنجاح",
+  "UPDATE_SUCCESS": "تم تحديث المزاد بنجاح",
+  "DELETE_SUCCESS": "تم حذف المزاد بنجاح",
+  "FIND_SUCCESS": "تم العثور على المزاد(ات) بنجاح",
+  "VALIDATION_FAILED": "فشل التحقق من البيانات"
+}

@@ -14,6 +14,7 @@ import (
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/database"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/middleware"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/pkg/logger"
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/pkg/translation"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/repository"
 	service "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/services"
 )
@@ -33,6 +34,9 @@ func New() *App {
 
 func (a *App) Run() {
 	logger.Info("AuctionApp", "Initializing Auction Service...")
+
+	// 0. Initialize Translations
+	translation.Init()
 
 	// 1. Initialize MongoDB
 	client, disconnect := database.InitMongoDB(a.cfg.MongoURI)
@@ -77,7 +81,7 @@ func (a *App) setupHTTPServer() {
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graphConfig))
 
 	http.Handle("/", playground.Handler("GraphQL playground", "/graphql"))
-	http.Handle("/graphql", middleware.AuthMiddleware(a.cfg.JWTSecret)(srv))
+	http.Handle("/graphql", middleware.LangMiddleware(middleware.AuthMiddleware(a.cfg.JWTSecret)(srv)))
 
 	logger.Info("AuctionApp", fmt.Sprintf("GraphQL Endpoint: http://localhost:%s/graphql", a.cfg.Port))
 	logger.Info("AuctionApp", fmt.Sprintf("GraphQL Playground: http://localhost:%s/", a.cfg.Port))

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/graph/model"
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/pkg/translation"
 	service "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/services"
 )
 
@@ -31,7 +32,7 @@ func (r *mutationResolver) CreateAuction(ctx context.Context, input model.Create
 
 	return &model.AuctionResponse{
 		Success:    true,
-		Message:    "Auction created successfully",
+		Message:    translation.T(ctx, "CREATE_SUCCESS"),
 		StatusCode: 201,
 		TimeStamp:  time.Now().Format(time.RFC3339),
 		Data:       mapDomainToModel(auction),
@@ -47,7 +48,7 @@ func (r *mutationResolver) UpdateAuction(ctx context.Context, id string, input m
 
 	return &model.AuctionResponse{
 		Success:    true,
-		Message:    "Auction updated successfully",
+		Message:    translation.T(ctx, "UPDATE_SUCCESS"),
 		StatusCode: 200,
 		TimeStamp:  time.Now().Format(time.RFC3339),
 		Data:       mapDomainToModel(auction),
@@ -63,7 +64,7 @@ func (r *mutationResolver) DeleteAuction(ctx context.Context, id string) (*model
 
 	return &model.AuctionResponse{
 		Success:    true,
-		Message:    "Auction deleted successfully",
+		Message:    translation.T(ctx, "DELETE_SUCCESS"),
 		StatusCode: 200,
 		TimeStamp:  time.Now().Format(time.RFC3339),
 		Data:       mapDomainToModel(auction),
@@ -84,7 +85,7 @@ func (r *queryResolver) FindAuctions(ctx context.Context, input *model.FindAucti
 
 	return &model.AuctionsResponse{
 		Success:     true,
-		Message:     "Auctions found successfully",
+		Message:     translation.T(ctx, "FIND_SUCCESS"),
 		StatusCode:  200,
 		TimeStamp:   time.Now().Format(time.RFC3339),
 		Data:        mapAuctionsToModel(auctions),
@@ -104,7 +105,7 @@ func (r *queryResolver) FindAuctionByID(ctx context.Context, id string) (*model.
 	if auction == nil {
 		return &model.AuctionResponse{
 			Success:    false,
-			Message:    "Auction not found",
+			Message:    translation.T(ctx, "AUCTION_NOT_FOUND"),
 			StatusCode: 404,
 			TimeStamp:  time.Now().Format(time.RFC3339),
 		}, nil
@@ -112,7 +113,7 @@ func (r *queryResolver) FindAuctionByID(ctx context.Context, id string) (*model.
 
 	return &model.AuctionResponse{
 		Success:    true,
-		Message:    "Auction found successfully",
+		Message:    translation.T(ctx, "FIND_SUCCESS"),
 		StatusCode: 200,
 		TimeStamp:  time.Now().Format(time.RFC3339),
 		Data:       mapDomainToModel(auction),

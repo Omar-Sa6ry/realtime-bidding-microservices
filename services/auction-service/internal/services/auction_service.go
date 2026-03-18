@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/client"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/domain"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/middleware"
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/pkg/translation"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -47,22 +49,22 @@ func (s *auctionService) CreateAuction(ctx context.Context, input CreateAuctionP
 		return nil, fmt.Errorf("failed to validate seller: %w", err)
 	}
 	if user == nil {
-		return nil, fmt.Errorf("seller profile not found in user service")
+		return nil, errors.New(translation.T(ctx, "SELLER_NOT_FOUND"))
 	}
 
 	startTime, err := time.Parse(time.RFC3339, input.StartTime)
 	if err != nil {
-		return nil, fmt.Errorf("invalid startTime format: %w", err)
+		return nil, errors.New(translation.T(ctx, "INVALID_START_TIME"))
 	}
 
 	endTime, err := time.Parse(time.RFC3339, input.EndTime)
 	if err != nil {
-		return nil, fmt.Errorf("invalid endTime format: %w", err)
+		return nil, errors.New(translation.T(ctx, "INVALID_END_TIME"))
 	}
 
 	imageURLs, err := s.cloudinary.UploadMultipleImages(ctx, input.Images)
 	if err != nil {
-		return nil, fmt.Errorf("failed to upload images: %w", err)
+		return nil, errors.New(translation.T(ctx, "IMAGE_UPLOAD_FAILED"))
 	}
 
 	auction := &domain.Auction{
@@ -139,13 +141,13 @@ func (s *auctionService) UpdateAuction(ctx context.Context, id string, input mod
 	}
 
 	if auction == nil {
-		return nil, fmt.Errorf("auction not found")
+		return nil, errors.New(translation.T(ctx, "AUCTION_NOT_FOUND"))
 	}
 	if userID != auction.SellerID {
-		return nil, fmt.Errorf("you are not the seller of this auction")
+		return nil, errors.New(translation.T(ctx, "UNAUTHORIZED_SELLER"))
 	}
 	if auction.Status != domain.StatusPending {
-		return nil, fmt.Errorf("auction is not pending")
+		return nil, errors.New(translation.T(ctx, "AUCTION_NOT_PENDING"))
 	}
 
 	if input.Title != nil {
@@ -167,21 +169,21 @@ func (s *auctionService) UpdateAuction(ctx context.Context, id string, input mod
 	if input.StartTime != nil {
 		auction.StartTime, err = time.Parse(time.RFC3339, *input.StartTime)
 		if err != nil {
-			return nil, fmt.Errorf("invalid startTime format: %w", err)
+			return nil, errors.New(translation.T(ctx, "INVALID_START_TIME"))
 		}
 	}
 
 	if input.EndTime != nil {
 		auction.EndTime, err = time.Parse(time.RFC3339, *input.EndTime)
 		if err != nil {
-			return nil, fmt.Errorf("invalid endTime format: %w", err)
+			return nil, errors.New(translation.T(ctx, "INVALID_END_TIME"))
 		}
 	}
 
 	if input.Images != nil {
 		imageURLs, err := s.cloudinary.UploadMultipleImages(ctx, input.Images)
 		if err != nil {
-			return nil, fmt.Errorf("failed to upload images: %w", err)
+			return nil, errors.New(translation.T(ctx, "IMAGE_UPLOAD_FAILED"))
 		}
 		auction.Images = imageURLs
 	}
@@ -208,7 +210,7 @@ func (s *auctionService) DeleteAuction(ctx context.Context, id string) (*domain.
 		return nil, fmt.Errorf("failed to validate seller: %w", err)
 	}
 	if user == nil {
-		return nil, fmt.Errorf("seller profile not found in user service")
+		return nil, errors.New(translation.T(ctx, "SELLER_NOT_FOUND"))
 	}
 	auction, err := s.repo.FindByID(ctx, id)
 	if err != nil {
@@ -216,10 +218,10 @@ func (s *auctionService) DeleteAuction(ctx context.Context, id string) (*domain.
 	}
 
 	if auction == nil {
-		return nil, fmt.Errorf("auction not found")
+		return nil, errors.New(translation.T(ctx, "AUCTION_NOT_FOUND"))
 	}
 	if userID != auction.SellerID {
-		return nil, fmt.Errorf("you are not the seller of this auction")
+		return nil, errors.New(translation.T(ctx, "UNAUTHORIZED_SELLER"))
 	}
 
 	if err := s.repo.Delete(ctx, id); err != nil {

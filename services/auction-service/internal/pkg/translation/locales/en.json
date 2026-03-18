@@ -1,0 +1,14 @@
+{
+  "AUCTION_NOT_FOUND": "Auction not found",
+  "UNAUTHORIZED_SELLER": "You are not the seller of this auction",
+  "SELLER_NOT_FOUND": "Seller profile not found in user service",
+  "INVALID_START_TIME": "Invalid startTime format",
+  "INVALID_END_TIME": "Invalid endTime format",
+  "IMAGE_UPLOAD_FAILED": "Failed to upload images",
+  "AUCTION_NOT_PENDING": "Auction is not pending and cannot be modified",
+  "CREATE_SUCCESS": "Auction created successfully",
+  "UPDATE_SUCCESS": "Auction updated successfully",
+  "DELETE_SUCCESS": "Auction deleted successfully",
+  "FIND_SUCCESS": "Auction(s) found successfully",
+  "VALIDATION_FAILED": "Validation failed"
+}
