@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/pkg/logger"
 
 	"github.com/nats-io/nats.go"
 )
@@ -29,7 +29,7 @@ func NewNatsPublisher(url string) (Publisher, error) {
 		return nil, fmt.Errorf("failed to connect to NATS: %w", err)
 	}
 
-	log.Printf("Successfully connected to NATS at %s", url)
+	logger.Info("NATS", fmt.Sprintf("Successfully connected to NATS at %s", url))
 
 	return &natsPublisher{
 		conn: nc,
@@ -46,7 +46,7 @@ func (n *natsPublisher) Publish(ctx context.Context, event Event) error {
 		return fmt.Errorf("failed to publish event to NATS: %w", err)
 	}
 
-	log.Printf("Event published to subject %s", event.Subject)
+	logger.Info("NATS", fmt.Sprintf("Event published to subject %s", event.Subject))
 	return nil
 }
 

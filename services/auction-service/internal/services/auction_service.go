@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/99designs/gqlgen/graphql"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/graph/model"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/broker"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/client"
@@ -21,16 +20,6 @@ type AuctionService interface {
 	UpdateAuction(ctx context.Context, id string, input model.UpdateAuctionInput) (*domain.Auction, error)
 	DeleteAuction(ctx context.Context, id string) (*domain.Auction, error)
 	ProcessLifecycleTransitions(ctx context.Context) error
-}
-
-type CreateAuctionParams struct {
-	Title         string
-	Description   string
-	StartingPrice float64
-	Currency      string
-	StartTime     string
-	EndTime       string
-	Images        []*graphql.Upload
 }
 
 type auctionService struct {

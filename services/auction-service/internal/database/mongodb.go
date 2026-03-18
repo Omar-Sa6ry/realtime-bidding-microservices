@@ -2,8 +2,9 @@ package database
 
 import (
 	"context"
-	"log"
 	"time"
+
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/pkg/logger"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -16,21 +17,23 @@ func InitMongoDB(uri string) (*mongo.Client, func()) {
 	clientOptions := options.Client().ApplyURI(uri)
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
-		log.Fatalf("MongoDB Connection Error: %v", err)
+		logger.Error("MongoDB", "MongoDB Connection Error", err)
+		panic(err)
 	}
 
 	err = client.Ping(ctx, nil)
 	if err != nil {
-		log.Fatalf("MongoDB Ping Error: %v", err)
+		logger.Error("MongoDB", "MongoDB Ping Error", err)
+		panic(err)
 	}
 
-	log.Println("Connected to MongoDB successfully")
+	logger.Info("MongoDB", "Connected to MongoDB successfully")
 
 	disconnect := func() {
 		if err := client.Disconnect(context.Background()); err != nil {
-			log.Printf("Error while disconnecting MongoDB: %v", err)
+			logger.Error("MongoDB", "Error while disconnecting MongoDB", err)
 		} else {
-			log.Println("MongoDB connection closed safely")
+			logger.Info("MongoDB", "MongoDB connection closed safely")
 		}
 	}
 
