@@ -21,4 +21,13 @@ type Auction struct {
 	WinnerID      *string            `bson:"winnerId,omitempty" json:"winnerId,omitempty"`
 	CreatedAt     time.Time          `bson:"createdAt" json:"createdAt"`
 	UpdatedAt     time.Time          `bson:"updatedAt" json:"updatedAt"`
+	DomainEvents  []interface{}      `bson:"-" json:"-"`
+}
+
+func (a *Auction) AddEvent(event interface{}) {
+	a.DomainEvents = append(a.DomainEvents, event)
+}
+
+func (a *Auction) ClearEvents() {
+	a.DomainEvents = nil
 }

@@ -1,9 +1,14 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
@@ -40,7 +45,8 @@ func (a *App) Run() {
 
 	// 1. Initialize MongoDB
 	client, disconnect := database.InitMongoDB(a.cfg.MongoURI)
-	defer disconnect()
+	// We'll call disconnect manually during shutdown
+	_ = disconnect 
 
 	db := client.Database(a.cfg.DBName)
 	repo := repository.NewMongoAuctionRepository(db)
@@ -55,13 +61,10 @@ func (a *App) Run() {
 	if err != nil {
 		log.Fatalf("Failed to initialize User gRPC Client: %v", err)
 	}
-	defer a.userClient.Close()
 
 	a.natsPublisher, err = broker.NewNatsPublisher(a.cfg.NatsURL)
 	if err != nil {
 		logger.Warn("AuctionApp", fmt.Sprintf("Failed to connect to NATS: %v. Events will not be published.", err))
-	} else {
-		defer a.natsPublisher.Close()
 	}
 
 	// 3. Initialize Service Layer
@@ -70,11 +73,11 @@ func (a *App) Run() {
 	// 4. Start Background Workers (Cron)
 	a.startCronJobs()
 
-	// 5. Setup GraphQL Server
-	a.setupHTTPServer()
+	// 5. Setup GraphQL Server & Wait for Shutdown
+	a.setupHTTPServer(disconnect)
 }
 
-func (a *App) setupHTTPServer() {
+func (a *App) setupHTTPServer(disconnect func()) {
 	graphConfig := graph.Config{Resolvers: &graph.Resolver{AuctionService: a.auctionService}}
 	graphConfig.Directives.Auth = graph.AuthDirective
 
@@ -83,10 +86,44 @@ func (a *App) setupHTTPServer() {
 	http.Handle("/", playground.Handler("GraphQL playground", "/graphql"))
 	http.Handle("/graphql", middleware.LangMiddleware(middleware.AuthMiddleware(a.cfg.JWTSecret)(srv)))
 
-	logger.Info("AuctionApp", fmt.Sprintf("GraphQL Endpoint: http://localhost:%s/graphql", a.cfg.Port))
-	logger.Info("AuctionApp", fmt.Sprintf("GraphQL Playground: http://localhost:%s/", a.cfg.Port))
+	server := &http.Server{Addr: ":" + a.cfg.Port}
 
-	if err := http.ListenAndServe(":"+a.cfg.Port, nil); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+	// Run server in a goroutine
+	go func() {
+		logger.Info("AuctionApp", fmt.Sprintf("GraphQL Endpoint: http://localhost:%s/graphql", a.cfg.Port))
+		logger.Info("AuctionApp", fmt.Sprintf("GraphQL Playground: http://localhost:%s/", a.cfg.Port))
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Failed to start server: %v", err)
+		}
+	}()
+
+	// Graceful Shutdown Logic
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	logger.Warn("AuctionApp", "Shutting down server...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// 1. Stop HTTP Server
+	if err := server.Shutdown(ctx); err != nil {
+		logger.Error("AuctionApp", "Server forced to shutdown", err)
 	}
+
+	// 2. Close gRPC Client
+	if a.userClient != nil {
+		a.userClient.Close()
+	}
+
+	// 3. Close NATS Publisher
+	if a.natsPublisher != nil {
+		a.natsPublisher.Close()
+	}
+
+	// 4. Disconnect MongoDB
+	disconnect()
+
+	logger.Info("AuctionApp", "Server exited gracefully")
 }

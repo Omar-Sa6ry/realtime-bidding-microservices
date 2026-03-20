@@ -60,6 +60,15 @@ import { SqlInjectionInterceptor } from './common/interceptors/sql-injection.int
                   context.req.headers.authorization,
                 );
               }
+              if (context.req?.headers?.['x-lang']) {
+                request.http.headers.set('x-lang', context.req.headers['x-lang']);
+              }
+              if (context.req?.headers?.['accept-language']) {
+                request.http.headers.set(
+                  'accept-language',
+                  context.req.headers['accept-language'],
+                );
+              }
             },
           });
         },

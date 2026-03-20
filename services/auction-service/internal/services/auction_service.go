@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -11,7 +10,6 @@ import (
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/client"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/domain"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/middleware"
-	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/pkg/translation"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -40,6 +38,21 @@ func NewAuctionService(repo domain.AuctionRepository, cloudinary CloudinaryServi
 	}
 }
 
+func (s *auctionService) publishEvents(ctx context.Context, auction *domain.Auction) {
+	if auction == nil || len(auction.DomainEvents) == 0 {
+		return
+	}
+
+	for _, eventData := range auction.DomainEvents {
+		event, ok := eventData.(broker.Event)
+		if !ok {
+			continue
+		}
+		_ = s.publisher.Publish(ctx, event)
+	}
+	auction.ClearEvents()
+}
+
 func (s *auctionService) CreateAuction(ctx context.Context, input CreateAuctionParams) (*domain.Auction, error) {
 	userID := middleware.GetUserIDFromContext(ctx)
 
@@ -49,22 +62,22 @@ func (s *auctionService) CreateAuction(ctx context.Context, input CreateAuctionP
 		return nil, fmt.Errorf("failed to validate seller: %w", err)
 	}
 	if user == nil {
-		return nil, errors.New(translation.T(ctx, "SELLER_NOT_FOUND"))
+		return nil, domain.ErrSellerNotFound
 	}
 
 	startTime, err := time.Parse(time.RFC3339, input.StartTime)
 	if err != nil {
-		return nil, errors.New(translation.T(ctx, "INVALID_START_TIME"))
+		return nil, domain.ErrInvalidStartTime
 	}
 
 	endTime, err := time.Parse(time.RFC3339, input.EndTime)
 	if err != nil {
-		return nil, errors.New(translation.T(ctx, "INVALID_END_TIME"))
+		return nil, domain.ErrInvalidEndTime
 	}
 
 	imageURLs, err := s.cloudinary.UploadMultipleImages(ctx, input.Images)
 	if err != nil {
-		return nil, errors.New(translation.T(ctx, "IMAGE_UPLOAD_FAILED"))
+		return nil, domain.ErrImageUploadFailed
 	}
 
 	auction := &domain.Auction{
@@ -84,11 +97,13 @@ func (s *auctionService) CreateAuction(ctx context.Context, input CreateAuctionP
 		return nil, fmt.Errorf("failed to create auction: %w", err)
 	}
 
-	// Publish auction.create event
-	_ = s.publisher.Publish(ctx, broker.Event{
+	// Add Domain Event
+	auction.AddEvent(broker.Event{
 		Subject: "auction.create",
 		Data:    auction,
 	})
+
+	s.publishEvents(ctx, auction)
 
 	return auction, nil
 }
@@ -141,13 +156,13 @@ func (s *auctionService) UpdateAuction(ctx context.Context, id string, input mod
 	}
 
 	if auction == nil {
-		return nil, errors.New(translation.T(ctx, "AUCTION_NOT_FOUND"))
+		return nil, domain.ErrAuctionNotFound
 	}
 	if userID != auction.SellerID {
-		return nil, errors.New(translation.T(ctx, "UNAUTHORIZED_SELLER"))
+		return nil, domain.ErrUnauthorizedSeller
 	}
 	if auction.Status != domain.StatusPending {
-		return nil, errors.New(translation.T(ctx, "AUCTION_NOT_PENDING"))
+		return nil, domain.ErrAuctionNotPending
 	}
 
 	if input.Title != nil {
@@ -169,21 +184,21 @@ func (s *auctionService) UpdateAuction(ctx context.Context, id string, input mod
 	if input.StartTime != nil {
 		auction.StartTime, err = time.Parse(time.RFC3339, *input.StartTime)
 		if err != nil {
-			return nil, errors.New(translation.T(ctx, "INVALID_START_TIME"))
+			return nil, domain.ErrInvalidStartTime
 		}
 	}
 
 	if input.EndTime != nil {
 		auction.EndTime, err = time.Parse(time.RFC3339, *input.EndTime)
 		if err != nil {
-			return nil, errors.New(translation.T(ctx, "INVALID_END_TIME"))
+			return nil, domain.ErrInvalidEndTime
 		}
 	}
 
 	if input.Images != nil {
 		imageURLs, err := s.cloudinary.UploadMultipleImages(ctx, input.Images)
 		if err != nil {
-			return nil, errors.New(translation.T(ctx, "IMAGE_UPLOAD_FAILED"))
+			return nil, domain.ErrImageUploadFailed
 		}
 		auction.Images = imageURLs
 	}
@@ -192,11 +207,13 @@ func (s *auctionService) UpdateAuction(ctx context.Context, id string, input mod
 		return nil, fmt.Errorf("failed to update auction: %w", err)
 	}
 
-	// Publish auction.update event
-	_ = s.publisher.Publish(ctx, broker.Event{
+	// Add Domain Event
+	auction.AddEvent(broker.Event{
 		Subject: "auction.update",
 		Data:    auction,
 	})
+
+	s.publishEvents(ctx, auction)
 
 	return auction, nil
 }
@@ -210,7 +227,7 @@ func (s *auctionService) DeleteAuction(ctx context.Context, id string) (*domain.
 		return nil, fmt.Errorf("failed to validate seller: %w", err)
 	}
 	if user == nil {
-		return nil, errors.New(translation.T(ctx, "SELLER_NOT_FOUND"))
+		return nil, domain.ErrSellerNotFound
 	}
 	auction, err := s.repo.FindByID(ctx, id)
 	if err != nil {
@@ -218,21 +235,23 @@ func (s *auctionService) DeleteAuction(ctx context.Context, id string) (*domain.
 	}
 
 	if auction == nil {
-		return nil, errors.New(translation.T(ctx, "AUCTION_NOT_FOUND"))
+		return nil, domain.ErrAuctionNotFound
 	}
 	if userID != auction.SellerID {
-		return nil, errors.New(translation.T(ctx, "UNAUTHORIZED_SELLER"))
+		return nil, domain.ErrUnauthorizedSeller
 	}
 
 	if err := s.repo.Delete(ctx, id); err != nil {
 		return nil, fmt.Errorf("failed to delete auction: %w", err)
 	}
 
-	// Publish auction.delete event
-	_ = s.publisher.Publish(ctx, broker.Event{
+	// Add Domain Event
+	auction.AddEvent(broker.Event{
 		Subject: "auction.delete",
 		Data:    auction,
 	})
+
+	s.publishEvents(ctx, auction)
 
 	return auction, nil
 }

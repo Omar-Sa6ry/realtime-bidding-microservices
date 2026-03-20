@@ -27,7 +27,12 @@ func (r *mutationResolver) CreateAuction(ctx context.Context, input model.Create
 		Images:        input.Images,
 	})
 	if err != nil {
-		return nil, err
+		return &model.AuctionResponse{
+			Success:    false,
+			Message:    translation.T(ctx, err.Error()),
+			StatusCode: 400,
+			TimeStamp:  time.Now().Format(time.RFC3339),
+		}, nil
 	}
 
 	return &model.AuctionResponse{
@@ -43,7 +48,12 @@ func (r *mutationResolver) CreateAuction(ctx context.Context, input model.Create
 func (r *mutationResolver) UpdateAuction(ctx context.Context, id string, input model.UpdateAuctionInput) (*model.AuctionResponse, error) {
 	auction, err := r.AuctionService.UpdateAuction(ctx, id, input)
 	if err != nil {
-		return nil, err
+		return &model.AuctionResponse{
+			Success:    false,
+			Message:    translation.T(ctx, err.Error()),
+			StatusCode: 400,
+			TimeStamp:  time.Now().Format(time.RFC3339),
+		}, nil
 	}
 
 	return &model.AuctionResponse{
@@ -59,7 +69,12 @@ func (r *mutationResolver) UpdateAuction(ctx context.Context, id string, input m
 func (r *mutationResolver) DeleteAuction(ctx context.Context, id string) (*model.AuctionResponse, error) {
 	auction, err := r.AuctionService.DeleteAuction(ctx, id)
 	if err != nil {
-		return nil, err
+		return &model.AuctionResponse{
+			Success:    false,
+			Message:    translation.T(ctx, err.Error()),
+			StatusCode: 400,
+			TimeStamp:  time.Now().Format(time.RFC3339),
+		}, nil
 	}
 
 	return &model.AuctionResponse{
@@ -75,7 +90,13 @@ func (r *mutationResolver) DeleteAuction(ctx context.Context, id string) (*model
 func (r *queryResolver) FindAuctions(ctx context.Context, input *model.FindAuctionsInput, pagination *model.PaginationInput) (*model.AuctionsResponse, error) {
 	auctions, total, err := r.AuctionService.FindAll(ctx, input, pagination)
 	if err != nil {
-		return nil, err
+		return &model.AuctionsResponse{
+			Success:    false,
+			Message:    translation.T(ctx, err.Error()),
+			StatusCode: 400,
+			TimeStamp:  time.Now().Format(time.RFC3339),
+			Data:       []*model.Auction{},
+		}, nil
 	}
 
 	limit := int32(10)
@@ -99,7 +120,12 @@ func (r *queryResolver) FindAuctions(ctx context.Context, input *model.FindAucti
 func (r *queryResolver) FindAuctionByID(ctx context.Context, id string) (*model.AuctionResponse, error) {
 	auction, err := r.AuctionService.FindByID(ctx, id)
 	if err != nil {
-		return nil, err
+		return &model.AuctionResponse{
+			Success:    false,
+			Message:    translation.T(ctx, err.Error()),
+			StatusCode: 400,
+			TimeStamp:  time.Now().Format(time.RFC3339),
+		}, nil
 	}
 
 	if auction == nil {
