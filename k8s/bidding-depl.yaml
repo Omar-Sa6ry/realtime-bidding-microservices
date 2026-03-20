@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bidding-depl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bidding
+  template:
+    metadata:
+      labels:
+        app: bidding
+    spec:
+      containers:
+        - name: bidding
+          image: bidding/bidding
+          ports:
+            - containerPort: 3003
+          env:
+            - name: NODE_ENV
+              value: "development"
+            - name: PORT_BIDDING
+              value: "3003"
+            - name: NATS_URL
+              value: "nats://nats-srv:4222"
+            - name: JWT_EXPIRE
+              value: "36000s"
+            - name: REDIS_HOST
+              value: "redis-srv"
+            - name: REDIS_PORT
+              value: "6379"
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: bidding-secrets
+                  key: JWT_SECRET
+          envFrom:
+            - secretRef:
+                name: bidding-secrets
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bidding-srv
+spec:
+  selector:
+    app: bidding
+  ports:
+    - name: http
+      protocol: TCP
+      port: 3003
+      targetPort: 3003

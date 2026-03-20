@@ -49,6 +49,21 @@ build:
           - src: 'proto/**/*.proto'
             dest: /usr/src/app
 
+    - image: bidding/bidding
+      context: .
+      docker:
+        dockerfile: services/bidding-service/Dockerfile
+      sync:
+        manual:
+          - src: 'services/bidding-service/**/*.go'
+            dest: /usr/src/app
+          - src: 'services/bidding-service/go.mod'
+            dest: /usr/src/app
+          - src: 'services/bidding-service/go.sum'
+            dest: /usr/src/app
+          - src: 'proto/**/*.proto'
+            dest: /usr/src/app
+
 portForward:
   - resourceType: service
     resourceName: api-gateway-srv
