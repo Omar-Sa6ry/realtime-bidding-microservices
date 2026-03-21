@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/pkg/translation"
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/pkg/translation"
 )
 
 func LangMiddleware(next http.Handler) http.Handler {
