@@ -6,18 +6,21 @@ import (
 
 	domains "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/domains"
 	Middlewares "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/middlewares"
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/broker"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type BiddingService struct {
-	redisRepo domains.BiddingRepository
-	mongoRepo domains.BiddingRepository
+	redisRepo     domains.BiddingRepository
+	mongoRepo     domains.BiddingRepository
+	natsPublisher broker.Publisher
 }
 
-func NewBiddingService(redisRepo, mongoRepo domains.BiddingRepository) *BiddingService {
+func NewBiddingService(redisRepo, mongoRepo domains.BiddingRepository, natsPublisher broker.Publisher) *BiddingService {
 	return &BiddingService{
-		redisRepo: redisRepo,
-		mongoRepo: mongoRepo,
+		redisRepo:     redisRepo,
+		mongoRepo:     mongoRepo,
+		natsPublisher: natsPublisher,
 	}
 }
 
@@ -43,6 +46,14 @@ func (s *BiddingService) PlaceBid(ctx context.Context, auctionID string, amount 
 		_ = s.mongoRepo.PlaceBid(context.Background(), bid)
 	}()
 
+	// Add Domain Event
+	bid.AddEvent(broker.Event{
+		Subject: "bid.created",
+		Data:    bid,
+	})
+
+	s.publishEvents(ctx, bid)
+
 	return bid, nil
 }
 
@@ -59,4 +70,17 @@ func (s *BiddingService) GetHighestBid(ctx context.Context, auctionID string) (*
 
 func (s *BiddingService) GetAuctionHistory(ctx context.Context, auctionID string) ([]*domains.Bid, error) {
 	return s.mongoRepo.GetAuctionHistory(ctx, auctionID)
+}
+
+func (s *BiddingService) publishEvents(ctx context.Context, bid *domains.Bid) {
+	if s.natsPublisher == nil {
+		return
+	}
+
+	for _, event := range bid.DomainEvents {
+		e := event.(broker.Event)
+		_ = s.natsPublisher.Publish(ctx, e)
+	}
+
+	bid.ClearEvents()
 }

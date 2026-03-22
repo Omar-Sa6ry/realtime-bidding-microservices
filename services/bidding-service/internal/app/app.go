@@ -1,22 +1,25 @@
 package app
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/graph"
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/broker"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/config"
-	databases "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/databases"
-	middlewares "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/middlewares"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/pkg/logger"
+	middlewares "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/middlewares"
 	repositories "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/repositories"
 	services "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/services"
+	databases "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/databases"
 )
 
 type App struct {
 	cfg            *config.Config
 	biddingService *services.BiddingService
+	natsPublisher  broker.Publisher
 }
 
 func New() *App {
@@ -41,10 +44,17 @@ func (a *App) Run() {
 
 	redisRepo := repositories.NewRedisBiddingRepository(redisClient)
 
-	// 3. Initialize Bidding Service
-	a.biddingService = services.NewBiddingService(redisRepo, mongoRepo)
+	// 3. Initialize NATS
+	var err error
+	a.natsPublisher, err = broker.NewNatsPublisher(a.cfg.NatsURL)
+	if err != nil {
+		logger.Warn("BiddingApp", fmt.Sprintf("Failed to connect to NATS: %v. Events will not be published.", err))
+	}
 
-	// 4. Setup GraphQL
+	// 4. Initialize Bidding Service
+	a.biddingService = services.NewBiddingService(redisRepo, mongoRepo, a.natsPublisher)
+
+	// 5. Setup GraphQL
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{
 		Resolvers: &graph.Resolver{BiddingService: a.biddingService},
 		Directives: graph.DirectiveRoot{
@@ -52,7 +62,7 @@ func (a *App) Run() {
 		},
 	}))
 
-	// 5. Setup Router & Middlewares
+	// 6. Setup Router & Middlewares
 	mux := http.NewServeMux()
 	mux.Handle("/", playground.Handler("GraphQL playground", "/graphql"))
 	mux.Handle("/graphql", middlewares.AuthMiddleware(a.cfg.JWTSecret)(srv))
