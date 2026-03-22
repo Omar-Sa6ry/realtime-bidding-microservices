@@ -27,6 +27,7 @@ async function bootstrap() {
   await Promise.all([
     waitForService('http://user-srv:3000/user/graphql'),
     waitForService('http://auction-srv:3002/graphql'),
+    waitForService('http://bidding-srv:3003/graphql'),
   ]);
 
   const app = await NestFactory.create(AppModule);
@@ -34,7 +35,7 @@ async function bootstrap() {
 
   const port = process.env.PORT_GATEWAY || 4000;
   await app.listen(port, '0.0.0.0');
-  console.log(`API Gateway is running on: https://bidding.test/graphql`);
+  console.log(`API Gateway is running on: https://bidding.test/graphql or http://localhost:${port}/graphql`);
 }
 
 bootstrap().catch((err) => {

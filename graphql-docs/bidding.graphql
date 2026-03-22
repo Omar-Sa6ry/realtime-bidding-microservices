@@ -1,0 +1,45 @@
+mutation PlaceNewBid {
+  placeBid(auctionId: "69bf74e559299dfdadab004d", amount: 52551.50) {
+    success
+    message
+    statusCode
+    data {
+      id
+      auctionId
+      userId
+      amount
+      status
+      createdAt
+    }
+  }
+}
+
+query {
+  getAuctionHistory(auctionId: "69bf74e559299dfdadab004d") {
+    success
+    message
+    statusCode
+    data {
+      id
+      userId
+      amount
+      status
+      createdAt
+    }
+  }
+}
+
+query {
+  getHighestBid(auctionId: "69bf74e559299dfdadab004d") {
+    success
+    message
+    statusCode
+    data {
+      id
+      auctionId
+      amount
+      userId
+      createdAt
+    }
+  }
+}

@@ -1,8 +1,3 @@
-directive @key(fields: String!) on OBJECT | INTERFACE
-directive @extends on OBJECT | INTERFACE
-directive @external on OBJECT | FIELD_DEFINITION
-directive @requires(fields: String!) on FIELD_DEFINITION
-directive @provides(fields: String!) on FIELD_DEFINITION
 directive @auth on FIELD_DEFINITION
 
 type Bid @key(fields: "id") {
@@ -22,10 +17,19 @@ type BidResponse {
   data: Bid
 }
 
+type BidsResponse {
+  success: Boolean!
+  message: String!
+  statusCode: Int!
+  timeStamp: String!
+  data: [Bid!]
+}
+
 extend type Mutation {
   placeBid(auctionId: ID!, amount: Float!): BidResponse! @auth
 }
 
 extend type Query {
-  getAuctionHistory(auctionId: ID!): [Bid!]!
+  getHighestBid(auctionId: ID!): BidResponse!
+  getAuctionHistory(auctionId: ID!): BidsResponse!
 }

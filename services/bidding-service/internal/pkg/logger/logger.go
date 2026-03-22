@@ -10,7 +10,7 @@ const (
 	colorReset   = "\033[0m"
 	colorGreen   = "\033[32m"
 	colorCyan    = "\033[36m"
-	colorMagenta = "\033[35m"
+	colorBlue    = "\033[34m"
 )
 
 func Log(context string, message string) {
@@ -20,7 +20,7 @@ func Log(context string, message string) {
 		1, // Placeholder for PID-like feel
 		timestamp,
 		colorGreen, colorReset,
-		colorMagenta, context, colorReset,
+		colorBlue, context, colorReset,
 		colorGreen, message, colorReset,
 	)
 }
@@ -35,7 +35,7 @@ func Error(context string, message string, err error) {
 		colorGreen, colorReset,
 		1,
 		timestamp,
-		colorMagenta, context, colorReset,
+		colorBlue, context, colorReset,
 		message, err,
 	)
 }
@@ -47,7 +47,7 @@ func Warn(context string, message string) {
 		1,
 		timestamp,
 		colorYellow, colorReset, // Yellow for WARN text
-		colorMagenta, context, colorReset,
+		colorBlue, context, colorReset,
 		colorYellow, message, colorReset,
 	)
 }

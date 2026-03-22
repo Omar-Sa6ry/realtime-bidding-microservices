@@ -11,7 +11,6 @@ import (
 
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/graph/model"
 	domains "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/domains"
-	middlewares "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/middlewares"
 )
 
 // Status is the resolver for the status field.
@@ -26,9 +25,7 @@ func (r *bidResolver) CreatedAt(ctx context.Context, obj *domains.Bid) (string, 
 
 // PlaceBid is the resolver for the placeBid field.
 func (r *mutationResolver) PlaceBid(ctx context.Context, auctionID string, amount float64) (*model.BidResponse, error) {
-	userID := middlewares.GetUserIDFromContext(ctx)
-
-	bid, err := r.BiddingService.PlaceBid(ctx, auctionID, userID, amount)
+	bid, err := r.BiddingService.PlaceBid(ctx, auctionID, amount)
 	if err != nil {
 		return &model.BidResponse{
 			Success:    false,
@@ -47,9 +44,60 @@ func (r *mutationResolver) PlaceBid(ctx context.Context, auctionID string, amoun
 	}, nil
 }
 
+// GetHighestBid is the resolver for the getHighestBid field.
+func (r *queryResolver) GetHighestBid(ctx context.Context, auctionID string) (*model.BidResponse, error) {
+	bid, err := r.BiddingService.GetHighestBid(ctx, auctionID)
+	if err != nil || bid == nil {
+		message := "Bid not found"
+		if err != nil {
+			message = err.Error()
+		} else {
+			message = "No bids found for this auction"
+		}
+		return &model.BidResponse{
+			Success:    false,
+			Message:    message,
+			StatusCode: 404,
+			TimeStamp:  time.Now().Format("2006-01-02T15:04:05Z07:00"),
+			Data:       nil,
+		}, nil
+	}
+
+	return &model.BidResponse{
+		Success:    true,
+		Message:    "Highest bid fetched successfully",
+		StatusCode: 200,
+		TimeStamp:  time.Now().Format("2006-01-02T15:04:05Z07:00"),
+		Data:       bid,
+	}, nil
+}
+
 // GetAuctionHistory is the resolver for the getAuctionHistory field.
-func (r *queryResolver) GetAuctionHistory(ctx context.Context, auctionID string) ([]*domains.Bid, error) {
-	return r.BiddingService.GetAuctionHistory(ctx, auctionID)
+func (r *queryResolver) GetAuctionHistory(ctx context.Context, auctionID string) (*model.BidsResponse, error) {
+	bids, err := r.BiddingService.GetAuctionHistory(ctx, auctionID)
+	if err != nil || len(bids) == 0 {
+		message := "History not found"
+		if err != nil {
+			message = err.Error()
+		} else {
+			message = "No bidding history found for this auction"
+		}
+		return &model.BidsResponse{
+			Success:    false,
+			Message:    message,
+			StatusCode: 404,
+			TimeStamp:  time.Now().Format("2006-01-02T15:04:05Z07:00"),
+			Data:       nil,
+		}, nil
+	}
+
+	return &model.BidsResponse{
+		Success:    true,
+		Message:    "Auction history fetched successfully",
+		StatusCode: 200,
+		TimeStamp:  time.Now().Format("2006-01-02T15:04:05Z07:00"),
+		Data:       bids,
+	}, nil
 }
 
 // Bid returns BidResolver implementation.

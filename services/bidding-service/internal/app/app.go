@@ -54,8 +54,8 @@ func (a *App) Run() {
 
 	// 5. Setup Router & Middlewares
 	mux := http.NewServeMux()
-	mux.Handle("/", playground.Handler("GraphQL playground", "/query"))
-	mux.Handle("/query", middlewares.AuthMiddleware(a.cfg.JWTSecret)(srv))
+	mux.Handle("/", playground.Handler("GraphQL playground", "/graphql"))
+	mux.Handle("/graphql", middlewares.AuthMiddleware(a.cfg.JWTSecret)(srv))
 
 	logger.Info("BiddingApp", "Server is running on port "+a.cfg.Port)
 	if err := http.ListenAndServe(":"+a.cfg.Port, mux); err != nil {

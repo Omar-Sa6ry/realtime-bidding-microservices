@@ -47,6 +47,7 @@ import { SqlInjectionInterceptor } from './common/interceptors/sql-injection.int
           subgraphs: [
             { name: 'user', url: 'http://user-srv:3000/user/graphql' },
             { name: 'auction', url: 'http://auction-srv:3002/graphql' },
+            { name: 'bidding', url: 'http://bidding-srv:3003/graphql' },
           ],
         }),
 

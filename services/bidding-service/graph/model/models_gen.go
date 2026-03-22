@@ -14,6 +14,14 @@ type BidResponse struct {
 	Data       *domain.Bid `json:"data,omitempty"`
 }
 
+type BidsResponse struct {
+	Success    bool          `json:"success"`
+	Message    string        `json:"message"`
+	StatusCode int           `json:"statusCode"`
+	TimeStamp  string        `json:"timeStamp"`
+	Data       []*domain.Bid `json:"data,omitempty"`
+}
+
 type Mutation struct {
 }
 
