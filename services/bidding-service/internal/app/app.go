@@ -2,24 +2,27 @@ package app
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/graph"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/broker"
+	user_client "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/clients"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/config"
-	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/pkg/logger"
+	databases "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/databases"
 	middlewares "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/middlewares"
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/pkg/logger"
 	repositories "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/repositories"
 	services "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/services"
-	databases "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/databases"
 )
 
 type App struct {
 	cfg            *config.Config
 	biddingService *services.BiddingService
 	natsPublisher  broker.Publisher
+	userClient     user_client.UserClient
 }
 
 func New() *App {
@@ -51,10 +54,16 @@ func (a *App) Run() {
 		logger.Warn("BiddingApp", fmt.Sprintf("Failed to connect to NATS: %v. Events will not be published.", err))
 	}
 
-	// 4. Initialize Bidding Service
-	a.biddingService = services.NewBiddingService(redisRepo, mongoRepo, a.natsPublisher)
+	// 4. Initialize gRPC Clients
+	a.userClient, err = user_client.NewUserClient(a.cfg.UserServiceURL)
+	if err != nil {
+		log.Fatalf("Failed to initialize User gRPC Client: %v", err)
+	}
 
-	// 5. Setup GraphQL
+	// 5. Initialize Bidding Service
+	a.biddingService = services.NewBiddingService(redisRepo, mongoRepo, a.natsPublisher, a.userClient)
+
+	// 6. Setup GraphQL
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{
 		Resolvers: &graph.Resolver{BiddingService: a.biddingService},
 		Directives: graph.DirectiveRoot{
@@ -62,7 +71,7 @@ func (a *App) Run() {
 		},
 	}))
 
-	// 6. Setup Router & Middlewares
+	// 7. Setup Router & Middlewares
 	mux := http.NewServeMux()
 	mux.Handle("/", playground.Handler("GraphQL playground", "/graphql"))
 	mux.Handle("/graphql", middlewares.AuthMiddleware(a.cfg.JWTSecret)(srv))

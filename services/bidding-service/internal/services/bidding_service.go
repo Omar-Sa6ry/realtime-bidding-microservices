@@ -3,9 +3,12 @@ package service
 import (
 	"context"
 	"time"
+	"fmt"
 
 	domains "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/domains"
 	Middlewares "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/middlewares"
+	user_client "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/clients"
+
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/broker"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -14,18 +17,28 @@ type BiddingService struct {
 	redisRepo     domains.BiddingRepository
 	mongoRepo     domains.BiddingRepository
 	natsPublisher broker.Publisher
+	userClient    user_client.UserClient
 }
 
-func NewBiddingService(redisRepo, mongoRepo domains.BiddingRepository, natsPublisher broker.Publisher) *BiddingService {
+func NewBiddingService(redisRepo, mongoRepo domains.BiddingRepository, natsPublisher broker.Publisher, userClient user_client.UserClient) *BiddingService {
 	return &BiddingService{
 		redisRepo:     redisRepo,
 		mongoRepo:     mongoRepo,
 		natsPublisher: natsPublisher,
+		userClient:    userClient,
 	}
 }
 
 func (s *BiddingService) PlaceBid(ctx context.Context, auctionID string, amount float64) (*domains.Bid, error) {
 	userID := Middlewares.GetUserIDFromContext(ctx)
+	user, err := s.userClient.GetUser(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to validate user: %w", err)
+	}
+	if user == nil {
+		return nil, fmt.Errorf("user not found")
+	}
+
 
 	bid := &domains.Bid{
 		ID:        primitive.NewObjectID().Hex(),
@@ -37,7 +50,7 @@ func (s *BiddingService) PlaceBid(ctx context.Context, auctionID string, amount 
 		UpdatedAt: time.Now(),
 	}
 
-	err := s.redisRepo.PlaceBid(ctx, bid)
+	err = s.redisRepo.PlaceBid(ctx, bid)
 	if err != nil {
 		return nil, err
 	}
