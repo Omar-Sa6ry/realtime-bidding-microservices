@@ -52,6 +52,9 @@ async function bootstrap() {
         package: 'user',
         protoPath: join(process.cwd(), '../../proto/user.proto'),
         url: '0.0.0.0:50051',
+        loader: {
+          keepCase: true,
+        },
       },
     });
 

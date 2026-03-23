@@ -34,6 +34,9 @@ func (s *BiddingService) PlaceBid(ctx context.Context, auctionID string, amount 
 
 	// 1. Get previous highest bid for refund
 	prevBid, _ := s.GetHighestBid(ctx, auctionID)
+	if prevBid != nil && prevBid.UserID == userID {
+		return nil, fmt.Errorf("you are already the highest bidder")
+	}
 
 	// 2. Deduct balance from new bidder
 	resp, err := s.userClient.UpdateBalance(ctx, userID, amount, user_client.TransactionDeduct)
