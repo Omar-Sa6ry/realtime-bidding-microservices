@@ -73,3 +73,11 @@ portForward:
     resourceName: auction-srv
     port: 3002
     localPort: 3002
+  - resourceType: service
+    resourceName: user-srv
+    port: 3000
+    localPort: 3000
+  - resourceType: service
+    resourceName: bidding-srv
+    port: 3003
+    localPort: 3003

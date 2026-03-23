@@ -13,7 +13,7 @@ async function bootstrap() {
   try {
     initializeTransactionalContext();
 
-    const app = await NestFactory.create(AppModule);
+    const app = await NestFactory.create(AppModule, { rawBody: true });
     app.enableCors();
 
     app.use(graphqlUploadExpress({ maxFileSize: 100_000_000, maxFiles: 5 })); // 100 MB max

@@ -14,6 +14,7 @@ import {
 import { GraphQLModule } from '@nestjs/graphql';
 import { DatabaseModule } from './common/database/database';
 import { TranslationModule } from './common/translation/translation.module';
+import { PaymentModule } from './modules/payment/payment.module';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { TranslationModule } from './common/translation/translation.module';
 
     UserModule,
     AuthModule,
+    PaymentModule,
   ],
   providers: [
     AppService,

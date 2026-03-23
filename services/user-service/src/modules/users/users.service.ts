@@ -167,6 +167,19 @@ export class UserService {
   }
 
   @Transactional()
+  async chargeMoney(userId: string, amount: number) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user)
+      throw new BadRequestException(await this.i18n.t('user.NOT_FOUND'));
+
+    user.balance = Number(user.balance) + amount;
+    await this.userRepo.save(user);
+    await this.notifyUpdate(user);
+
+    return { data: user, message: await this.i18n.t('user.UPDATED') };
+  }
+
+  @Transactional()
   async updateBalance(
     userId: string,
     amount: number,
@@ -210,12 +223,12 @@ export class UserService {
   }
 
   private async notifyUpdate(user: User): Promise<void> {
-    await this.redisService.set(`user:${user.id}`, user);
-    await this.redisService.set(`user:email:${user.email}`, user);
+    this.redisService.set(`user:${user.id}`, user);
+     this.redisService.set(`user:email:${user.email}`, user);
   }
 
   private async notifyDelete(userId: string, email: string): Promise<void> {
-    await this.redisService.del(`user:${userId}`);
-    await this.redisService.del(`user:email:${email}`);
+     this.redisService.del(`user:${userId}`);
+     this.redisService.del(`user:email:${email}`);
   }
 }

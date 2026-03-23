@@ -18,8 +18,20 @@ export enum Permission {
   RESET_PASSWORD = 'RESET_PASSWORD',
   CHANGE_PASSWORD = 'CHANGE_PASSWORD',
   FORGOT_PASSWORD = 'FORGOT_PASSWORD',
+  RECHARGE_WALLET = 'RECHARGE_WALLET',
   LOGOUT = 'LOGOUT',
 }
+
+export enum PaymentMethod {
+  STRIPE = 'STRIPE',
+  PAYPAL = 'PAYPAL',
+  PAYMOB = 'PAYMOB',
+}
+
+registerEnumType(PaymentMethod, {
+  name: 'PaymentMethod',
+  description: 'Available payment methods in the system',
+});
 
 registerEnumType(Permission, {
   name: 'Permission',

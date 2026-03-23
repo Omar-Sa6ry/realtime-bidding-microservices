@@ -46,6 +46,26 @@ spec:
                 secretKeyRef:
                   name: user-secrets
                   key: POSTGRES_PASSWORD
+            - name: STRIPE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: user-secrets
+                  key: STRIPE_SECRET_KEY
+            - name: STRIPE_WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: user-secrets
+                  key: STRIPE_WEBHOOK_SECRET
+            - name: STRIPE_WEBHOOK_SECRETSUCCESSURL
+              valueFrom:
+                secretKeyRef:
+                  name: user-secrets
+                  key: STRIPE_WEBHOOK_SECRETSUCCESSURL
+            - name: STRIPE_WEBHOOK_SECRETFAILURL
+              valueFrom:
+                secretKeyRef:
+                  name: user-secrets
+                  key: STRIPE_WEBHOOK_SECRETFAILURL
             - name: REDIS_HOST
               value: 'redis-srv'
             - name: REDIS_PORT

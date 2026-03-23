@@ -12,6 +12,13 @@ export class UserResponse extends BaseResponse {
 }
 
 @ObjectType()
+export class UrlResponse extends BaseResponse {
+  @Field(() => String, { nullable: true })
+  @Expose()
+  data?: string;
+}
+
+@ObjectType()
 export class UsersResponse extends BaseResponse {
   @Field(() => [User], { nullable: true })
   items: User[];
