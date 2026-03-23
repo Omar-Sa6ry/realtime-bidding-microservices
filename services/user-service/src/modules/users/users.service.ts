@@ -17,6 +17,7 @@ import {
   UserResponse,
   UsersResponse,
 } from './dto/UserResponse.dto';
+import { TransactionType } from './interfaces/ItransactionType.interface';
 
 @Injectable()
 export class UserService {
@@ -134,7 +135,10 @@ export class UserService {
 
     const updatedUser = await this.userRepo.update(id, updateUserDto);
 
-    return { data: updatedUser.raw || user , message: await this.i18n.t('user.UPDATED')};
+    return {
+      data: updatedUser.raw || user,
+      message: await this.i18n.t('user.UPDATED'),
+    };
   }
 
   @Transactional()
@@ -166,17 +170,16 @@ export class UserService {
   async updateBalance(
     userId: string,
     amount: number,
-    transactionType: string,
+    transactionType: TransactionType,
   ): Promise<{ success: boolean; new_balance: number; message: string }> {
     const user = await this.userRepo.findOne({ where: { id: userId } });
-    if (!user) {
+    if (!user)
       return { success: false, new_balance: 0, message: 'User not found' };
-    }
 
     let balance = Number(user.balance || 0);
     const parsedAmount = Number(amount);
 
-    if (transactionType === 'deduct') {
+    if (transactionType === TransactionType.DEDUCT) {
       if (balance < parsedAmount) {
         return {
           success: false,
@@ -185,7 +188,7 @@ export class UserService {
         };
       }
       balance -= parsedAmount;
-    } else if (transactionType === 'add') {
+    } else if (transactionType === TransactionType.ADD) {
       balance += parsedAmount;
     } else {
       return {

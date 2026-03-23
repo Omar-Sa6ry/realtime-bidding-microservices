@@ -2,6 +2,7 @@ import { Controller } from '@nestjs/common';
 import { GrpcMethod, MessagePattern, Payload } from '@nestjs/microservices';
 import { UserService } from './users.service';
 import { UserEvents } from '@bidding-micro/shared';
+import { TransactionType } from './interfaces/ItransactionType.interface';
 
 @Controller()
 export class UserNatsController {
@@ -15,6 +16,15 @@ export class UserNatsController {
     } catch {
       return { exists: false };
     }
+  }
+
+  @MessagePattern('bid.outbid')
+  async handleOutbid(@Payload() data: { userId: string; amount: number }) {
+    this.userService.updateBalance(
+      data.userId,
+      data.amount,
+      TransactionType.ADD,
+    );
   }
 
   @MessagePattern(UserEvents.GET_USER_BY_ID)
@@ -37,7 +47,7 @@ export class UserNatsController {
   async updateBalance(data: {
     user_id: string;
     amount: number;
-    transaction_type: string;
+    transaction_type: TransactionType;
   }) {
     return await this.userService.updateBalance(
       data.user_id,

@@ -12,6 +12,7 @@ import (
 
 type UserClient interface {
 	GetUser(ctx context.Context, id string) (*pb.User, error)
+	UpdateBalance(ctx context.Context, userId string, amount float64, transactionType string) (*pb.UpdateBalanceResponse, error)
 	Close() error
 }
 
@@ -19,6 +20,12 @@ type userClient struct {
 	conn   *grpc.ClientConn
 	client pb.UserServiceClient
 }
+
+const (
+	TransactionDeduct = "deduct"
+	TransactionAdd    = "add"
+)
+
 
 func NewUserClient(url string) (UserClient, error) {
 	conn, err := grpc.Dial(url, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -41,6 +48,20 @@ func (c *userClient) GetUser(ctx context.Context, id string) (*pb.User, error) {
 	}
 
 	return resp.User, nil
+}
+
+func (c *userClient) UpdateBalance(ctx context.Context, userId string, amount float64, transactionType string) (*pb.UpdateBalanceResponse, error) {
+	resp, err := c.client.UpdateBalance(ctx, &pb.UpdateBalanceRequest{
+		UserId:          userId,
+		Amount:          amount,
+		TransactionType: transactionType,
+	})
+	
+	if err != nil {
+		return nil, fmt.Errorf("failed to update balance: %w", err)
+	}
+
+	return resp, nil
 }
 
 func (c *userClient) Close() error {

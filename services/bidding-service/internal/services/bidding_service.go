@@ -31,15 +31,20 @@ func NewBiddingService(redisRepo, mongoRepo domains.BiddingRepository, natsPubli
 
 func (s *BiddingService) PlaceBid(ctx context.Context, auctionID string, amount float64) (*domains.Bid, error) {
 	userID := Middlewares.GetUserIDFromContext(ctx)
-	user, err := s.userClient.GetUser(ctx, userID)
+
+	// 1. Get previous highest bid for refund
+	prevBid, _ := s.GetHighestBid(ctx, auctionID)
+
+	// 2. Deduct balance from new bidder
+	resp, err := s.userClient.UpdateBalance(ctx, userID, amount, user_client.TransactionDeduct)
 	if err != nil {
-		return nil, fmt.Errorf("failed to validate user: %w", err)
+		return nil, fmt.Errorf("failed to process balance deduction: %w", err)
 	}
-	if user == nil {
-		return nil, fmt.Errorf("user not found")
+	if !resp.Success {
+		return nil, fmt.Errorf("insufficient balance or user not found: %s", resp.Message)
 	}
 
-
+	// 3. Place new bid
 	bid := &domains.Bid{
 		ID:        primitive.NewObjectID().Hex(),
 		AuctionID: auctionID,
@@ -52,8 +57,24 @@ func (s *BiddingService) PlaceBid(ctx context.Context, auctionID string, amount 
 
 	err = s.redisRepo.PlaceBid(ctx, bid)
 	if err != nil {
+		// ROLLBACK: If bid fails, refund the user immediately
+		go func() {
+			_, _ = s.userClient.UpdateBalance(context.Background(), userID, amount, user_client.TransactionAdd)
+		}()
 		return nil, err
 	}
+
+	// 4. Record refund event for previous bidder (to be published via NATS)
+	if prevBid != nil && prevBid.UserID != userID {
+		bid.AddEvent(broker.Event{
+			Subject: "bid.outbid",
+			Data: map[string]interface{}{
+				"userId": prevBid.UserID,
+				"amount": prevBid.Amount,
+			},
+		})
+	}
+
 
 	go func() {
 		_ = s.mongoRepo.PlaceBid(context.Background(), bid)
