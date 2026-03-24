@@ -138,6 +138,35 @@ func (s *BiddingService) GetAuctionHistory(ctx context.Context, auctionID string
 	return s.mongoRepo.GetAuctionHistory(ctx, auctionID)
 }
 
+func (s *BiddingService) ResolveAuction(ctx context.Context, auctionID string, sellerID string) error {
+	highestBid, err := s.GetHighestBid(ctx, auctionID)
+	if err != nil {
+		return fmt.Errorf("failed to get highest bid during resolution: %w", err)
+	}
+	
+	if highestBid == nil {
+		return nil
+	}
+
+	highestBid.Status = domains.StatusWinner
+	highestBid.UpdatedAt = time.Now()
+	
+	_ = s.mongoRepo.PlaceBid(ctx, highestBid)
+
+	resp, err := s.userClient.UpdateBalance(ctx, sellerID, highestBid.Amount, user_client.TransactionAdd)
+	if err != nil || !resp.Success {
+		return fmt.Errorf("failed to transfer funds to seller: %w", err)
+	}
+
+	highestBid.AddEvent(broker.Event{
+		Subject: "bid.won",
+		Data:    highestBid,
+	})
+	s.publishEvents(ctx, highestBid)
+
+	return nil
+}
+
 func (s *BiddingService) publishEvents(ctx context.Context, bid *domains.Bid) {
 	if s.natsPublisher == nil {
 		return

@@ -35,27 +35,27 @@ func New() *App {
 func (a *App) Run() {
 	logger.Info("BiddingApp", "Initializing Bidding Service...")
 
-	// 1. Initialize MongoDB
+	// 1 Initialize MongoDB
 	mongoClient, disconnectMongo := databases.InitMongoDB(a.cfg.MongoURI)
 	defer disconnectMongo()
 
 	mongoDB := mongoClient.Database(a.cfg.DBName)
 	mongoRepo := repositories.NewMongoBiddingRepository(mongoDB)
 
-	// 2. Initialize Redis
+	// 2 Initialize Redis
 	redisClient, disconnectRedis := databases.InitRedis(a.cfg.RedisHost, a.cfg.RedisPort)
 	defer disconnectRedis()
 
 	redisRepo := repositories.NewRedisBiddingRepository(redisClient)
 
-	// 3. Initialize NATS
+	// 3 Initialize NATS
 	var err error
 	a.natsPublisher, err = broker.NewNatsPublisher(a.cfg.NatsURL)
 	if err != nil {
-		logger.Warn("BiddingApp", fmt.Sprintf("Failed to connect to NATS: %v. Events will not be published.", err))
+		logger.Warn("BiddingApp", fmt.Sprintf("Failed to connect to NATS: %v Events will not be published.", err))
 	}
 
-	// 4. Initialize gRPC Clients
+	// 4 Initialize gRPC Clients
 	a.userClient, err = user_client.NewUserClient(a.cfg.UserServiceURL)
 	if err != nil {
 		log.Fatalf("Failed to initialize User gRPC Client: %v", err)
@@ -66,10 +66,18 @@ func (a *App) Run() {
 		log.Fatalf("Failed to initialize Auction gRPC Client: %v", err)
 	}
 
-	// 5. Initialize Bidding Service
+	// 5 Initialize Bidding Service
 	a.biddingService = services.NewBiddingService(redisRepo, mongoRepo, a.natsPublisher, a.userClient, a.auctionClient)
 
-	// 6. Setup GraphQL
+	// 6 Initialize NATS Listener for auction.ended events
+	natsListener, err := broker.NewNatsListener(a.cfg.NatsURL, a.biddingService.ResolveAuction)
+	if err != nil {
+		logger.Warn("BiddingApp", fmt.Sprintf("Failed to start NATS listener: %v", err))
+	} else {
+		defer natsListener.Close()
+	}
+
+	// 7 Setup GraphQL
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{
 		Resolvers: &graph.Resolver{BiddingService: a.biddingService},
 		Directives: graph.DirectiveRoot{
@@ -77,7 +85,7 @@ func (a *App) Run() {
 		},
 	}))
 
-	// 7. Setup Router & Middlewares
+	// 8 Setup Router & Middlewares
 	mux := http.NewServeMux()
 	mux.Handle("/", playground.Handler("GraphQL playground", "/graphql"))
 	mux.Handle("/graphql", middlewares.AuthMiddleware(a.cfg.JWTSecret)(srv))
