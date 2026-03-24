@@ -15,8 +15,9 @@ type Config struct {
 	DBName         string
 	RedisHost      string
 	RedisPort      string
-	NatsURL        string
-	UserServiceURL string
+	NatsURL           string
+	UserServiceURL    string
+	AuctionServiceURL string
 }
 
 func LoadConfig() *Config {
@@ -30,10 +31,11 @@ func LoadConfig() *Config {
 		JWTExpire:      getEnv("JWT_EXPIRE", "36000s"),
 		MongoURI:       getEnv("MONGO_URI", "mongodb://localhost:27017"),
 		DBName:         getEnv("DB_NAME", "bidding-bidding_service_dev"),
-		RedisHost:      getEnv("REDIS_HOST", "localhost"),
-		RedisPort:      getEnv("REDIS_PORT", "6379"),
-		NatsURL:        getEnv("NATS_URL", "nats://localhost:4222"),
-		UserServiceURL: getEnv("USER_SERVICE_URL", "localhost:50051"),
+		RedisHost:         getEnv("REDIS_HOST", "localhost"),
+		RedisPort:         getEnv("REDIS_PORT", "6379"),
+		NatsURL:           getEnv("NATS_URL", "nats://localhost:4222"),
+		UserServiceURL:    getEnv("USER_SERVICE_URL", "localhost:50051"),
+		AuctionServiceURL: getEnv("AUCTION_SERVICE_URL", "localhost:50052"),
 	}
 }
 

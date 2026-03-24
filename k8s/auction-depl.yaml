@@ -17,6 +17,7 @@ spec:
           image: bidding/auction
           ports:
             - containerPort: 3002
+            - containerPort: 50052
           env:
             - name: NODE_ENV
               value: "development"
@@ -53,3 +54,7 @@ spec:
       protocol: TCP
       port: 3002
       targetPort: 3002
+    - name: grpc
+      protocol: TCP
+      port: 50052
+      targetPort: 50052

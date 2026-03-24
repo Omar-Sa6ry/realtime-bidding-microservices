@@ -9,6 +9,9 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	"net"
+
+	"google.golang.org/grpc"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
@@ -20,8 +23,11 @@ import (
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/middleware"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/pkg/logger"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/pkg/translation"
+	pb "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/proto/auction"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/repository"
 	service "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/services"
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/domain"
+	grpc_server "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/grpc_server"
 )
 
 type App struct {
@@ -29,6 +35,7 @@ type App struct {
 	auctionService service.AuctionService
 	userClient     user_client.UserClient
 	natsPublisher  broker.Publisher
+	grpcServer     *grpc.Server
 }
 
 func New() *App {
@@ -73,9 +80,31 @@ func (a *App) Run() {
 	// 4. Start Background Workers (Cron)
 	a.startCronJobs()
 
-	// 5. Setup GraphQL Server & Wait for Shutdown
+	// 5. Setup gRPC Server
+	a.setupGRPCServer(repo)
+
+	// 6. Setup GraphQL Server & Wait for Shutdown
 	a.setupHTTPServer(disconnect)
 }
+
+func (a *App) setupGRPCServer(repo domain.AuctionRepository) {
+	lis, err := net.Listen("tcp", ":50052")
+	if err != nil {
+		log.Fatalf("Failed to listen on gRPC port 50052: %v", err)
+	}
+
+	a.grpcServer = grpc.NewServer()
+	auctionServer := grpc_server.NewAuctionServer(repo)
+	pb.RegisterAuctionServiceServer(a.grpcServer, auctionServer)
+
+	go func() {
+		logger.Info("AuctionApp", "gRPC Server is running on port 50052")
+		if err := a.grpcServer.Serve(lis); err != nil {
+			log.Fatalf("Failed to serve gRPC: %v", err)
+		}
+	}()
+}
+
 
 func (a *App) setupHTTPServer(disconnect func()) {
 	graphConfig := graph.Config{Resolvers: &graph.Resolver{AuctionService: a.auctionService}}
@@ -110,6 +139,11 @@ func (a *App) setupHTTPServer(disconnect func()) {
 	// 1. Stop HTTP Server
 	if err := server.Shutdown(ctx); err != nil {
 		logger.Error("AuctionApp", "Server forced to shutdown", err)
+	}
+
+	// 1.5 Stop gRPC Server
+	if a.grpcServer != nil {
+		a.grpcServer.GracefulStop()
 	}
 
 	// 2. Close gRPC Client

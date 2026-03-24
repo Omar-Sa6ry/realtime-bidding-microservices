@@ -10,5 +10,7 @@
   "UPDATE_SUCCESS": "تم تحديث المزاد بنجاح",
   "DELETE_SUCCESS": "تم حذف المزاد بنجاح",
   "FIND_SUCCESS": "تم العثور على المزاد(ات) بنجاح",
-  "VALIDATION_FAILED": "فشل التحقق من البيانات"
+  "VALIDATION_FAILED": "فشل التحقق من البيانات",
+  "YOU_OWN_AUCTION": "لا يمكن المزايدة على مزادك الخاص",
+  "AUCTION_NOT_ACTIVE": "المزاد غير نشط أو انتهى"
 }

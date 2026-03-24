@@ -32,6 +32,8 @@ spec:
               value: "6379"
             - name: USER_SERVICE_URL
               value: "user-srv:50051"
+            - name: AUCTION_SERVICE_URL
+              value: "auction-srv:50052"
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:

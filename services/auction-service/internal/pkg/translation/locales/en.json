@@ -10,5 +10,7 @@
   "UPDATE_SUCCESS": "Auction updated successfully",
   "DELETE_SUCCESS": "Auction deleted successfully",
   "FIND_SUCCESS": "Auction(s) found successfully",
-  "VALIDATION_FAILED": "Validation failed"
+  "VALIDATION_FAILED": "Validation failed",
+  "YOU_OWN_AUCTION": "You cannot bid on your own auction",
+  "AUCTION_NOT_ACTIVE": "Auction is not active or has already ended"
 }

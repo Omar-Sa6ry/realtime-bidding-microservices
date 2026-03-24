@@ -23,6 +23,7 @@ type App struct {
 	biddingService *services.BiddingService
 	natsPublisher  broker.Publisher
 	userClient     user_client.UserClient
+	auctionClient  user_client.AuctionClient
 }
 
 func New() *App {
@@ -60,8 +61,13 @@ func (a *App) Run() {
 		log.Fatalf("Failed to initialize User gRPC Client: %v", err)
 	}
 
+	a.auctionClient, err = user_client.NewAuctionClient(a.cfg.AuctionServiceURL)
+	if err != nil {
+		log.Fatalf("Failed to initialize Auction gRPC Client: %v", err)
+	}
+
 	// 5. Initialize Bidding Service
-	a.biddingService = services.NewBiddingService(redisRepo, mongoRepo, a.natsPublisher, a.userClient)
+	a.biddingService = services.NewBiddingService(redisRepo, mongoRepo, a.natsPublisher, a.userClient, a.auctionClient)
 
 	// 6. Setup GraphQL
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{

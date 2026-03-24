@@ -18,21 +18,33 @@ type BiddingService struct {
 	mongoRepo     domains.BiddingRepository
 	natsPublisher broker.Publisher
 	userClient    user_client.UserClient
+	auctionClient user_client.AuctionClient
 }
 
-func NewBiddingService(redisRepo, mongoRepo domains.BiddingRepository, natsPublisher broker.Publisher, userClient user_client.UserClient) *BiddingService {
+func NewBiddingService(redisRepo, mongoRepo domains.BiddingRepository, natsPublisher broker.Publisher, userClient user_client.UserClient, auctionClient user_client.AuctionClient) *BiddingService {
 	return &BiddingService{
 		redisRepo:     redisRepo,
 		mongoRepo:     mongoRepo,
 		natsPublisher: natsPublisher,
 		userClient:    userClient,
+		auctionClient: auctionClient,
 	}
 }
 
 func (s *BiddingService) PlaceBid(ctx context.Context, auctionID string, amount float64) (*domains.Bid, error) {
 	userID := Middlewares.GetUserIDFromContext(ctx)
 
-	// 1. Get previous highest bid for refund
+	// 1. Validate Auction Details via gRPC
+	valResp, err := s.auctionClient.ValidateAuctionForBid(ctx, auctionID, userID, amount)
+	if err != nil {
+		return nil, fmt.Errorf("failed to validate auction: %w", err)
+	}
+
+	if !valResp.IsActive {
+		return nil, fmt.Errorf("auction validation failed: %s", valResp.ErrorMessage)
+	}
+	
+	// 2. Get previous highest bid for refund
 	prevBid, _ := s.GetHighestBid(ctx, auctionID)
 	if prevBid != nil && prevBid.UserID == userID {
 		return nil, fmt.Errorf("you are already the highest bidder")

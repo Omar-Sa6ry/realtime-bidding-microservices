@@ -10,11 +10,11 @@ service AuctionService {
 
 message ValidateAuctionRequest {
   string auction_id = 1;
+  string user_id = 2;
+  double amount = 3;
 }
 
 message ValidateAuctionResponse {
   bool is_active = 1;
-  double current_price = 2;
-  string seller_id = 3;
-  string error_message = 4; // Populated if is_active is false
+  string error_message = 2; // Populated if is_active is false
 }
