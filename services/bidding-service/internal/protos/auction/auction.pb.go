@@ -21,6 +21,50 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type GetAuctionRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AuctionId     string                 `protobuf:"bytes,1,opt,name=auction_id,json=auctionId,proto3" json:"auction_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetAuctionRequest) Reset() {
+	*x = GetAuctionRequest{}
+	mi := &file_auction_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetAuctionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAuctionRequest) ProtoMessage() {}
+
+func (x *GetAuctionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_auction_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAuctionRequest.ProtoReflect.Descriptor instead.
+func (*GetAuctionRequest) Descriptor() ([]byte, []int) {
+	return file_auction_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *GetAuctionRequest) GetAuctionId() string {
+	if x != nil {
+		return x.AuctionId
+	}
+	return ""
+}
+
 type ValidateAuctionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AuctionId     string                 `protobuf:"bytes,1,opt,name=auction_id,json=auctionId,proto3" json:"auction_id,omitempty"`
@@ -32,7 +76,7 @@ type ValidateAuctionRequest struct {
 
 func (x *ValidateAuctionRequest) Reset() {
 	*x = ValidateAuctionRequest{}
-	mi := &file_auction_proto_msgTypes[0]
+	mi := &file_auction_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -44,7 +88,7 @@ func (x *ValidateAuctionRequest) String() string {
 func (*ValidateAuctionRequest) ProtoMessage() {}
 
 func (x *ValidateAuctionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_auction_proto_msgTypes[0]
+	mi := &file_auction_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -57,7 +101,7 @@ func (x *ValidateAuctionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ValidateAuctionRequest.ProtoReflect.Descriptor instead.
 func (*ValidateAuctionRequest) Descriptor() ([]byte, []int) {
-	return file_auction_proto_rawDescGZIP(), []int{0}
+	return file_auction_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *ValidateAuctionRequest) GetAuctionId() string {
@@ -91,7 +135,7 @@ type ValidateAuctionResponse struct {
 
 func (x *ValidateAuctionResponse) Reset() {
 	*x = ValidateAuctionResponse{}
-	mi := &file_auction_proto_msgTypes[1]
+	mi := &file_auction_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -103,7 +147,7 @@ func (x *ValidateAuctionResponse) String() string {
 func (*ValidateAuctionResponse) ProtoMessage() {}
 
 func (x *ValidateAuctionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_auction_proto_msgTypes[1]
+	mi := &file_auction_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -116,7 +160,7 @@ func (x *ValidateAuctionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ValidateAuctionResponse.ProtoReflect.Descriptor instead.
 func (*ValidateAuctionResponse) Descriptor() ([]byte, []int) {
-	return file_auction_proto_rawDescGZIP(), []int{1}
+	return file_auction_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ValidateAuctionResponse) GetIsActive() bool {
@@ -137,7 +181,10 @@ var File_auction_proto protoreflect.FileDescriptor
 
 const file_auction_proto_rawDesc = "" +
 	"\n" +
-	"\rauction.proto\x12\aauction\"h\n" +
+	"\rauction.proto\x12\aauction\"2\n" +
+	"\x11GetAuctionRequest\x12\x1d\n" +
+	"\n" +
+	"auction_id\x18\x01 \x01(\tR\tauctionId\"h\n" +
 	"\x16ValidateAuctionRequest\x12\x1d\n" +
 	"\n" +
 	"auction_id\x18\x01 \x01(\tR\tauctionId\x12\x17\n" +
@@ -145,9 +192,11 @@ const file_auction_proto_rawDesc = "" +
 	"\x06amount\x18\x03 \x01(\x01R\x06amount\"[\n" +
 	"\x17ValidateAuctionResponse\x12\x1b\n" +
 	"\tis_active\x18\x01 \x01(\bR\bisActive\x12#\n" +
-	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage2n\n" +
+	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage2\xbc\x01\n" +
 	"\x0eAuctionService\x12\\\n" +
-	"\x15ValidateAuctionForBid\x12\x1f.auction.ValidateAuctionRequest\x1a .auction.ValidateAuctionResponse\"\x00BJZHrealtime-bidding-microservices/services/auction-service/internal/grpc/pbb\x06proto3"
+	"\x15ValidateAuctionForBid\x12\x1f.auction.ValidateAuctionRequest\x1a .auction.ValidateAuctionResponse\"\x00\x12L\n" +
+	"\n" +
+	"GetAuction\x12\x1a.auction.GetAuctionRequest\x1a .auction.ValidateAuctionResponse\"\x00BJZHrealtime-bidding-microservices/services/auction-service/internal/grpc/pbb\x06proto3"
 
 var (
 	file_auction_proto_rawDescOnce sync.Once
@@ -161,16 +210,19 @@ func file_auction_proto_rawDescGZIP() []byte {
 	return file_auction_proto_rawDescData
 }
 
-var file_auction_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_auction_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_auction_proto_goTypes = []any{
-	(*ValidateAuctionRequest)(nil),  // 0: auction.ValidateAuctionRequest
-	(*ValidateAuctionResponse)(nil), // 1: auction.ValidateAuctionResponse
+	(*GetAuctionRequest)(nil),       // 0: auction.GetAuctionRequest
+	(*ValidateAuctionRequest)(nil),  // 1: auction.ValidateAuctionRequest
+	(*ValidateAuctionResponse)(nil), // 2: auction.ValidateAuctionResponse
 }
 var file_auction_proto_depIdxs = []int32{
-	0, // 0: auction.AuctionService.ValidateAuctionForBid:input_type -> auction.ValidateAuctionRequest
-	1, // 1: auction.AuctionService.ValidateAuctionForBid:output_type -> auction.ValidateAuctionResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
+	1, // 0: auction.AuctionService.ValidateAuctionForBid:input_type -> auction.ValidateAuctionRequest
+	0, // 1: auction.AuctionService.GetAuction:input_type -> auction.GetAuctionRequest
+	2, // 2: auction.AuctionService.ValidateAuctionForBid:output_type -> auction.ValidateAuctionResponse
+	2, // 3: auction.AuctionService.GetAuction:output_type -> auction.ValidateAuctionResponse
+	2, // [2:4] is the sub-list for method output_type
+	0, // [0:2] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -187,7 +239,7 @@ func file_auction_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_auction_proto_rawDesc), len(file_auction_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

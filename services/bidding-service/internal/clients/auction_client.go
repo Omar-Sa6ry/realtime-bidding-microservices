@@ -12,6 +12,7 @@ import (
 
 type AuctionClient interface {
 	ValidateAuctionForBid(ctx context.Context, auctionId string, userId string, amount float64) (*pb.ValidateAuctionResponse, error)
+	GetAuction(ctx context.Context, auctionId string) (*pb.ValidateAuctionResponse, error)
 	Close() error
 }
 
@@ -40,6 +41,14 @@ func (c *auctionClient) ValidateAuctionForBid(ctx context.Context, auctionId str
 		return nil, fmt.Errorf("failed to validate auction: %w", err)
 	}
 
+	return resp, nil
+}
+
+func (c *auctionClient) GetAuction(ctx context.Context, auctionId string) (*pb.ValidateAuctionResponse, error) {
+	resp, err := c.client.GetAuction(ctx, &pb.GetAuctionRequest{AuctionId: auctionId})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get auction: %w", err)
+	}
 	return resp, nil
 }
 

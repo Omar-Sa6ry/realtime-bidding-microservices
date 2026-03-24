@@ -66,3 +66,15 @@ func (s *AuctionServer) ValidateAuctionForBid(ctx context.Context, req *pb.Valid
 		IsActive: true,
 	}, nil
 }
+
+func (s *AuctionServer) GetAuction(ctx context.Context, req *pb.GetAuctionRequest) (*pb.ValidateAuctionResponse, error) {
+	auction, err := s.repo.FindByID(ctx, req.AuctionId)
+	if err != nil {
+		return &pb.ValidateAuctionResponse{IsActive: false, ErrorMessage: domain.ErrInternalServerError.Error()}, nil
+	}
+	if auction == nil {
+		return &pb.ValidateAuctionResponse{IsActive: false, ErrorMessage: domain.ErrAuctionNotFound.Error()}, nil
+	}
+
+	return &pb.ValidateAuctionResponse{IsActive: true}, nil
+}
