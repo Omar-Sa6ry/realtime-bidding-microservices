@@ -107,17 +107,27 @@ func (s *BiddingService) PlaceBid(ctx context.Context, auctionID string, amount 
 }
 
 func (s *BiddingService) GetHighestBid(ctx context.Context, auctionID string) (*domains.Bid, error) {
-	// Try Redis first for performance
+
+	_, err := s.auctionClient.GetAuction(ctx, auctionID)
+	if err != nil {
+		return nil, fmt.Errorf("auction not found")
+	}
+
 	bid, err := s.redisRepo.GetHighestBid(ctx, auctionID)
 	if err == nil && bid != nil {
 		return bid, nil
 	}
 
-	// Fallback to MongoDB if not in Redis
 	return s.mongoRepo.GetHighestBid(ctx, auctionID)
 }
 
+
 func (s *BiddingService) GetAuctionHistory(ctx context.Context, auctionID string) ([]*domains.Bid, error) {
+	_, err := s.auctionClient.GetAuction(ctx, auctionID)
+	if err != nil {
+		return nil, fmt.Errorf("auction not found")
+	}
+	
 	return s.mongoRepo.GetAuctionHistory(ctx, auctionID)
 }
 
