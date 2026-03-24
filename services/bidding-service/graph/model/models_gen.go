@@ -15,14 +15,22 @@ type BidResponse struct {
 }
 
 type BidsResponse struct {
-	Success    bool          `json:"success"`
-	Message    string        `json:"message"`
-	StatusCode int           `json:"statusCode"`
-	TimeStamp  string        `json:"timeStamp"`
-	Data       []*domain.Bid `json:"data,omitempty"`
+	Success     bool          `json:"success"`
+	Message     string        `json:"message"`
+	StatusCode  int           `json:"statusCode"`
+	TimeStamp   string        `json:"timeStamp"`
+	Data        []*domain.Bid `json:"data,omitempty"`
+	TotalPages  *int          `json:"totalPages,omitempty"`
+	CurrentPage *int          `json:"currentPage,omitempty"`
+	TotalItems  *int          `json:"totalItems,omitempty"`
 }
 
 type Mutation struct {
+}
+
+type PaginationInput struct {
+	Limit *int `json:"limit,omitempty"`
+	Page  *int `json:"page,omitempty"`
 }
 
 type Query struct {

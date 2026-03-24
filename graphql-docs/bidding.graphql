@@ -43,3 +43,20 @@ query {
     }
   }
 }
+
+
+query {
+  getMyBids(pagination: { limit: 5, page: 1 }) {
+    success
+    totalPages
+    totalItems
+    currentPage
+    statusCode
+    message
+    data {
+      amount
+      status
+    }
+  }
+}
+

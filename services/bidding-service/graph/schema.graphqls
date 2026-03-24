@@ -23,6 +23,14 @@ type BidsResponse {
   statusCode: Int!
   timeStamp: String!
   data: [Bid!]
+  totalPages: Int
+  currentPage: Int
+  totalItems: Int
+}
+
+input PaginationInput {
+  limit: Int = 10
+  page: Int = 1
 }
 
 extend type Mutation {
@@ -31,5 +39,6 @@ extend type Mutation {
 
 extend type Query {
   getHighestBid(auctionId: ID!): BidResponse!
-  getAuctionHistory(auctionId: ID!): BidsResponse!
+  getAuctionHistory(auctionId: ID!, pagination: PaginationInput): BidsResponse!
+  getMyBids(pagination: PaginationInput): BidsResponse! @auth
 }

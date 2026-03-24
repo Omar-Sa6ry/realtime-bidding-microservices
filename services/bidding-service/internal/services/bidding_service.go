@@ -10,6 +10,7 @@ import (
 	user_client "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/clients"
 
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/broker"
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/graph/model"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -129,13 +130,24 @@ func (s *BiddingService) GetHighestBid(ctx context.Context, auctionID string) (*
 }
 
 
-func (s *BiddingService) GetAuctionHistory(ctx context.Context, auctionID string) ([]*domains.Bid, error) {
+func (s *BiddingService) GetAuctionHistory(ctx context.Context, auctionID string, pagination *model.PaginationInput) ([]*domains.Bid, int64, error) {
 	resp, err := s.auctionClient.GetAuction(ctx, auctionID)
 	if err != nil || !resp.Exists {
-		return nil, fmt.Errorf("auction not found")
+		return nil, 0, fmt.Errorf("auction not found")
 	}
 	
-	return s.mongoRepo.GetAuctionHistory(ctx, auctionID)
+	limit := int64(10)
+	offset := int64(0)
+	if pagination != nil {
+		if pagination.Limit != nil {
+			limit = int64(*pagination.Limit)
+		}
+		if pagination.Page != nil {
+			offset = int64(*pagination.Page-1) * limit
+		}
+	}
+	
+	return s.mongoRepo.GetAuctionHistory(ctx, auctionID, limit, offset)
 }
 
 func (s *BiddingService) ResolveAuction(ctx context.Context, auctionID string, sellerID string) error {
@@ -165,6 +177,26 @@ func (s *BiddingService) ResolveAuction(ctx context.Context, auctionID string, s
 	s.publishEvents(ctx, highestBid)
 
 	return nil
+}
+
+func (s *BiddingService) GetMyBids(ctx context.Context, pagination *model.PaginationInput) ([]*domains.Bid, int64, error) {
+	userID := Middlewares.GetUserIDFromContext(ctx)
+	if userID == "" {
+		return nil, 0, fmt.Errorf("unauthorized: missing user id")
+	}
+
+	limit := int64(10)
+	offset := int64(0)
+	if pagination != nil {
+		if pagination.Limit != nil {
+			limit = int64(*pagination.Limit)
+		}
+		if pagination.Page != nil {
+			offset = int64(*pagination.Page-1) * limit
+		}
+	}
+
+	return s.mongoRepo.GetBidsByUserID(ctx, userID, limit, offset)
 }
 
 func (s *BiddingService) publishEvents(ctx context.Context, bid *domains.Bid) {

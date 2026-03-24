@@ -73,30 +73,80 @@ func (r *queryResolver) GetHighestBid(ctx context.Context, auctionID string) (*m
 }
 
 // GetAuctionHistory is the resolver for the getAuctionHistory field.
-func (r *queryResolver) GetAuctionHistory(ctx context.Context, auctionID string) (*model.BidsResponse, error) {
-	bids, err := r.BiddingService.GetAuctionHistory(ctx, auctionID)
-	if err != nil || len(bids) == 0 {
-		message := "History not found"
-		if err != nil {
-			message = err.Error()
-		} else {
-			message = "No bidding history found for this auction"
-		}
+func (r *queryResolver) GetAuctionHistory(ctx context.Context, auctionID string, pagination *model.PaginationInput) (*model.BidsResponse, error) {
+	bids, total, err := r.BiddingService.GetAuctionHistory(ctx, auctionID, pagination)
+	if err != nil {
 		return &model.BidsResponse{
 			Success:    false,
-			Message:    message,
-			StatusCode: 404,
+			Message:    err.Error(),
+			StatusCode: 500,
 			TimeStamp:  time.Now().Format("2006-01-02T15:04:05Z07:00"),
 			Data:       nil,
 		}, nil
 	}
 
+	limit := 10
+	page := 1
+	if pagination != nil {
+		if pagination.Limit != nil {
+			limit = *pagination.Limit
+		}
+		if pagination.Page != nil {
+			page = *pagination.Page
+		}
+	}
+
+	totalPages := int((total + int64(limit) - 1) / int64(limit))
+	totalItemsInt := int(total)
+
 	return &model.BidsResponse{
-		Success:    true,
-		Message:    "Auction history fetched successfully",
-		StatusCode: 200,
-		TimeStamp:  time.Now().Format("2006-01-02T15:04:05Z07:00"),
-		Data:       bids,
+		Success:     true,
+		Message:     "Auction history fetched successfully",
+		StatusCode:  200,
+		TimeStamp:   time.Now().Format("2006-01-02T15:04:05Z07:00"),
+		Data:        bids,
+		TotalPages:  &totalPages,
+		CurrentPage: &page,
+		TotalItems:  &totalItemsInt,
+	}, nil
+}
+
+// GetMyBids is the resolver for the getMyBids field.
+func (r *queryResolver) GetMyBids(ctx context.Context, pagination *model.PaginationInput) (*model.BidsResponse, error) {
+	bids, total, err := r.BiddingService.GetMyBids(ctx, pagination)
+	if err != nil {
+		return &model.BidsResponse{
+			Success:    false,
+			Message:    err.Error(),
+			StatusCode: 500,
+			TimeStamp:  time.Now().Format("2006-01-02T15:04:05Z07:00"),
+			Data:       nil,
+		}, nil
+	}
+
+	limit := 10
+	page := 1
+	if pagination != nil {
+		if pagination.Limit != nil {
+			limit = *pagination.Limit
+		}
+		if pagination.Page != nil {
+			page = *pagination.Page
+		}
+	}
+
+	totalPages := int((total + int64(limit) - 1) / int64(limit))
+	totalItemsInt := int(total)
+
+	return &model.BidsResponse{
+		Success:     true,
+		Message:     "User bids fetched successfully",
+		StatusCode:  200,
+		TimeStamp:   time.Now().Format("2006-01-02T15:04:05Z07:00"),
+		Data:        bids,
+		TotalPages:  &totalPages,
+		CurrentPage: &page,
+		TotalItems:  &totalItemsInt,
 	}, nil
 }
 

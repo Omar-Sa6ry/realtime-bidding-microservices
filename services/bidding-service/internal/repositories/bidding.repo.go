@@ -38,22 +38,64 @@ func (r *mongoBiddingRepository) GetHighestBid(ctx context.Context, auctionID st
 	return &bid, nil
 }
 
-func (r *mongoBiddingRepository) GetAuctionHistory(ctx context.Context, auctionID string) ([]*domains.Bid, error) {
+func (r *mongoBiddingRepository) GetAuctionHistory(ctx context.Context, auctionID string, limit, offset int64) ([]*domains.Bid, int64, error) {
 	var bids []*domains.Bid
-	opts := options.Find().SetSort(bson.M{"created_at": -1})
-	cursor, err := r.collection.Find(ctx, bson.M{"auction_id": auctionID}, opts)
+	filter := bson.M{"auction_id": auctionID}
+	
+	findOptions := options.Find()
+	findOptions.SetLimit(limit)
+	findOptions.SetSkip(offset)
+	findOptions.SetSort(bson.M{"created_at": -1})
+	
+	cursor, err := r.collection.Find(ctx, filter, findOptions)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer cursor.Close(ctx)
+	
+	total, err := r.collection.CountDocuments(ctx, filter)
+	if err != nil {
+		return nil, 0, err
+	}
+
 	for cursor.Next(ctx) {
 		var bid domains.Bid
 		if err := cursor.Decode(&bid); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		bids = append(bids, &bid)
 	}
-	return bids, nil
+	return bids, total, nil
+}
+
+func (r *mongoBiddingRepository) GetBidsByUserID(ctx context.Context, userID string, limit, offset int64) ([]*domains.Bid, int64, error) {
+	var bids []*domains.Bid
+	filter := bson.M{"user_id": userID}
+
+	findOptions := options.Find()
+	findOptions.SetLimit(limit)
+	findOptions.SetSkip(offset)
+	findOptions.SetSort(bson.M{"created_at": -1})
+
+	cursor, err := r.collection.Find(ctx, filter, findOptions)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer cursor.Close(ctx)
+	
+	total, err := r.collection.CountDocuments(ctx, filter)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	for cursor.Next(ctx) {
+		var bid domains.Bid
+		if err := cursor.Decode(&bid); err != nil {
+			return nil, 0, err
+		}
+		bids = append(bids, &bid)
+	}
+	return bids, total, nil
 }
 
 func (r *mongoBiddingRepository) Lock(ctx context.Context, auctionID string, expiration time.Duration) (string, error) {

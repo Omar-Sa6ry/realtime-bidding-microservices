@@ -77,8 +77,12 @@ func (r *redisBiddingRepository) GetHighestBid(ctx context.Context, auctionID st
 	}, nil
 }
 
-func (r *redisBiddingRepository) GetAuctionHistory(ctx context.Context, auctionID string) ([]*domains.Bid, error) {
-	return nil, fmt.Errorf("use MongoDB repository for auction history")
+func (r *redisBiddingRepository) GetAuctionHistory(ctx context.Context, auctionID string, limit, offset int64) ([]*domains.Bid, int64, error) {
+	return nil, 0, fmt.Errorf("use MongoDB repository for auction history")
+}
+
+func (r *redisBiddingRepository) GetBidsByUserID(ctx context.Context, userID string, limit, offset int64) ([]*domains.Bid, int64, error) {
+	return nil, 0, fmt.Errorf("use MongoDB repository for user bid history")
 }
 
 func (r *redisBiddingRepository) Lock(ctx context.Context, auctionID string, expiration time.Duration) (string, error) {
