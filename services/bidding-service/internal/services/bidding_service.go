@@ -33,7 +33,7 @@ func NewBiddingService(redisRepo, mongoRepo domains.BiddingRepository, natsPubli
 }
 
 func (s *BiddingService) PlaceBid(ctx context.Context, auctionID string, amount float64) (*domains.Bid, error) {
-	// 0. Acquire Distributed Lock
+	// Acquire Distributed Lock
 	lockID, err := s.redisRepo.Lock(ctx, auctionID, 5*time.Second)
 	if err != nil {
 		return nil, fmt.Errorf("could not acquire lock: %w", err)
@@ -42,7 +42,7 @@ func (s *BiddingService) PlaceBid(ctx context.Context, auctionID string, amount 
 
 	userID := Middlewares.GetUserIDFromContext(ctx)
 
-	// 1. Validate Auction Details via gRPC
+	// Validate Auction Details via gRPC
 	valResp, err := s.auctionClient.ValidateAuctionForBid(ctx, auctionID, userID, amount)
 	if err != nil {
 		return nil, fmt.Errorf("failed to validate auction: %w", err)
@@ -52,13 +52,11 @@ func (s *BiddingService) PlaceBid(ctx context.Context, auctionID string, amount 
 		return nil, fmt.Errorf("auction validation failed: %s", valResp.ErrorMessage)
 	}
 	
-	// 2. Get previous highest bid for refund
 	prevBid, _ := s.GetHighestBid(ctx, auctionID)
 	if prevBid != nil && prevBid.UserID == userID {
 		return nil, fmt.Errorf("you are already the highest bidder")
 	}
 
-	// 2. Deduct balance from new bidder
 	resp, err := s.userClient.UpdateBalance(ctx, userID, amount, user_client.TransactionDeduct)
 	if err != nil {
 		return nil, fmt.Errorf("failed to process balance deduction: %w", err)
@@ -67,7 +65,6 @@ func (s *BiddingService) PlaceBid(ctx context.Context, auctionID string, amount 
 		return nil, fmt.Errorf("insufficient balance or user not found: %s", resp.Message)
 	}
 
-	// 3. Place new bid
 	bid := &domains.Bid{
 		ID:        primitive.NewObjectID().Hex(),
 		AuctionID: auctionID,
@@ -80,14 +77,12 @@ func (s *BiddingService) PlaceBid(ctx context.Context, auctionID string, amount 
 
 	err = s.redisRepo.PlaceBid(ctx, bid)
 	if err != nil {
-		// ROLLBACK: If bid fails, refund the user immediately
 		go func() {
 			_, _ = s.userClient.UpdateBalance(context.Background(), userID, amount, user_client.TransactionAdd)
 		}()
 		return nil, err
 	}
 
-	// 4. Record refund event for previous bidder (to be published via NATS)
 	if prevBid != nil && prevBid.UserID != userID {
 		bid.AddEvent(broker.Event{
 			Subject: "bid.outbid",
@@ -96,8 +91,11 @@ func (s *BiddingService) PlaceBid(ctx context.Context, auctionID string, amount 
 				"amount": prevBid.Amount,
 			},
 		})
-	}
 
+		go func(bidID string) {
+			_ = s.mongoRepo.UpdateBidStatus(context.Background(), bidID, domains.StatusOutbid)
+		}(prevBid.ID)
+	}
 
 	go func() {
 		_ = s.mongoRepo.PlaceBid(context.Background(), bid)

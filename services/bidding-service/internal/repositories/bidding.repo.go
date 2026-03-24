@@ -98,6 +98,11 @@ func (r *mongoBiddingRepository) GetBidsByUserID(ctx context.Context, userID str
 	return bids, total, nil
 }
 
+func (r *mongoBiddingRepository) UpdateBidStatus(ctx context.Context, bidID string, status domains.BidStatus) error {
+	_, err := r.collection.UpdateOne(ctx, bson.M{"id": bidID}, bson.M{"$set": bson.M{"status": string(status), "updated_at": time.Now()}})
+	return err
+}
+
 func (r *mongoBiddingRepository) Lock(ctx context.Context, auctionID string, expiration time.Duration) (string, error) {
 	return "", nil
 }

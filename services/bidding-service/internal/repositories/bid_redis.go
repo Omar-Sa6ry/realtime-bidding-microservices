@@ -85,6 +85,10 @@ func (r *redisBiddingRepository) GetBidsByUserID(ctx context.Context, userID str
 	return nil, 0, fmt.Errorf("use MongoDB repository for user bid history")
 }
 
+func (r *redisBiddingRepository) UpdateBidStatus(ctx context.Context, bidID string, status domains.BidStatus) error {
+	return nil
+}
+
 func (r *redisBiddingRepository) Lock(ctx context.Context, auctionID string, expiration time.Duration) (string, error) {
 	lockKey := fmt.Sprintf("lock:auction:%s", auctionID)
 	lockID := primitive.NewObjectID().Hex()
