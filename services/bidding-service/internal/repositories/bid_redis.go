@@ -7,6 +7,7 @@ import (
 
 	domains "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/domains"
 	"github.com/redis/go-redis/v9"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type redisBiddingRepository struct {
@@ -78,4 +79,34 @@ func (r *redisBiddingRepository) GetHighestBid(ctx context.Context, auctionID st
 
 func (r *redisBiddingRepository) GetAuctionHistory(ctx context.Context, auctionID string) ([]*domains.Bid, error) {
 	return nil, fmt.Errorf("use MongoDB repository for auction history")
+}
+
+func (r *redisBiddingRepository) Lock(ctx context.Context, auctionID string, expiration time.Duration) (string, error) {
+	lockKey := fmt.Sprintf("lock:auction:%s", auctionID)
+	lockID := primitive.NewObjectID().Hex()
+
+	success, err := r.client.SetNX(ctx, lockKey, lockID, expiration).Result()
+	if err != nil {
+		return "", err
+	}
+	if !success {
+		return "", fmt.Errorf("could not acquire lock for auction %s", auctionID)
+	}
+
+	return lockID, nil
+}
+
+func (r *redisBiddingRepository) Unlock(ctx context.Context, auctionID string, lockID string) error {
+	lockKey := fmt.Sprintf("lock:auction:%s", auctionID)
+
+	// Use Lua script to ensure only the owner of the lock can delete it
+	script := `
+		if redis.call("get", KEYS[1]) == ARGV[1] then
+			return redis.call("del", KEYS[1])
+		else
+			return 0
+		end
+	`
+	_, err := r.client.Eval(ctx, script, []string{lockKey}, lockID).Result()
+	return err
 }

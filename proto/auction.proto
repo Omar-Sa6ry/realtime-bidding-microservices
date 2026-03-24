@@ -6,11 +6,18 @@ option go_package = "realtime-bidding-microservices/services/auction-service/int
 
 service AuctionService {
   rpc ValidateAuctionForBid (ValidateAuctionRequest) returns (ValidateAuctionResponse) {}
-  rpc GetAuction (GetAuctionRequest) returns (ValidateAuctionResponse) {}
+  rpc GetAuction (GetAuctionRequest) returns (GetAuctionResponse) {}
 }
 
 message GetAuctionRequest {
   string auction_id = 1;
+}
+
+message GetAuctionResponse {
+  bool exists = 1;
+  double current_price = 2;
+  string seller_id = 3;
+  string status = 4;
 }
 
 message ValidateAuctionRequest {

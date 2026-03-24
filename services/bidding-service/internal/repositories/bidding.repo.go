@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	domains "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/domains"
 	"go.mongodb.org/mongo-driver/bson"
@@ -53,4 +54,12 @@ func (r *mongoBiddingRepository) GetAuctionHistory(ctx context.Context, auctionI
 		bids = append(bids, &bid)
 	}
 	return bids, nil
+}
+
+func (r *mongoBiddingRepository) Lock(ctx context.Context, auctionID string, expiration time.Duration) (string, error) {
+	return "", nil
+}
+
+func (r *mongoBiddingRepository) Unlock(ctx context.Context, auctionID string, lockID string) error {
+	return nil
 }

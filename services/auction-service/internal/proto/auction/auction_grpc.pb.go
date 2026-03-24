@@ -28,7 +28,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AuctionServiceClient interface {
 	ValidateAuctionForBid(ctx context.Context, in *ValidateAuctionRequest, opts ...grpc.CallOption) (*ValidateAuctionResponse, error)
-	GetAuction(ctx context.Context, in *GetAuctionRequest, opts ...grpc.CallOption) (*ValidateAuctionResponse, error)
+	GetAuction(ctx context.Context, in *GetAuctionRequest, opts ...grpc.CallOption) (*GetAuctionResponse, error)
 }
 
 type auctionServiceClient struct {
@@ -49,9 +49,9 @@ func (c *auctionServiceClient) ValidateAuctionForBid(ctx context.Context, in *Va
 	return out, nil
 }
 
-func (c *auctionServiceClient) GetAuction(ctx context.Context, in *GetAuctionRequest, opts ...grpc.CallOption) (*ValidateAuctionResponse, error) {
+func (c *auctionServiceClient) GetAuction(ctx context.Context, in *GetAuctionRequest, opts ...grpc.CallOption) (*GetAuctionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ValidateAuctionResponse)
+	out := new(GetAuctionResponse)
 	err := c.cc.Invoke(ctx, AuctionService_GetAuction_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ func (c *auctionServiceClient) GetAuction(ctx context.Context, in *GetAuctionReq
 // for forward compatibility.
 type AuctionServiceServer interface {
 	ValidateAuctionForBid(context.Context, *ValidateAuctionRequest) (*ValidateAuctionResponse, error)
-	GetAuction(context.Context, *GetAuctionRequest) (*ValidateAuctionResponse, error)
+	GetAuction(context.Context, *GetAuctionRequest) (*GetAuctionResponse, error)
 	mustEmbedUnimplementedAuctionServiceServer()
 }
 
@@ -78,7 +78,7 @@ type UnimplementedAuctionServiceServer struct{}
 func (UnimplementedAuctionServiceServer) ValidateAuctionForBid(context.Context, *ValidateAuctionRequest) (*ValidateAuctionResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ValidateAuctionForBid not implemented")
 }
-func (UnimplementedAuctionServiceServer) GetAuction(context.Context, *GetAuctionRequest) (*ValidateAuctionResponse, error) {
+func (UnimplementedAuctionServiceServer) GetAuction(context.Context, *GetAuctionRequest) (*GetAuctionResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetAuction not implemented")
 }
 func (UnimplementedAuctionServiceServer) mustEmbedUnimplementedAuctionServiceServer() {}

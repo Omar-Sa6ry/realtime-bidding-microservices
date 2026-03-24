@@ -32,6 +32,13 @@ func NewBiddingService(redisRepo, mongoRepo domains.BiddingRepository, natsPubli
 }
 
 func (s *BiddingService) PlaceBid(ctx context.Context, auctionID string, amount float64) (*domains.Bid, error) {
+	// 0. Acquire Distributed Lock
+	lockID, err := s.redisRepo.Lock(ctx, auctionID, 5*time.Second)
+	if err != nil {
+		return nil, fmt.Errorf("could not acquire lock: %w", err)
+	}
+	defer s.redisRepo.Unlock(ctx, auctionID, lockID)
+
 	userID := Middlewares.GetUserIDFromContext(ctx)
 
 	// 1. Validate Auction Details via gRPC
@@ -108,8 +115,8 @@ func (s *BiddingService) PlaceBid(ctx context.Context, auctionID string, amount 
 
 func (s *BiddingService) GetHighestBid(ctx context.Context, auctionID string) (*domains.Bid, error) {
 
-	_, err := s.auctionClient.GetAuction(ctx, auctionID)
-	if err != nil {
+	resp, err := s.auctionClient.GetAuction(ctx, auctionID)
+	if err != nil || !resp.Exists {
 		return nil, fmt.Errorf("auction not found")
 	}
 
@@ -123,8 +130,8 @@ func (s *BiddingService) GetHighestBid(ctx context.Context, auctionID string) (*
 
 
 func (s *BiddingService) GetAuctionHistory(ctx context.Context, auctionID string) ([]*domains.Bid, error) {
-	_, err := s.auctionClient.GetAuction(ctx, auctionID)
-	if err != nil {
+	resp, err := s.auctionClient.GetAuction(ctx, auctionID)
+	if err != nil || !resp.Exists {
 		return nil, fmt.Errorf("auction not found")
 	}
 	
