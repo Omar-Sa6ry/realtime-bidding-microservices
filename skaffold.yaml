@@ -64,6 +64,15 @@ build:
           - src: 'proto/**/*.proto'
             dest: /usr/src/app
 
+    - image: bidding/notification
+      context: .
+      docker:
+        dockerfile: services/notification-service/Dockerfile
+      sync:
+        manual:
+          - src: 'services/notification-service/**/*.ts'
+            dest: /usr/src/app
+
 portForward:
   - resourceType: service
     resourceName: api-gateway-srv
@@ -81,3 +90,7 @@ portForward:
     resourceName: bidding-srv
     port: 3003
     localPort: 3003
+  - resourceType: service
+    resourceName: notification-srv
+    port: 3004
+    localPort: 3004
