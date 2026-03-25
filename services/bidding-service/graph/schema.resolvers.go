@@ -14,6 +14,11 @@ import (
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/pkg/translation"
 )
 
+// Auction is the resolver for the auction field.
+func (r *bidResolver) Auction(ctx context.Context, obj *domains.Bid) (*model.Auction, error) {
+	return &model.Auction{ID: obj.AuctionID}, nil
+}
+
 // Status is the resolver for the status field.
 func (r *bidResolver) Status(ctx context.Context, obj *domains.Bid) (string, error) {
 	return string(obj.Status), nil

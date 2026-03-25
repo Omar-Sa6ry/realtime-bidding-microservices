@@ -118,3 +118,7 @@ func (r *redisBiddingRepository) Unlock(ctx context.Context, auctionID string, l
 	_, err := r.client.Eval(ctx, script, []string{lockKey}, lockID).Result()
 	return err
 }
+
+func (r *redisBiddingRepository) EnsureIndexes(ctx context.Context) error {
+	return nil
+}

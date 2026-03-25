@@ -1,15 +1,26 @@
 mutation PlaceNewBid {
-  placeBid(auctionId: "69bf74e559299dfdadab004d", amount: 52551.50) {
+  placeBid(auctionId: "69c3959061b3e307b021c026", amount: 52551.50) {
     success
     message
     statusCode
     data {
       id
-      auctionId
       userId
       amount
       status
       createdAt
+      auction {
+        id
+        status
+        startTime
+        endTime
+        description
+        seller {
+          lastname
+          email
+          firstname
+        }
+      }
     }
   }
 }
@@ -25,6 +36,18 @@ query {
       amount
       status
       createdAt
+      auction {
+        id
+        status
+        startTime
+        endTime
+        description
+        seller {
+          lastname
+          email
+          firstname
+        }
+      }
     }
   }
 }
@@ -36,14 +59,24 @@ query {
     statusCode
     data {
       id
-      auctionId
       amount
       userId
       createdAt
+      auction {
+        id
+        status
+        startTime
+        endTime
+        description
+        seller {
+          lastname
+          email
+          firstname
+        }
+      }
     }
   }
 }
-
 
 query {
   getMyBids(pagination: { limit: 5, page: 1 }) {
@@ -56,7 +89,18 @@ query {
     data {
       amount
       status
+      auction {
+        id
+        status
+        startTime
+        endTime
+        description
+        seller {
+          lastname
+          email
+          firstname
+        }
+      }
     }
   }
 }
-

@@ -1,8 +1,12 @@
 directive @auth on FIELD_DEFINITION
 
+extend type Auction @key(fields: "id") {
+  id: ID! @external
+}
+
 type Bid @key(fields: "id") {
   id: ID!
-  auctionId: ID!
+  auction: Auction!
   userId: ID!
   amount: Float!
   status: String!

@@ -41,9 +41,13 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	Auction struct {
+		ID func(childComplexity int) int
+	}
+
 	Bid struct {
 		Amount    func(childComplexity int) int
-		AuctionID func(childComplexity int) int
+		Auction   func(childComplexity int) int
 		CreatedAt func(childComplexity int) int
 		ID        func(childComplexity int) int
 		Status    func(childComplexity int) int
@@ -91,6 +95,8 @@ type ComplexityRoot struct {
 }
 
 type BidResolver interface {
+	Auction(ctx context.Context, obj *domain.Bid) (*model.Auction, error)
+
 	Status(ctx context.Context, obj *domain.Bid) (string, error)
 	CreatedAt(ctx context.Context, obj *domain.Bid) (string, error)
 }
@@ -120,18 +126,25 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 	_ = ec
 	switch typeName + "." + field {
 
+	case "Auction.id":
+		if e.ComplexityRoot.Auction.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Auction.ID(childComplexity), true
+
 	case "Bid.amount":
 		if e.ComplexityRoot.Bid.Amount == nil {
 			break
 		}
 
 		return e.ComplexityRoot.Bid.Amount(childComplexity), true
-	case "Bid.auctionId":
-		if e.ComplexityRoot.Bid.AuctionID == nil {
+	case "Bid.auction":
+		if e.ComplexityRoot.Bid.Auction == nil {
 			break
 		}
 
-		return e.ComplexityRoot.Bid.AuctionID(childComplexity), true
+		return e.ComplexityRoot.Bid.Auction(childComplexity), true
 	case "Bid.createdAt":
 		if e.ComplexityRoot.Bid.CreatedAt == nil {
 			break
@@ -469,7 +482,7 @@ var sources = []*ast.Source{
 `, BuiltIn: true},
 	{Name: "../federation/entity.graphql", Input: `
 # a union of all types that use the @key directive
-union _Entity = Bid
+union _Entity = Auction | Bid
 
 # fake type to build resolver interfaces for users to implement
 type Entity {
@@ -631,6 +644,35 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
+func (ec *executionContext) _Auction_id(ctx context.Context, field graphql.CollectedField, obj *model.Auction) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Auction_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Auction_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Auction",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Bid_id(ctx context.Context, field graphql.CollectedField, obj *domain.Bid) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -660,30 +702,34 @@ func (ec *executionContext) fieldContext_Bid_id(_ context.Context, field graphql
 	return fc, nil
 }
 
-func (ec *executionContext) _Bid_auctionId(ctx context.Context, field graphql.CollectedField, obj *domain.Bid) (ret graphql.Marshaler) {
+func (ec *executionContext) _Bid_auction(ctx context.Context, field graphql.CollectedField, obj *domain.Bid) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Bid_auctionId,
+		ec.fieldContext_Bid_auction,
 		func(ctx context.Context) (any, error) {
-			return obj.AuctionID, nil
+			return ec.Resolvers.Bid().Auction(ctx, obj)
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNAuction2ᚖgithubᚗcomᚋOmarᚑSa6ryᚋrealtimeᚑbiddingᚑmicroservicesᚋservicesᚋbiddingᚑserviceᚋgraphᚋmodelᚐAuction,
 		true,
 		true,
 	)
 }
 
-func (ec *executionContext) fieldContext_Bid_auctionId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Bid_auction(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Bid",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Auction_id(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Auction", field.Name)
 		},
 	}
 	return fc, nil
@@ -947,8 +993,8 @@ func (ec *executionContext) fieldContext_BidResponse_data(_ context.Context, fie
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Bid_id(ctx, field)
-			case "auctionId":
-				return ec.fieldContext_Bid_auctionId(ctx, field)
+			case "auction":
+				return ec.fieldContext_Bid_auction(ctx, field)
 			case "userId":
 				return ec.fieldContext_Bid_userId(ctx, field)
 			case "amount":
@@ -1106,8 +1152,8 @@ func (ec *executionContext) fieldContext_BidsResponse_data(_ context.Context, fi
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Bid_id(ctx, field)
-			case "auctionId":
-				return ec.fieldContext_Bid_auctionId(ctx, field)
+			case "auction":
+				return ec.fieldContext_Bid_auction(ctx, field)
 			case "userId":
 				return ec.fieldContext_Bid_userId(ctx, field)
 			case "amount":
@@ -1237,8 +1283,8 @@ func (ec *executionContext) fieldContext_Entity_findBidByID(ctx context.Context,
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Bid_id(ctx, field)
-			case "auctionId":
-				return ec.fieldContext_Bid_auctionId(ctx, field)
+			case "auction":
+				return ec.fieldContext_Bid_auction(ctx, field)
 			case "userId":
 				return ec.fieldContext_Bid_userId(ctx, field)
 			case "amount":
@@ -3231,6 +3277,13 @@ func (ec *executionContext) __Entity(ctx context.Context, sel ast.SelectionSet, 
 			return graphql.Null
 		}
 		return ec._Bid(ctx, sel, obj)
+	case model.Auction:
+		return ec._Auction(ctx, sel, &obj)
+	case *model.Auction:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Auction(ctx, sel, obj)
 	default:
 		if typedObj, ok := obj.(graphql.Marshaler); ok {
 			return typedObj
@@ -3243,6 +3296,45 @@ func (ec *executionContext) __Entity(ctx context.Context, sel ast.SelectionSet, 
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
+
+var auctionImplementors = []string{"Auction", "_Entity"}
+
+func (ec *executionContext) _Auction(ctx context.Context, sel ast.SelectionSet, obj *model.Auction) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, auctionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Auction")
+		case "id":
+			out.Values[i] = ec._Auction_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
 
 var bidImplementors = []string{"Bid", "_Entity"}
 
@@ -3260,11 +3352,42 @@ func (ec *executionContext) _Bid(ctx context.Context, sel ast.SelectionSet, obj 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
-		case "auctionId":
-			out.Values[i] = ec._Bid_auctionId(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+		case "auction":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Bid_auction(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "userId":
 			out.Values[i] = ec._Bid_userId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -4131,6 +4254,20 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 // endregion **************************** object.gotpl ****************************
 
 // region    ***************************** type.gotpl *****************************
+
+func (ec *executionContext) marshalNAuction2githubᚗcomᚋOmarᚑSa6ryᚋrealtimeᚑbiddingᚑmicroservicesᚋservicesᚋbiddingᚑserviceᚋgraphᚋmodelᚐAuction(ctx context.Context, sel ast.SelectionSet, v model.Auction) graphql.Marshaler {
+	return ec._Auction(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAuction2ᚖgithubᚗcomᚋOmarᚑSa6ryᚋrealtimeᚑbiddingᚑmicroservicesᚋservicesᚋbiddingᚑserviceᚋgraphᚋmodelᚐAuction(ctx context.Context, sel ast.SelectionSet, v *model.Auction) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Auction(ctx, sel, v)
+}
 
 func (ec *executionContext) marshalNBid2githubᚗcomᚋOmarᚑSa6ryᚋrealtimeᚑbiddingᚑmicroservicesᚋservicesᚋbiddingᚑserviceᚋinternalᚋdomainsᚐBid(ctx context.Context, sel ast.SelectionSet, v domain.Bid) graphql.Marshaler {
 	return ec._Bid(ctx, sel, &v)

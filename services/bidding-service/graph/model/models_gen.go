@@ -6,6 +6,12 @@ import (
 	domain "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/domains"
 )
 
+type Auction struct {
+	ID string `json:"id"`
+}
+
+func (Auction) IsEntity() {}
+
 type BidResponse struct {
 	Success    bool        `json:"success"`
 	Message    string      `json:"message"`
