@@ -11,6 +11,7 @@ import (
 
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/graph/model"
 	domains "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/domains"
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/pkg/translation"
 )
 
 // Status is the resolver for the status field.
@@ -37,7 +38,7 @@ func (r *mutationResolver) PlaceBid(ctx context.Context, auctionID string, amoun
 
 	return &model.BidResponse{
 		Success:    true,
-		Message:    "Bid placed successfully",
+		Message:    translation.T(ctx, "bid_placed_success"),
 		StatusCode: 201,
 		TimeStamp:  time.Now().Format("2006-01-02T15:04:05Z07:00"),
 		Data:       bid,
@@ -48,11 +49,9 @@ func (r *mutationResolver) PlaceBid(ctx context.Context, auctionID string, amoun
 func (r *queryResolver) GetHighestBid(ctx context.Context, auctionID string) (*model.BidResponse, error) {
 	bid, err := r.BiddingService.GetHighestBid(ctx, auctionID)
 	if err != nil || bid == nil {
-		message := "Bid not found"
+		message := translation.T(ctx, "bids_not_found")
 		if err != nil {
 			message = err.Error()
-		} else {
-			message = "No bids found for this auction"
 		}
 		return &model.BidResponse{
 			Success:    false,
@@ -65,7 +64,7 @@ func (r *queryResolver) GetHighestBid(ctx context.Context, auctionID string) (*m
 
 	return &model.BidResponse{
 		Success:    true,
-		Message:    "Highest bid fetched successfully",
+		Message:    translation.T(ctx, "highest_bid_fetched"),
 		StatusCode: 200,
 		TimeStamp:  time.Now().Format("2006-01-02T15:04:05Z07:00"),
 		Data:       bid,
@@ -101,7 +100,7 @@ func (r *queryResolver) GetAuctionHistory(ctx context.Context, auctionID string,
 
 	return &model.BidsResponse{
 		Success:     true,
-		Message:     "Auction history fetched successfully",
+		Message:     translation.T(ctx, "auction_history_fetched"),
 		StatusCode:  200,
 		TimeStamp:   time.Now().Format("2006-01-02T15:04:05Z07:00"),
 		Data:        bids,
@@ -140,7 +139,7 @@ func (r *queryResolver) GetMyBids(ctx context.Context, pagination *model.Paginat
 
 	return &model.BidsResponse{
 		Success:     true,
-		Message:     "User bids fetched successfully",
+		Message:     translation.T(ctx, "user_bids_fetched"),
 		StatusCode:  200,
 		TimeStamp:   time.Now().Format("2006-01-02T15:04:05Z07:00"),
 		Data:        bids,

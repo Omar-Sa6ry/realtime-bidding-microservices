@@ -1,0 +1,15 @@
+{
+  "unauthorized": "Unauthorized access. Please log in.",
+  "auction_not_found": "Auction not found.",
+  "auction_not_active": "Bidding is only allowed on active auctions.",
+  "insufficient_balance": "Insufficient balance. Please recharge your wallet.",
+  "already_highest_bidder": "You are already the highest bidder.",
+  "bid_placed_success": "Bid placed successfully.",
+  "outbid": "You have been outbid on auction %s.",
+  "failed_to_place_bid": "Failed to place bid. Please try again.",
+  "invalid_amount": "Bid amount must be higher than the current highest bid.",
+  "highest_bid_fetched": "Highest bid fetched successfully.",
+  "auction_history_fetched": "Auction history fetched successfully.",
+  "user_bids_fetched": "User bids fetched successfully.",
+  "bids_not_found": "No bids found for this auction."
+}

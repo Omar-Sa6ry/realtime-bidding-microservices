@@ -10,6 +10,7 @@ import (
 	user_client "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/clients"
 
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/broker"
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/pkg/translation"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/graph/model"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -36,7 +37,7 @@ func (s *BiddingService) PlaceBid(ctx context.Context, auctionID string, amount 
 	// Acquire Distributed Lock
 	lockID, err := s.redisRepo.Lock(ctx, auctionID, 5*time.Second)
 	if err != nil {
-		return nil, fmt.Errorf("could not acquire lock: %w", err)
+		return nil, fmt.Errorf("%s: %w", translation.T(ctx, "failed_to_place_bid"), err)
 	}
 	defer s.redisRepo.Unlock(ctx, auctionID, lockID)
 
@@ -45,24 +46,24 @@ func (s *BiddingService) PlaceBid(ctx context.Context, auctionID string, amount 
 	// Validate Auction Details via gRPC
 	valResp, err := s.auctionClient.ValidateAuctionForBid(ctx, auctionID, userID, amount)
 	if err != nil {
-		return nil, fmt.Errorf("failed to validate auction: %w", err)
+		return nil, fmt.Errorf("%s: %w", translation.T(ctx, "failed_to_place_bid"), err)
 	}
 
 	if !valResp.IsActive {
-		return nil, fmt.Errorf("auction validation failed: %s", valResp.ErrorMessage)
+		return nil, fmt.Errorf(translation.T(ctx, "auction_not_active"))
 	}
 	
 	prevBid, _ := s.GetHighestBid(ctx, auctionID)
 	if prevBid != nil && prevBid.UserID == userID {
-		return nil, fmt.Errorf("you are already the highest bidder")
+		return nil, fmt.Errorf(translation.T(ctx, "already_highest_bidder"))
 	}
 
 	resp, err := s.userClient.UpdateBalance(ctx, userID, amount, user_client.TransactionDeduct)
 	if err != nil {
-		return nil, fmt.Errorf("failed to process balance deduction: %w", err)
+		return nil, fmt.Errorf("%s: %w", translation.T(ctx, "failed_to_place_bid"), err)
 	}
 	if !resp.Success {
-		return nil, fmt.Errorf("insufficient balance or user not found: %s", resp.Message)
+		return nil, fmt.Errorf(translation.T(ctx, "insufficient_balance"))
 	}
 
 	bid := &domains.Bid{
@@ -116,7 +117,7 @@ func (s *BiddingService) GetHighestBid(ctx context.Context, auctionID string) (*
 
 	resp, err := s.auctionClient.GetAuction(ctx, auctionID)
 	if err != nil || !resp.Exists {
-		return nil, fmt.Errorf("auction not found")
+		return nil, fmt.Errorf(translation.T(ctx, "auction_not_found"))
 	}
 
 	bid, err := s.redisRepo.GetHighestBid(ctx, auctionID)
@@ -131,7 +132,7 @@ func (s *BiddingService) GetHighestBid(ctx context.Context, auctionID string) (*
 func (s *BiddingService) GetAuctionHistory(ctx context.Context, auctionID string, pagination *model.PaginationInput) ([]*domains.Bid, int64, error) {
 	resp, err := s.auctionClient.GetAuction(ctx, auctionID)
 	if err != nil || !resp.Exists {
-		return nil, 0, fmt.Errorf("auction not found")
+		return nil, 0, fmt.Errorf(translation.T(ctx, "auction_not_found"))
 	}
 	
 	limit := int64(10)
@@ -180,7 +181,7 @@ func (s *BiddingService) ResolveAuction(ctx context.Context, auctionID string, s
 func (s *BiddingService) GetMyBids(ctx context.Context, pagination *model.PaginationInput) ([]*domains.Bid, int64, error) {
 	userID := Middlewares.GetUserIDFromContext(ctx)
 	if userID == "" {
-		return nil, 0, fmt.Errorf("unauthorized: missing user id")
+		return nil, 0, fmt.Errorf(translation.T(ctx, "unauthorized"))
 	}
 
 	limit := int64(10)
