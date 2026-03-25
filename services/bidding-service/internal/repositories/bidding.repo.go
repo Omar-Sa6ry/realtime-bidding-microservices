@@ -2,9 +2,11 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	domains "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/domains"
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/pkg/logger"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -99,7 +101,7 @@ func (r *mongoBiddingRepository) GetBidsByUserID(ctx context.Context, userID str
 }
 
 func (r *mongoBiddingRepository) UpdateBidStatus(ctx context.Context, bidID string, status domains.BidStatus) error {
-	_, err := r.collection.UpdateOne(ctx, bson.M{"id": bidID}, bson.M{"$set": bson.M{"status": string(status), "updated_at": time.Now()}})
+	_, err := r.collection.UpdateOne(ctx, bson.M{"_id": bidID}, bson.M{"$set": bson.M{"status": string(status), "updated_at": time.Now()}})
 	return err
 }
 
@@ -108,5 +110,27 @@ func (r *mongoBiddingRepository) Lock(ctx context.Context, auctionID string, exp
 }
 
 func (r *mongoBiddingRepository) Unlock(ctx context.Context, auctionID string, lockID string) error {
+	return nil
+}
+
+func (r *mongoBiddingRepository) EnsureIndexes(ctx context.Context) error {
+	indexSpecs := []mongo.IndexModel{
+		{
+			Keys: bson.M{"auction_id": 1, "amount": -1},
+		},
+		{
+			Keys: bson.M{"auction_id": 1, "created_at": -1},
+		},
+		{
+			Keys: bson.M{"user_id": 1, "created_at": -1},
+		},
+	}
+
+	_, err := r.collection.Indexes().CreateMany(ctx, indexSpecs)
+	if err != nil {
+		return fmt.Errorf("failed to ensure indexes: %w", err)
+	}
+
+	logger.Info("MongoDB", "Bid collection indexes ensured successfully")
 	return nil
 }

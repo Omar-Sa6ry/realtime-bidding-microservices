@@ -46,6 +46,11 @@ func (a *App) Run() {
 	mongoDB := mongoClient.Database(a.cfg.DBName)
 	mongoRepo := repositories.NewMongoBiddingRepository(mongoDB)
 
+	// Ensure Indexes
+	if err := mongoRepo.EnsureIndexes(context.Background()); err != nil {
+		logger.Error("BiddingApp", "Failed to ensure MongoDB indexes", err)
+	}
+
 	// 3 Initialize Redis
 	redisClient, disconnectRedis := databases.InitRedis(a.cfg.RedisHost, a.cfg.RedisPort)
 	defer disconnectRedis()

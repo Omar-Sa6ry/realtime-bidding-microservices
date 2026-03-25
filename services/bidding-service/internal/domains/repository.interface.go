@@ -13,4 +13,5 @@ type BiddingRepository interface {
 	UpdateBidStatus(ctx context.Context, bidID string, status BidStatus) error
 	Lock(ctx context.Context, auctionID string, expiration time.Duration) (string, error)
 	Unlock(ctx context.Context, auctionID string, lockID string) error
+	EnsureIndexes(ctx context.Context) error
 }
