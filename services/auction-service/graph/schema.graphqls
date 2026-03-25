@@ -54,9 +54,17 @@ type Auction @key(fields: "id") {
   startTime: String!
   endTime: String!
   sellerId: String!
+  seller: User!
   winnerId: String
   createdAt: String!
   updatedAt: String!
+}
+
+type User @key(fields: "id") @shareable {
+  id: ID!
+  email: String!
+  firstname: String
+  lastname: String
 }
 
 enum AuctionStatus {

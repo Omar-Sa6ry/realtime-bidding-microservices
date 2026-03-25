@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
+import { In, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
 import { Transactional } from 'typeorm-transactional';
 import { I18nService } from 'nestjs-i18n';
 import { RedisService } from '@bts-soft/core';
@@ -42,6 +42,13 @@ export class UserService {
 
     await this.notifyUpdate(user);
     return { data: user };
+  }
+
+  async findByIds(ids: string[]): Promise<User[]> {
+    if (!ids || ids.length === 0) return [];
+    return await this.userRepo.find({
+      where: { id: In(ids) },
+    });
   }
 
   async findByEmail(email: string): Promise<UserResponse> {

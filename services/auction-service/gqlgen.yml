@@ -24,6 +24,10 @@ federation:
 #  - "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/domain"
 
 models:
+  Auction:
+    fields:
+      seller:
+        resolver: true
   ID:
     model:
       - github.com/99designs/gqlgen/graphql.ID

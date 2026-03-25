@@ -18,6 +18,7 @@ import (
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/graph"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/broker"
 	user_client "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/client"
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/pkg/dataloader"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/config"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/database"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/middleware"
@@ -113,7 +114,11 @@ func (a *App) setupHTTPServer(disconnect func()) {
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graphConfig))
 
 	http.Handle("/", playground.Handler("GraphQL playground", "/graphql"))
-	http.Handle("/graphql", middleware.LangMiddleware(middleware.AuthMiddleware(a.cfg.JWTSecret)(srv)))
+	
+	// Wrap with DataLoader middleware
+	handlerWithLoaders := dataloader.Middleware(a.userClient, srv)
+	
+	http.Handle("/graphql", middleware.LangMiddleware(middleware.AuthMiddleware(a.cfg.JWTSecret)(handlerWithLoaders)))
 
 	server := &http.Server{Addr: ":" + a.cfg.Port}
 

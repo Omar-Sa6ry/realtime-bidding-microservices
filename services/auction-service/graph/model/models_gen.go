@@ -23,6 +23,7 @@ type Auction struct {
 	StartTime     string        `json:"startTime"`
 	EndTime       string        `json:"endTime"`
 	SellerID      string        `json:"sellerId"`
+	Seller        *User         `json:"seller"`
 	WinnerID      *string       `json:"winnerId,omitempty"`
 	CreatedAt     string        `json:"createdAt"`
 	UpdatedAt     string        `json:"updatedAt"`
@@ -89,6 +90,15 @@ type UpdateAuctionInput struct {
 	StartingPrice *float64          `json:"startingPrice,omitempty"`
 	Images        []*graphql.Upload `json:"images,omitempty"`
 }
+
+type User struct {
+	ID        string  `json:"id"`
+	Email     string  `json:"email"`
+	Firstname *string `json:"firstname,omitempty"`
+	Lastname  *string `json:"lastname,omitempty"`
+}
+
+func (User) IsEntity() {}
 
 type AuctionStatus string
 

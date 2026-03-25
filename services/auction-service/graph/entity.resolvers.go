@@ -9,6 +9,7 @@ import (
 	"context"
 
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/graph/model"
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/pkg/dataloader"
 )
 
 // FindAuctionByID is the resolver for the findAuctionByID field.
@@ -21,6 +22,11 @@ func (r *entityResolver) FindAuctionByID(ctx context.Context, id string) (*model
 		return nil, nil
 	}
 	return mapDomainToModel(auction), nil
+}
+
+// FindUserByID is the resolver for the findUserByID field.
+func (r *entityResolver) FindUserByID(ctx context.Context, id string) (*model.User, error) {
+	return dataloader.For(ctx).Load(ctx, id)()
 }
 
 // Entity returns EntityResolver implementation.

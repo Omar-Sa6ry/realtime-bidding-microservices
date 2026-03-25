@@ -1,65 +1,90 @@
-mutation{
-  createAuction(input: {
-    title: "Vintage Watch",
-    description: "A very rare watch from 1950",
-    startingPrice: 500.0,
-    currency: "USD",
-    startTime: "2026-04-01T10:00:00Z",
-    endTime: "2026-04-10T10:00:00Z",
-  }) {
+mutation {
+  createAuction(
+    input: {
+      title: "Cron Test Auction"
+      description: "Testing automatic status transition"
+      startingPrice: 50.0
+      currency: "USD"
+      startTime: "2026-03-20T22:06:00+02:00"
+      endTime: "2026-03-29T22:07:00+02:00"
+    }
+  ) {
     success
     message
     data {
       id
-      sellerId
+      status
+      startTime
+      endTime
+      description
+      seller {
+        lastname
+        email
+        firstname
+      }
     }
   }
 }
 
-
 query {
-  findAuctionByID(id: "69b5e583e7387e7a5cc8fd99") {
+  findAuctionByID(id: "69c3959061b3e307b021c026") {
     success
     message
     statusCode
     data {
       id
       title
+      seller {
+        lastname
+        email
+        firstname
+      }
     }
   }
 }
 
-query{
+query {
   findAuctions(
-    pagination:{page:1 limit:10}
-    input:{
-      title:"Vintage"
-      status:ACTIVE
-    }
-  ){
+    pagination: { page: 1, limit: 10 }
+    input: { title: "Vintage", status: ACTIVE }
+  ) {
     success
     statusCode
     message
     totalPages
     currentPage
     totalItems
-    data{
+    data {
+      id
+      status
       title
+      startingPrice
+      currency
+      seller {
+        lastname
+        email
+        firstname
+      }
     }
   }
 }
 
 mutation {
-  updateAuction(id: "69b5e583e7387e7a5cc8fd99", input: {
-    title: "Updated Title",
-    startingPrice: 600.0
-  }) {
+  updateAuction(
+    id: "69b5e583e7387e7a5cc8fd99"
+    input: { title: "Updated Title", startingPrice: 600.0 }
+  ) {
     success
     message
     data {
       title
       startingPrice
       updatedAt
+      seller {
+        lastname
+        email
+        firstname
+      }
     }
   }
 }

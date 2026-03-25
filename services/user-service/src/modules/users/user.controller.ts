@@ -43,6 +43,20 @@ export class UserNatsController {
     return { user: user.data };
   }
 
+  @GrpcMethod('UserService', 'GetUsers')
+  async getUsers(data: { ids: string[] }) {
+    const users = await this.userService.findByIds(data.ids);
+    return {
+      users: users.map((u) => ({
+        id: u.id,
+        email: u.email,
+        balance: u.balance,
+        firstname: u.firstName,
+        lastname: u.lastName,
+      })),
+    };
+  }
+
   @GrpcMethod('UserService', 'UpdateBalance')
   async updateBalance(data: {
     user_id: string;

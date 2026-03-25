@@ -1,5 +1,5 @@
 import { BaseEntity, CapitalTextField, EmailField } from '@bts-soft/core';
-import { Field, ObjectType, registerEnumType } from '@nestjs/graphql';
+import { Directive, Field, ObjectType, registerEnumType } from '@nestjs/graphql';
 import { Exclude } from 'class-transformer';
 import { Role } from '@bidding-micro/shared';
 import { Entity, Column, Index, Check } from 'typeorm';
@@ -8,6 +8,8 @@ registerEnumType(Role, {
   name: 'Role',
 });
 
+@Directive('@key(fields: "id")')
+@Directive('@shareable')
 @ObjectType()
 @Entity('users')
 @Check(`("password" IS NOT NULL) OR ("googleId" IS NOT NULL)`)
@@ -59,4 +61,14 @@ export class User extends BaseEntity {
   @Field(() => Number, { defaultValue: 0 })
   @Column('decimal', { precision: 12, scale: 2, default: 0 })
   balance: number;
+
+  @Field(() => String, { nullable: true })
+  get firstname(): string | undefined {
+    return this.firstName;
+  }
+
+  @Field(() => String, { nullable: true })
+  get lastname(): string | undefined {
+    return this.lastName;
+  }
 }

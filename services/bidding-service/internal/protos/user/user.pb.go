@@ -28,6 +28,8 @@ type User struct {
 	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
 	Email         string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
 	Balance       float64                `protobuf:"fixed64,4,opt,name=balance,proto3" json:"balance,omitempty"`
+	Firstname     string                 `protobuf:"bytes,5,opt,name=firstname,proto3" json:"firstname,omitempty"`
+	Lastname      string                 `protobuf:"bytes,6,opt,name=lastname,proto3" json:"lastname,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -88,6 +90,20 @@ func (x *User) GetBalance() float64 {
 		return x.Balance
 	}
 	return 0
+}
+
+func (x *User) GetFirstname() string {
+	if x != nil {
+		return x.Firstname
+	}
+	return ""
+}
+
+func (x *User) GetLastname() string {
+	if x != nil {
+		return x.Lastname
+	}
+	return ""
 }
 
 // Messages for Register
@@ -397,6 +413,94 @@ func (x *GetUserResponse) GetUser() *User {
 	return nil
 }
 
+type GetUsersRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ids           []string               `protobuf:"bytes,1,rep,name=ids,proto3" json:"ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUsersRequest) Reset() {
+	*x = GetUsersRequest{}
+	mi := &file_proto_user_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUsersRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUsersRequest) ProtoMessage() {}
+
+func (x *GetUsersRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_user_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUsersRequest.ProtoReflect.Descriptor instead.
+func (*GetUsersRequest) Descriptor() ([]byte, []int) {
+	return file_proto_user_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *GetUsersRequest) GetIds() []string {
+	if x != nil {
+		return x.Ids
+	}
+	return nil
+}
+
+type GetUsersResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Users         []*User                `protobuf:"bytes,1,rep,name=users,proto3" json:"users,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUsersResponse) Reset() {
+	*x = GetUsersResponse{}
+	mi := &file_proto_user_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUsersResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUsersResponse) ProtoMessage() {}
+
+func (x *GetUsersResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_user_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUsersResponse.ProtoReflect.Descriptor instead.
+func (*GetUsersResponse) Descriptor() ([]byte, []int) {
+	return file_proto_user_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *GetUsersResponse) GetUsers() []*User {
+	if x != nil {
+		return x.Users
+	}
+	return nil
+}
+
 // Messages for UpdateBalance
 type UpdateBalanceRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
@@ -409,7 +513,7 @@ type UpdateBalanceRequest struct {
 
 func (x *UpdateBalanceRequest) Reset() {
 	*x = UpdateBalanceRequest{}
-	mi := &file_proto_user_proto_msgTypes[7]
+	mi := &file_proto_user_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -421,7 +525,7 @@ func (x *UpdateBalanceRequest) String() string {
 func (*UpdateBalanceRequest) ProtoMessage() {}
 
 func (x *UpdateBalanceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_user_proto_msgTypes[7]
+	mi := &file_proto_user_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -434,7 +538,7 @@ func (x *UpdateBalanceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateBalanceRequest.ProtoReflect.Descriptor instead.
 func (*UpdateBalanceRequest) Descriptor() ([]byte, []int) {
-	return file_proto_user_proto_rawDescGZIP(), []int{7}
+	return file_proto_user_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *UpdateBalanceRequest) GetUserId() string {
@@ -469,7 +573,7 @@ type UpdateBalanceResponse struct {
 
 func (x *UpdateBalanceResponse) Reset() {
 	*x = UpdateBalanceResponse{}
-	mi := &file_proto_user_proto_msgTypes[8]
+	mi := &file_proto_user_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -481,7 +585,7 @@ func (x *UpdateBalanceResponse) String() string {
 func (*UpdateBalanceResponse) ProtoMessage() {}
 
 func (x *UpdateBalanceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_user_proto_msgTypes[8]
+	mi := &file_proto_user_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -494,7 +598,7 @@ func (x *UpdateBalanceResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateBalanceResponse.ProtoReflect.Descriptor instead.
 func (*UpdateBalanceResponse) Descriptor() ([]byte, []int) {
-	return file_proto_user_proto_rawDescGZIP(), []int{8}
+	return file_proto_user_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *UpdateBalanceResponse) GetSuccess() bool {
@@ -522,12 +626,14 @@ var File_proto_user_proto protoreflect.FileDescriptor
 
 const file_proto_user_proto_rawDesc = "" +
 	"\n" +
-	"\x10proto/user.proto\x12\x04user\"b\n" +
+	"\x10proto/user.proto\x12\x04user\"\x9c\x01\n" +
 	"\x04User\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x14\n" +
 	"\x05email\x18\x03 \x01(\tR\x05email\x12\x18\n" +
-	"\abalance\x18\x04 \x01(\x01R\abalance\"_\n" +
+	"\abalance\x18\x04 \x01(\x01R\abalance\x12\x1c\n" +
+	"\tfirstname\x18\x05 \x01(\tR\tfirstname\x12\x1a\n" +
+	"\blastname\x18\x06 \x01(\tR\blastname\"_\n" +
 	"\x0fRegisterRequest\x12\x1a\n" +
 	"\busername\x18\x01 \x01(\tR\busername\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x1a\n" +
@@ -547,7 +653,12 @@ const file_proto_user_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"1\n" +
 	"\x0fGetUserResponse\x12\x1e\n" +
 	"\x04user\x18\x01 \x01(\v2\n" +
-	".user.UserR\x04user\"r\n" +
+	".user.UserR\x04user\"#\n" +
+	"\x0fGetUsersRequest\x12\x10\n" +
+	"\x03ids\x18\x01 \x03(\tR\x03ids\"4\n" +
+	"\x10GetUsersResponse\x12 \n" +
+	"\x05users\x18\x01 \x03(\v2\n" +
+	".user.UserR\x05users\"r\n" +
 	"\x14UpdateBalanceRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x16\n" +
 	"\x06amount\x18\x02 \x01(\x01R\x06amount\x12)\n" +
@@ -556,11 +667,12 @@ const file_proto_user_proto_rawDesc = "" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x1f\n" +
 	"\vnew_balance\x18\x02 \x01(\x01R\n" +
 	"newBalance\x12\x18\n" +
-	"\amessage\x18\x03 \x01(\tR\amessage2\x84\x02\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage2\xc1\x02\n" +
 	"\vUserService\x12;\n" +
 	"\bRegister\x12\x15.user.RegisterRequest\x1a\x16.user.RegisterResponse\"\x00\x122\n" +
 	"\x05Login\x12\x12.user.LoginRequest\x1a\x13.user.LoginResponse\"\x00\x128\n" +
-	"\aGetUser\x12\x14.user.GetUserRequest\x1a\x15.user.GetUserResponse\"\x00\x12J\n" +
+	"\aGetUser\x12\x14.user.GetUserRequest\x1a\x15.user.GetUserResponse\"\x00\x12;\n" +
+	"\bGetUsers\x12\x15.user.GetUsersRequest\x1a\x16.user.GetUsersResponse\"\x00\x12J\n" +
 	"\rUpdateBalance\x12\x1a.user.UpdateBalanceRequest\x1a\x1b.user.UpdateBalanceResponse\"\x00BAZ?github.com/Omar-Sa6ry/realtime-bidding-microservices/proto/userb\x06proto3"
 
 var (
@@ -575,7 +687,7 @@ func file_proto_user_proto_rawDescGZIP() []byte {
 	return file_proto_user_proto_rawDescData
 }
 
-var file_proto_user_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_proto_user_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_proto_user_proto_goTypes = []any{
 	(*User)(nil),                  // 0: user.User
 	(*RegisterRequest)(nil),       // 1: user.RegisterRequest
@@ -584,26 +696,31 @@ var file_proto_user_proto_goTypes = []any{
 	(*LoginResponse)(nil),         // 4: user.LoginResponse
 	(*GetUserRequest)(nil),        // 5: user.GetUserRequest
 	(*GetUserResponse)(nil),       // 6: user.GetUserResponse
-	(*UpdateBalanceRequest)(nil),  // 7: user.UpdateBalanceRequest
-	(*UpdateBalanceResponse)(nil), // 8: user.UpdateBalanceResponse
+	(*GetUsersRequest)(nil),       // 7: user.GetUsersRequest
+	(*GetUsersResponse)(nil),      // 8: user.GetUsersResponse
+	(*UpdateBalanceRequest)(nil),  // 9: user.UpdateBalanceRequest
+	(*UpdateBalanceResponse)(nil), // 10: user.UpdateBalanceResponse
 }
 var file_proto_user_proto_depIdxs = []int32{
-	0, // 0: user.RegisterResponse.user:type_name -> user.User
-	0, // 1: user.LoginResponse.user:type_name -> user.User
-	0, // 2: user.GetUserResponse.user:type_name -> user.User
-	1, // 3: user.UserService.Register:input_type -> user.RegisterRequest
-	3, // 4: user.UserService.Login:input_type -> user.LoginRequest
-	5, // 5: user.UserService.GetUser:input_type -> user.GetUserRequest
-	7, // 6: user.UserService.UpdateBalance:input_type -> user.UpdateBalanceRequest
-	2, // 7: user.UserService.Register:output_type -> user.RegisterResponse
-	4, // 8: user.UserService.Login:output_type -> user.LoginResponse
-	6, // 9: user.UserService.GetUser:output_type -> user.GetUserResponse
-	8, // 10: user.UserService.UpdateBalance:output_type -> user.UpdateBalanceResponse
-	7, // [7:11] is the sub-list for method output_type
-	3, // [3:7] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	0,  // 0: user.RegisterResponse.user:type_name -> user.User
+	0,  // 1: user.LoginResponse.user:type_name -> user.User
+	0,  // 2: user.GetUserResponse.user:type_name -> user.User
+	0,  // 3: user.GetUsersResponse.users:type_name -> user.User
+	1,  // 4: user.UserService.Register:input_type -> user.RegisterRequest
+	3,  // 5: user.UserService.Login:input_type -> user.LoginRequest
+	5,  // 6: user.UserService.GetUser:input_type -> user.GetUserRequest
+	7,  // 7: user.UserService.GetUsers:input_type -> user.GetUsersRequest
+	9,  // 8: user.UserService.UpdateBalance:input_type -> user.UpdateBalanceRequest
+	2,  // 9: user.UserService.Register:output_type -> user.RegisterResponse
+	4,  // 10: user.UserService.Login:output_type -> user.LoginResponse
+	6,  // 11: user.UserService.GetUser:output_type -> user.GetUserResponse
+	8,  // 12: user.UserService.GetUsers:output_type -> user.GetUsersResponse
+	10, // 13: user.UserService.UpdateBalance:output_type -> user.UpdateBalanceResponse
+	9,  // [9:14] is the sub-list for method output_type
+	4,  // [4:9] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_proto_user_proto_init() }
@@ -617,7 +734,7 @@ func file_proto_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_user_proto_rawDesc), len(file_proto_user_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

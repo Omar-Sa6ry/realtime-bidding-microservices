@@ -12,6 +12,7 @@ import (
 
 type UserClient interface {
 	GetUser(ctx context.Context, id string) (*pb.User, error)
+	GetUsers(ctx context.Context, ids []string) (*pb.GetUsersResponse, error)
 	Close() error
 }
 
@@ -41,6 +42,15 @@ func (c *userClient) GetUser(ctx context.Context, id string) (*pb.User, error) {
 	}
 
 	return resp.User, nil
+}
+
+func (c *userClient) GetUsers(ctx context.Context, ids []string) (*pb.GetUsersResponse, error) {
+	resp, err := c.client.GetUsers(ctx, &pb.GetUsersRequest{Ids: ids})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get users: %w", err)
+	}
+
+	return resp, nil
 }
 
 func (c *userClient) Close() error {

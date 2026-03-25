@@ -11,9 +11,15 @@ import (
 	"time"
 
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/graph/model"
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/pkg/dataloader"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/pkg/translation"
 	service "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/services"
 )
+
+// Seller is the resolver for the seller field.
+func (r *auctionResolver) Seller(ctx context.Context, obj *model.Auction) (*model.User, error) {
+	return dataloader.For(ctx).Load(ctx, obj.SellerID)()
+}
 
 // CreateAuction is the resolver for the createAuction field.
 func (r *mutationResolver) CreateAuction(ctx context.Context, input model.CreateAuctionInput) (*model.AuctionResponse, error) {
@@ -146,11 +152,15 @@ func (r *queryResolver) FindAuctionByID(ctx context.Context, id string) (*model.
 	}, nil
 }
 
+// Auction returns AuctionResolver implementation.
+func (r *Resolver) Auction() AuctionResolver { return &auctionResolver{r} }
+
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
+type auctionResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
