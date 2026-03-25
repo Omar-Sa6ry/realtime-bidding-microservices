@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/domain"
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/pkg/logger"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -146,4 +147,29 @@ func (r *mongoAuctionRepository) FindByStatusAndCutoff(ctx context.Context, stat
 	}
 
 	return auctions, nil
+}
+
+func (r *mongoAuctionRepository) EnsureIndexes(ctx context.Context) error {
+	indexSpecs := []mongo.IndexModel{
+		{
+			Keys: bson.M{"status": 1, "startTime": 1},
+		},
+		{
+			Keys: bson.M{"status": 1, "endTime": 1},
+		},
+		{
+			Keys: bson.M{"createdAt": -1},
+		},
+		{
+			Keys: bson.M{"sellerId": 1},
+		},
+	}
+
+	_, err := r.collection.Indexes().CreateMany(ctx, indexSpecs)
+	if err != nil {
+		return fmt.Errorf("failed to ensure indexes: %w", err)
+	}
+
+	logger.Info("MongoDB", "Auction collection indexes ensured successfully")
+	return nil
 }

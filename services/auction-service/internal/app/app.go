@@ -59,6 +59,11 @@ func (a *App) Run() {
 	db := client.Database(a.cfg.DBName)
 	repo := repository.NewMongoAuctionRepository(db)
 
+	// Ensure Indexes
+	if err := repo.EnsureIndexes(context.Background()); err != nil {
+		logger.Error("AuctionApp", "Failed to ensure MongoDB indexes", err)
+	}
+
 	// 2. Initialize Clients (Cloudinary, gRPC, NATS)
 	cldService, err := service.NewCloudinaryService(a.cfg.CloudinaryCloudName, a.cfg.CloudinaryAPIKey, a.cfg.CloudinaryAPISecret)
 	if err != nil {
