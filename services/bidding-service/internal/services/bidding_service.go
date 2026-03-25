@@ -8,6 +8,7 @@ import (
 	domains "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/domains"
 	Middlewares "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/middlewares"
 	user_client "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/clients"
+	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/pkg/logger"
 
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/broker"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/pkg/translation"
@@ -149,35 +150,6 @@ func (s *BiddingService) GetAuctionHistory(ctx context.Context, auctionID string
 	return s.mongoRepo.GetAuctionHistory(ctx, auctionID, limit, offset)
 }
 
-func (s *BiddingService) ResolveAuction(ctx context.Context, auctionID string, sellerID string) error {
-	highestBid, err := s.GetHighestBid(ctx, auctionID)
-	if err != nil {
-		return fmt.Errorf("failed to get highest bid during resolution: %w", err)
-	}
-	
-	if highestBid == nil {
-		return nil
-	}
-
-	highestBid.Status = domains.StatusWinner
-	highestBid.UpdatedAt = time.Now()
-	
-	_ = s.mongoRepo.PlaceBid(ctx, highestBid)
-
-	resp, err := s.userClient.UpdateBalance(ctx, sellerID, highestBid.Amount, user_client.TransactionAdd)
-	if err != nil || !resp.Success {
-		return fmt.Errorf("failed to transfer funds to seller: %w", err)
-	}
-
-	highestBid.AddEvent(broker.Event{
-		Subject: "bid.won",
-		Data:    highestBid,
-	})
-	s.publishEvents(ctx, highestBid)
-
-	return nil
-}
-
 func (s *BiddingService) GetMyBids(ctx context.Context, pagination *model.PaginationInput) ([]*domains.Bid, int64, error) {
 	userID := Middlewares.GetUserIDFromContext(ctx)
 	if userID == "" {
@@ -196,6 +168,50 @@ func (s *BiddingService) GetMyBids(ctx context.Context, pagination *model.Pagina
 	}
 
 	return s.mongoRepo.GetBidsByUserID(ctx, userID, limit, offset)
+}
+
+func (s *BiddingService) ResolveAuction(ctx context.Context, auctionID string, sellerID string) error {
+	highestBid, err := s.GetHighestBid(ctx, auctionID)
+	if err != nil {
+		return fmt.Errorf("failed to get highest bid during resolution: %w", err)
+	}
+	
+	if highestBid == nil {
+		return nil
+	}
+
+	highestBid.Status = domains.StatusWinnerPending
+	highestBid.UpdatedAt = time.Now()
+	_ = s.mongoRepo.PlaceBid(ctx, highestBid)
+
+	var success bool
+	maxRetries := 3
+	for i := 0; i < maxRetries; i++ {
+		resp, err := s.userClient.UpdateBalance(ctx, sellerID, highestBid.Amount, user_client.TransactionAdd)
+		if err == nil && resp != nil && resp.Success {
+			success = true
+			break
+		}
+		logger.Warn("BiddingService", fmt.Sprintf("Retry %d/%d: Failed to transfer funds to seller %s for auction %s. Error: %v", i+1, maxRetries, sellerID, auctionID, err))
+		time.Sleep(2 * time.Second)
+	}
+
+	if !success {
+		logger.Error("BiddingService", fmt.Sprintf("CRITICAL: Failed to transfer funds after %d retries. Auction: %s, Seller: %s, Amount: %f", maxRetries, auctionID, sellerID, highestBid.Amount), nil)
+		return fmt.Errorf("robustness: funds was not transferred but auction is marked as WINNER_PENDING")
+	}
+
+	highestBid.Status = domains.StatusWinner
+	highestBid.UpdatedAt = time.Now()
+	_ = s.mongoRepo.UpdateBidStatus(ctx, highestBid.ID, domains.StatusWinner)
+
+	highestBid.AddEvent(broker.Event{
+		Subject: "bid.won",
+		Data:    highestBid,
+	})
+	s.publishEvents(ctx, highestBid)
+
+	return nil
 }
 
 func (s *BiddingService) publishEvents(ctx context.Context, bid *domains.Bid) {
