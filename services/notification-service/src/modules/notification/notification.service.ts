@@ -1,4 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, OnModuleInit } from '@nestjs/common';
+import type { ClientGrpc } from '@nestjs/microservices';
+import { lastValueFrom } from 'rxjs';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { CreateNotificationInput } from './inputs/createNotification.input';
@@ -12,19 +14,46 @@ import { PaginationInput } from './inputs/pagination.dto';
 import { FindNotificationInput } from './inputs/findNotification.input';
 import { Notification } from './entity/notification.entity';
 
+interface UserGrpcService {
+  getUser(data: { id: string }): import('rxjs').Observable<any>;
+}
+
 @Injectable()
-export class NotificationService {
+export class NotificationService implements OnModuleInit {
+  private userService: UserGrpcService;
+
   constructor(
     private readonly i18n: I18nService,
 
     @InjectModel(Notification.name)
     private model: Model<Notification>,
+
+    @Inject('USER_SERVICE') private client: ClientGrpc,
   ) {}
+
+  onModuleInit() {
+    this.userService = this.client.getService<UserGrpcService>('UserService');
+  }
+
+  private async validateUserExists(userId: string) {
+    try {
+      const response = await lastValueFrom(
+        this.userService.getUser({ id: userId }),
+      );
+      if (!response || !response.user) {
+        throw new NotFoundException(this.i18n.t('notification.USER_NOT_FOUND'));
+      }
+    } catch (error) {
+      throw new NotFoundException(this.i18n.t('notification.USER_NOT_FOUND'));
+    }
+  }
 
   async createAndNotify(
     data: CreateNotificationInput,
     userId: string,
   ): Promise<NotificationResponse> {
+    await this.validateUserExists(userId);
+
     const notification = await this.model.create({
       type: data.type,
       title: data.title,
@@ -42,25 +71,25 @@ export class NotificationService {
     };
   }
 
-async getById(id: string, userId: string): Promise<NotificationResponse> {
-  const notification = await this.model.findOne({
-    _id: new Types.ObjectId(id),
-    userId: new Types.ObjectId(userId),
-  });
+  async getById(id: string, userId: string): Promise<NotificationResponse> {
+    const notification = await this.model.findOne({
+      _id: new Types.ObjectId(id),
+      userId: new Types.ObjectId(userId),
+    });
 
-  if(!notification) 
-    throw new NotFoundException(this.i18n.t('notification.NOT_FOUND'));
-  
-  return {
-    data: notification.toObject({ getters: true }) as any,
-    message: this.i18n.t('notification.RETRIEVED'),
-  };
-}
+    if (!notification)
+      throw new NotFoundException(this.i18n.t('notification.NOT_FOUND'));
+
+    return {
+      data: notification.toObject({ getters: true }) as any,
+      message: this.i18n.t('notification.RETRIEVED'),
+    };
+  }
 
   async getUserNotifications(
     userId: string,
     findNotificationInput: FindNotificationInput,
-    pagination: PaginationInput,
+    pagination?: PaginationInput,
   ): Promise<NotificationsResponse> {
     const filter: any = {
       userId: new Types.ObjectId(userId),
@@ -76,8 +105,8 @@ async getById(id: string, userId: string): Promise<NotificationResponse> {
       filter.referenceId = new Types.ObjectId(findNotificationInput.referenceId);
     
 
-    const page = pagination.page
-    const limit = pagination.limit
+    const page = pagination?.page ?? 1;
+    const limit = pagination?.limit ?? 10;
 
     const notifications = await this.model
       .find(filter)

@@ -4,5 +4,6 @@
     "UPDATED": "Notification updated successfully",
     "DELETED": "Notification deleted successfully",
     "NOT_FOUND": "Notification not found",
-    "NOT_FOUNDS": "Notifications not found"
+    "NOT_FOUNDS": "Notifications not found",
+    "USER_NOT_FOUND": "Target user does not exist"
 }
