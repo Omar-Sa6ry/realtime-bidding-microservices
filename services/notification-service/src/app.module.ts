@@ -1,10 +1,67 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AppResolver } from './app.resolver';
+import { ConfigModule } from '@nestjs/config';
+import { GraphQLModule } from '@nestjs/graphql';
+import { ApolloFederationDriver, ApolloFederationDriverConfig } from '@nestjs/apollo';
+import { join } from 'path';
+import { APP_FILTER } from '@nestjs/core';
+import { HttpExceptionFilter } from '@bts-soft/core';
 
 @Module({
-  imports: [],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+
+    GraphQLModule.forRoot<ApolloFederationDriverConfig>({
+      driver: ApolloFederationDriver,
+      path: '/graphql',
+
+      autoSchemaFile: {
+        path: join(process.cwd(), 'src/schema.gql'),
+        federation: 2,
+      },
+
+      context: ({ req }) => ({
+        req,
+        user: req.user,
+        language: req.headers['accept-language'] || 'en',
+      }),
+
+      playground: true,
+      debug: false,
+      csrfPrevention: false,
+
+      installSubscriptionHandlers: true,
+      subscriptions: {
+        'subscriptions-transport-ws': {
+          path: '/graphql',
+          keepAlive: 10000,
+        },
+        'graphql-ws': true,
+      },
+
+      formatError: (error: any) => {
+        const originalError = error.extensions?.originalError as any;
+        const msg = originalError?.message || error.message;
+        const code =
+          error.extensions?.statusCode || originalError?.statusCode || 400;
+
+        return {
+          success: false,
+          statusCode: code,
+          message: Array.isArray(msg) ? msg[0] : msg,
+          timeStamp: new Date().toISOString(),
+        } as any;
+      },
+    }),
+  ],
+  providers: [
+    AppService,
+    AppResolver,
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
+    },
+  ],
 })
 export class AppModule {}

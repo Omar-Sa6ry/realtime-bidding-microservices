@@ -1,0 +1,15 @@
+{
+  "dependencies": {
+    "@bidding-micro/shared": "^1.1.0",
+    "@nestjs/config": "^4.0.3",
+    "@nestjs/microservices": "^11.1.17",
+    "@nestjs/mongoose": "^11.0.4",
+    "@nestjs/platform-socket.io": "^11.1.17",
+    "@nestjs/websockets": "^11.1.17",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.4",
+    "ioredis": "^5.10.1",
+    "mongoose": "^9.3.2",
+    "nats": "^2.29.3"
+  }
+}

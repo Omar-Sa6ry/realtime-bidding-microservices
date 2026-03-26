@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
-async function waitForService(url: string, retries = 60, delay = 5000) {
+async function waitForService(url: string, retries = 120, delay = 5000) {
   for (let i = 0; i < retries; i++) {
     try {
       const res = await fetch(url, {
@@ -10,10 +10,14 @@ async function waitForService(url: string, retries = 60, delay = 5000) {
         body: JSON.stringify({ query: '{ __typename }' }),
       });
       if (res.ok) {
-        return;
+        const body = await res.json();
+        if (body?.data?.__typename) {
+          console.log(`Service at ${url} is ready.`);
+          return;
+        }
       }
-    } catch {
-      // service not ready yet
+    } catch (err) {
+      // console.log(`Waiting for ${url}...`);
     }
     await new Promise((r) => setTimeout(r, delay));
   }
@@ -28,6 +32,7 @@ async function bootstrap() {
     waitForService('http://user-srv:3000/user/graphql'),
     waitForService('http://auction-srv:3002/graphql'),
     waitForService('http://bidding-srv:3003/graphql'),
+    waitForService('http://notification-srv:3004/graphql'),
   ]);
 
   const app = await NestFactory.create(AppModule);
