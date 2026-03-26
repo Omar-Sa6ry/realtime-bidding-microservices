@@ -20,6 +20,12 @@ export enum Permission {
   FORGOT_PASSWORD = 'FORGOT_PASSWORD',
   RECHARGE_WALLET = 'RECHARGE_WALLET',
   LOGOUT = 'LOGOUT',
+
+  // Notification
+  CREATE_NOTIFICATION = 'create_notification',
+  READ_NOTIFICATION = 'read_notification',
+  UPDATE_NOTIFICATION = 'update_notification',
+  DELETE_NOTIFICATION = 'delete_notification',
 }
 
 export enum PaymentMethod {

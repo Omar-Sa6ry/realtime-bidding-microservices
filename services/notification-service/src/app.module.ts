@@ -1,16 +1,33 @@
 import { Module } from '@nestjs/common';
 import { AppService } from './app.service';
 import { AppResolver } from './app.resolver';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
-import { ApolloFederationDriver, ApolloFederationDriverConfig } from '@nestjs/apollo';
+import {
+  ApolloFederationDriver,
+  ApolloFederationDriverConfig,
+} from '@nestjs/apollo';
 import { join } from 'path';
 import { APP_FILTER } from '@nestjs/core';
-import { HttpExceptionFilter } from '@bts-soft/core';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { TranslationModule } from './common/translation/translation.module';
+import { NotificationSubModule } from './modules/notification/notification.module';
+import { MongooseModule } from '@nestjs/mongoose';
+import { RedisModule } from '@bts-soft/cache';
+import { HttpExceptionFilter } from './common/filter/errorHandling.filter';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+
+    MongooseModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        uri: config.get<string>('MONGO_URI'),
+      }),
+    }),
+
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
 
     GraphQLModule.forRoot<ApolloFederationDriverConfig>({
       driver: ApolloFederationDriver,
@@ -54,6 +71,10 @@ import { HttpExceptionFilter } from '@bts-soft/core';
         } as any;
       },
     }),
+
+    TranslationModule,
+    RedisModule,
+    NotificationSubModule,
   ],
   providers: [
     AppService,

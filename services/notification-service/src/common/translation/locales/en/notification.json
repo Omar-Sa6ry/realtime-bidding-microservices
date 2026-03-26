@@ -1,0 +1,8 @@
+{
+    "CREATED": "Notification created successfully",
+    "RETRIEVED": "Notification retrieved successfully",
+    "UPDATED": "Notification updated successfully",
+    "DELETED": "Notification deleted successfully",
+    "NOT_FOUND": "Notification not found",
+    "NOT_FOUNDS": "Notifications not found"
+}

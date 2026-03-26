@@ -1,3 +1,5 @@
+import { registerEnumType } from '@nestjs/graphql';
+
 export enum NotificationType {
   AUCTION_WON = 'AUCTION_WON',
   OUTBID = 'OUTBID',

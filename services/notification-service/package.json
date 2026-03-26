@@ -25,8 +25,9 @@
     "@apollo/subgraph": "^2.13.1",
     "@as-integrations/express5": "^1.1.2",
     "@as-integrations/fastify": "^3.1.0",
-    "@bidding-micro/shared": "^1.1.0",
-    "@bts-soft/core": "^2.2.6",
+    "@bidding-micro/shared": "^1.1.1",
+    "@bts-soft/cache": "^1.0.5",
+    "@bts-soft/notifications": "^1.4.5",
     "@grpc/grpc-js": "^1.14.3",
     "@grpc/proto-loader": "^0.8.0",
     "@nestjs/apollo": "^13.2.4",
@@ -56,13 +57,10 @@
     "mqtt": "^5.15.0",
     "nats": "^2.29.3",
     "nestjs-i18n": "^10.6.0",
-    "pg": "^8.20.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "stripe": "^20.4.1",
-    "ts-morph": "^25.0.0",
-    "typeorm": "^0.3.28",
-    "typeorm-transactional": "^0.5.0"
+    "ts-morph": "^25.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
