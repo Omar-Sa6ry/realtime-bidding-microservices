@@ -1,6 +1,4 @@
-import { Injectable, NotFoundException, Inject, OnModuleInit } from '@nestjs/common';
-import type { ClientGrpc } from '@nestjs/microservices';
-import { lastValueFrom } from 'rxjs';
+import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { CreateNotificationInput } from './inputs/createNotification.input';
@@ -13,57 +11,38 @@ import { I18nService } from 'nestjs-i18n';
 import { PaginationInput } from './inputs/pagination.dto';
 import { FindNotificationInput } from './inputs/findNotification.input';
 import { Notification } from './entity/notification.entity';
-
-interface UserGrpcService {
-  getUser(data: { id: string }): import('rxjs').Observable<any>;
-}
+import { UserService } from '../user/user.service';
+import { ChannelType, NotificationService } from '@bts-soft/notifications';
 
 @Injectable()
-export class NotificationService implements OnModuleInit {
-  private userService: UserGrpcService;
-
+export class NotificationSubService {
   constructor(
     private readonly i18n: I18nService,
+    private readonly notificationService: NotificationService,
+    private readonly userService: UserService,
 
     @InjectModel(Notification.name)
     private model: Model<Notification>,
-
-    @Inject('USER_SERVICE') private client: ClientGrpc,
   ) {}
-
-  onModuleInit() {
-    this.userService = this.client.getService<UserGrpcService>('UserService');
-  }
-
-  private async validateUserExists(userId: string) {
-    try {
-      const response = await lastValueFrom(
-        this.userService.getUser({ id: userId }),
-      );
-      if (!response || !response.user) {
-        throw new NotFoundException(this.i18n.t('notification.USER_NOT_FOUND'));
-      }
-    } catch (error) {
-      throw new NotFoundException(this.i18n.t('notification.USER_NOT_FOUND'));
-    }
-  }
 
   async createAndNotify(
     data: CreateNotificationInput,
-    userId: string,
+    userId: string,email:string
   ): Promise<NotificationResponse> {
-    await this.validateUserExists(userId);
+    await this.userService.findById(userId);
 
     const notification = await this.model.create({
       type: data.type,
       title: data.title,
       message: data.message,
       userId: new Types.ObjectId(userId),
-      ...(data.referenceId && {
-        referenceId: new Types.ObjectId(data.referenceId),
+      ...(data.actionId && {
+        actionId: new Types.ObjectId(data.actionId),
       }),
     });
 
+    this.sentNotifications(email, data.title, data.message);
+    
     return {
       data: notification,
       statusCode: 201,
@@ -95,15 +74,15 @@ export class NotificationService implements OnModuleInit {
       userId: new Types.ObjectId(userId),
     };
 
-    if (findNotificationInput.type) 
-      filter.type = findNotificationInput.type;
-    
-    if (findNotificationInput.title) 
+    if (findNotificationInput.type) filter.type = findNotificationInput.type;
+
+    if (findNotificationInput.title)
       filter.title = new RegExp(findNotificationInput.title, 'i');
-    
-    if (findNotificationInput.referenceId) 
-      filter.referenceId = new Types.ObjectId(findNotificationInput.referenceId);
-    
+
+    if (findNotificationInput.actionId)
+      filter.actionId = new Types.ObjectId(
+        findNotificationInput.actionId,
+      );
 
     const page = pagination?.page ?? 1;
     const limit = pagination?.limit ?? 10;
@@ -114,10 +93,9 @@ export class NotificationService implements OnModuleInit {
       .skip((page - 1) * limit)
       .limit(limit);
 
-
     if (!notifications)
       throw new NotFoundException(this.i18n.t('notification.NOT_FOUNDS'));
-    
+
     return {
       items: notifications.map((n) => n.toObject({ getters: true })) as any,
       message: this.i18n.t('notification.RETRIEVED'),
@@ -130,7 +108,6 @@ export class NotificationService implements OnModuleInit {
       isRead: false,
     });
 
-    
     return {
       data: count,
       message: this.i18n.t('notification.RETRIEVED'),
@@ -150,9 +127,9 @@ export class NotificationService implements OnModuleInit {
       { new: true },
     );
 
-    if(!notification) 
+    if (!notification)
       throw new NotFoundException(this.i18n.t('notification.NOT_FOUND'));
-    
+
     return {
       data: notification.toObject({ getters: true }) as any,
       message: this.i18n.t('notification.UPDATED'),
@@ -175,7 +152,7 @@ export class NotificationService implements OnModuleInit {
 
     if (!notifications)
       throw new NotFoundException(this.i18n.t('notification.NOT_FOUND'));
-    
+
     return {
       items: notifications.map((n) => n.toObject({ getters: true })) as any,
       message: this.i18n.t('notification.UPDATED'),
@@ -191,13 +168,20 @@ export class NotificationService implements OnModuleInit {
       userId: new Types.ObjectId(userId),
     });
 
-    if(!notification) 
+    if (!notification)
       throw new NotFoundException(this.i18n.t('notification.NOT_FOUND'));
-    
 
     return {
       data: null,
       message: this.i18n.t('notification.DELETED'),
     };
+  }
+
+  private sentNotifications(email: string, title: string, body: string) {
+    this.notificationService.send(ChannelType.EMAIL, {
+      recipientId: email,
+      title: title,
+      body: body,
+    });
   }
 }

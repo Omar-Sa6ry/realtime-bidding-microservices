@@ -14,7 +14,7 @@ import { TranslationModule } from './common/translation/translation.module';
 import { NotificationSubModule } from './modules/notification/notification.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { RedisModule } from '@bts-soft/cache';
-import { HttpExceptionFilter } from './common/filter/errorHandling.filter';
+import { HttpExceptionFilterN } from './common/filter/errorHandling.filter';
 
 @Module({
   imports: [
@@ -81,7 +81,7 @@ import { HttpExceptionFilter } from './common/filter/errorHandling.filter';
     AppResolver,
     {
       provide: APP_FILTER,
-      useClass: HttpExceptionFilter,
+      useClass: HttpExceptionFilterN,
     },
   ],
 })

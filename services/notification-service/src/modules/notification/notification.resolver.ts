@@ -1,5 +1,5 @@
 import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
-import { NotificationService } from './notification.service';
+import { NotificationSubService } from './notification.service';
 import { Notification } from './entity/notification.entity';
 import { CreateNotificationInput } from './inputs/createNotification.input';
 import { FindNotificationInput } from './inputs/findNotification.input';
@@ -10,26 +10,26 @@ import {
   NotificationsResponse,
 } from './dtos/notificationResponse.dto';
 import { Auth, CurrentUser, Permission } from '@bidding-micro/shared';
-import { CurrentUserDto } from './dtos/currentUser.dto';
+import { CurrentUserDtoN } from './dtos/currentUser.dto';
 
 @Resolver(() => Notification)
 export class NotificationResolver {
-  constructor(private readonly notificationService: NotificationService) {}
+  constructor(private readonly notificationService: NotificationSubService) {}
 
   @Mutation(() => NotificationResponse)
   @Auth([Permission.CREATE_NOTIFICATION])
   async createNotification(
     @Args('input') input: CreateNotificationInput,
-    @CurrentUser() user: CurrentUserDto,
+    @CurrentUser() user: CurrentUserDtoN,
   ) {
-    return this.notificationService.createAndNotify(input, user.id);
+    return this.notificationService.createAndNotify(input, user.id, user.email);
   }
 
   @Query(() => NotificationResponse)
   @Auth([Permission.READ_NOTIFICATION])
   async getNotificationById(
     @Args('id') id: string,
-    @CurrentUser() user: CurrentUserDto,
+    @CurrentUser() user: CurrentUserDtoN,
   ) {
     return this.notificationService.getById(id, user.id);
   }
@@ -39,7 +39,7 @@ export class NotificationResolver {
   async getUserNotifications(
     @Args('input') input: FindNotificationInput,
     @Args('pagination', { nullable: true }) pagination: PaginationInput,
-    @CurrentUser() user: CurrentUserDto,
+    @CurrentUser() user: CurrentUserDtoN,
   ) {
     return this.notificationService.getUserNotifications(
       user.id,
@@ -50,7 +50,7 @@ export class NotificationResolver {
 
   @Query(() => NotificationCount)
   @Auth([Permission.READ_NOTIFICATION])
-  async getUnreadNotificationCount(@CurrentUser() user: CurrentUserDto) {
+  async getUnreadNotificationCount(@CurrentUser() user: CurrentUserDtoN) {
     return this.notificationService.getUnreadCount(user.id);
   }
 
@@ -58,14 +58,14 @@ export class NotificationResolver {
   @Auth([Permission.UPDATE_NOTIFICATION])
   async markNotificationAsRead(
     @Args('id') id: string,
-    @CurrentUser() user: CurrentUserDto,
+    @CurrentUser() user: CurrentUserDtoN,
   ) {
     return this.notificationService.markAsRead(id, user.id);
   }
 
   @Mutation(() => NotificationsResponse)
   @Auth([Permission.UPDATE_NOTIFICATION])
-  async markAllNotificationsAsRead(@CurrentUser() user: CurrentUserDto) {
+  async markAllNotificationsAsRead(@CurrentUser() user: CurrentUserDtoN) {
     return this.notificationService.markAllAsRead(user.id);
   }
 
@@ -73,7 +73,7 @@ export class NotificationResolver {
   @Auth([Permission.DELETE_NOTIFICATION])
   async deleteNotification(
     @Args('id') id: string,
-    @CurrentUser() user: CurrentUserDto,
+    @CurrentUser() user: CurrentUserDtoN,
   ) {
     return this.notificationService.deleteNotification(id, user.id);
   }

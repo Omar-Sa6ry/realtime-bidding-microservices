@@ -1,8 +1,10 @@
 import { Field, Int, ObjectType } from '@nestjs/graphql';
+import { Directive } from '@nestjs/graphql';
 import { Expose } from 'class-transformer';
 
+@Directive('@shareable')
 @ObjectType({ description: 'Metadata describing pagination details' })
-export class PaginationInfo {
+export class PaginationInfoN {
   @Field(() => Int, { description: 'Total number of pages' })
   @Expose()
   totalPages: number;

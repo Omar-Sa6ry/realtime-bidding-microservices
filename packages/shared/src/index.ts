@@ -13,6 +13,9 @@ export * from './guard/role.guard';
 // Interfaces
 export * from './interfaces/user.interface';
 
+// DTOs
+export * from './dtos/user.dto';
+
 // Modules
 export * from './modules/auth.module';
 

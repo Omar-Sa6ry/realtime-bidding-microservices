@@ -32,7 +32,7 @@ export class Notification {
 
   @Field(() => String, { nullable: true })
   @Prop({ type: Types.ObjectId })
-  referenceId?: Types.ObjectId;
+  actionId?: Types.ObjectId;
 
   @Field(() => Date)
   createdAt: Date;

@@ -1,29 +1,29 @@
 import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { Expose } from 'class-transformer';
-import { IsOptional } from 'class-validator';
 import { Notification } from '../entity/notification.entity';
-import { BaseResponse } from 'src/common/constant/BaseResponse';
-import { PaginationInfo } from './pagintion';
+import { BaseResponseN } from 'src/common/constant/BaseResponse';
+import { PaginationInfoN } from './pagintion';
+import { IsOptional } from 'class-validator';
 
 @ObjectType()
-export class NotificationResponse extends BaseResponse {
+export class NotificationResponse extends BaseResponseN {
   @Field(() => Notification, { nullable: true })
   @Expose()
   data?: Notification | null;
 }
 
 @ObjectType()
-export class NotificationsResponse extends BaseResponse {
+export class NotificationsResponse extends BaseResponseN {
   @Field(() => [Notification], { nullable: true })
   items: Notification[];
 
   @IsOptional()
-  @Field(() => PaginationInfo, { nullable: true })
-  pagination?: PaginationInfo;
+  @Field(() => PaginationInfoN, { nullable: true })
+  pagination?: PaginationInfoN;
 }
 
 @ObjectType()
-export class NotificationCount extends BaseResponse {
+export class NotificationCount extends BaseResponseN {
   @Field(() => Int, { nullable: true })
   data: number;
 }

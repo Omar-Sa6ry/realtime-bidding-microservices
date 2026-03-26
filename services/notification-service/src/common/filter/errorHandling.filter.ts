@@ -3,7 +3,7 @@ import { GqlExceptionFilter } from '@nestjs/graphql';
 import { GraphQLError } from 'graphql';
 
 @Catch()
-export class HttpExceptionFilter implements GqlExceptionFilter {
+export class HttpExceptionFilterN implements GqlExceptionFilter {
   catch(exception: any, host: ArgumentsHost) {
     console.log(exception);
 

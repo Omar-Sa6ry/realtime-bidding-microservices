@@ -3,7 +3,7 @@ import { Expose } from 'class-transformer';
 
 
 @ObjectType({ description: 'Minimal representation of the authenticated user' })
-export class CurrentUserDto {
+export class CurrentUserDtoN {
   @Field(() => String, { description: 'Unique user ID' })
   @Expose()
   id: string;

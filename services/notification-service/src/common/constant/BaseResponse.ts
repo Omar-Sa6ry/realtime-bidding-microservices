@@ -3,8 +3,8 @@ import { Expose } from 'class-transformer';
 import { IsBoolean, IsInt, IsOptional, IsString } from 'class-validator';
 
 
-@ObjectType({ isAbstract: true })
-export class BaseResponse {
+@ObjectType()
+export class BaseResponseN {
   @IsOptional()
   @IsString()
   @Field({ nullable: true })

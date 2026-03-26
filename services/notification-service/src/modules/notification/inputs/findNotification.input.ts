@@ -10,5 +10,5 @@ export class FindNotificationInput {
   title?: string;
 
   @Field(() => String, { nullable: true })
-  referenceId?: string;
+  actionId?: string;
 }

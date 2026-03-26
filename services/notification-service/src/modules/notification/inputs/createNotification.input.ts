@@ -13,5 +13,5 @@ export class CreateNotificationInput {
   message: string;
 
   @Field(() => String, { nullable: true })
-  referenceId?: string;
+  actionId?: string;
 }
