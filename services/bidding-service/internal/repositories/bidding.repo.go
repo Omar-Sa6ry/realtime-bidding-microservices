@@ -116,13 +116,13 @@ func (r *mongoBiddingRepository) Unlock(ctx context.Context, auctionID string, l
 func (r *mongoBiddingRepository) EnsureIndexes(ctx context.Context) error {
 	indexSpecs := []mongo.IndexModel{
 		{
-			Keys: bson.M{"auction_id": 1, "amount": -1},
+			Keys: bson.D{{Key: "auction_id", Value: 1}, {Key: "amount", Value: -1}},
 		},
 		{
-			Keys: bson.M{"auction_id": 1, "created_at": -1},
+			Keys: bson.D{{Key: "auction_id", Value: 1}, {Key: "created_at", Value: -1}},
 		},
 		{
-			Keys: bson.M{"user_id": 1, "created_at": -1},
+			Keys: bson.D{{Key: "user_id", Value: 1}, {Key: "created_at", Value: -1}},
 		},
 	}
 

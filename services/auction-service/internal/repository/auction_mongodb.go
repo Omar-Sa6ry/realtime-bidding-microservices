@@ -152,16 +152,16 @@ func (r *mongoAuctionRepository) FindByStatusAndCutoff(ctx context.Context, stat
 func (r *mongoAuctionRepository) EnsureIndexes(ctx context.Context) error {
 	indexSpecs := []mongo.IndexModel{
 		{
-			Keys: bson.M{"status": 1, "startTime": 1},
+			Keys: bson.D{{Key: "status", Value: 1}, {Key: "startTime", Value: 1}},
 		},
 		{
-			Keys: bson.M{"status": 1, "endTime": 1},
+			Keys: bson.D{{Key: "status", Value: 1}, {Key: "endTime", Value: 1}},
 		},
 		{
-			Keys: bson.M{"createdAt": -1},
+			Keys: bson.D{{Key: "createdAt", Value: -1}},
 		},
 		{
-			Keys: bson.M{"sellerId": 1},
+			Keys: bson.D{{Key: "sellerId", Value: 1}},
 		},
 	}
 
