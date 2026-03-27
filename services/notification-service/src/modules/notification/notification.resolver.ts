@@ -1,4 +1,4 @@
-import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, Subscription } from '@nestjs/graphql';
 import { NotificationSubService } from './notification.service';
 import { Notification } from './entity/notification.entity';
 import { FindNotificationInput } from './inputs/findNotification.input';
@@ -10,10 +10,26 @@ import {
 } from './dtos/notificationResponse.dto';
 import { Auth, CurrentUser, Permission } from '@bidding-micro/shared';
 import { CurrentUserDtoN } from './dtos/currentUser.dto';
+import { Inject } from '@nestjs/common';
+import { PUB_SUB } from '../pubsub/pubsub.module';
+import { RedisPubSub } from 'graphql-redis-subscriptions';
 
 @Resolver(() => Notification)
 export class NotificationResolver {
-  constructor(private readonly notificationService: NotificationSubService) {}
+  constructor(
+    private readonly notificationService: NotificationSubService,
+    @Inject(PUB_SUB) private readonly pubSub: RedisPubSub,
+  ) {}
+
+  @Subscription(() => Notification, {
+    filter: (payload, variables) => {
+      return payload.notificationCreated.userId.toString() === variables.userId;
+    },
+    resolve: (payload) => payload.notificationCreated,
+  })
+  notificationCreated(@Args('userId') userId: string) {
+    return this.pubSub.asyncIterator('NOTIFICATION_CREATED');
+  }
 
   @Query(() => NotificationResponse)
   @Auth([Permission.READ_NOTIFICATION])

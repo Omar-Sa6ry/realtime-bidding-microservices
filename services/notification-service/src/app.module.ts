@@ -15,6 +15,7 @@ import { NotificationSubModule } from './modules/notification/notification.modul
 import { MongooseModule } from '@nestjs/mongoose';
 import { RedisModule } from '@bts-soft/cache';
 import { HttpExceptionFilterN } from './common/filter/errorHandling.filter';
+import { PubSubModule } from './modules/pubsub/pubsub.module';
 
 @Module({
   imports: [
@@ -48,13 +49,18 @@ import { HttpExceptionFilterN } from './common/filter/errorHandling.filter';
       debug: false,
       csrfPrevention: false,
 
-      installSubscriptionHandlers: true,
       subscriptions: {
-        'subscriptions-transport-ws': {
+        'graphql-ws': {
           path: '/graphql',
-          keepAlive: 10000,
+          onConnect: (context: any) => {
+            const { connectionParams, extra } = context;
+            // Handle auth or language from connectionParams if needed
+            return {
+              req: extra.request,
+              language: connectionParams?.['accept-language'] || 'en',
+            };
+          },
         },
-        'graphql-ws': true,
       },
 
       formatError: (error: any) => {
@@ -74,6 +80,7 @@ import { HttpExceptionFilterN } from './common/filter/errorHandling.filter';
 
     TranslationModule,
     RedisModule,
+    PubSubModule,
     NotificationSubModule,
   ],
   providers: [

@@ -12,6 +12,9 @@ import { AuctionService } from '../auction/auction.service';
 import { NotificationStrategy } from './strategies/interface/notification.strategy';
 import { NotificationStrategyFactory } from './strategies/notification-strategy.factory';
 import { NotificationEventData } from './strategies/interface/notification-events.interface';
+import { Inject } from '@nestjs/common';
+import { PUB_SUB } from '../pubsub/pubsub.module';
+import { RedisPubSub } from 'graphql-redis-subscriptions';
 import {
   NotificationCount,
   NotificationResponse,
@@ -29,6 +32,9 @@ export class NotificationSubService {
 
     @InjectModel(Notification.name)
     private model: Model<Notification>,
+
+    @Inject(PUB_SUB)
+    private readonly pubSub: RedisPubSub,
   ) {}
 
   async process(strategy: NotificationStrategy, data: NotificationEventData) {
@@ -48,9 +54,14 @@ export class NotificationSubService {
       ...(actionId && { actionId: new Types.ObjectId(actionId) }),
     });
 
+    // publish event for websocket
+    this.pubSub.publish('NOTIFICATION_CREATED', {
+      notificationCreated: notification,
+    });
+
     // send notification via email via bts-sotf package
     const user = await this.userService.findById(userId);
-    this.sentNotifications(user.email, title, message);
+    this.sentNotifications(user, title, message);
 
     return notification;
   }
@@ -213,9 +224,9 @@ export class NotificationSubService {
     if (actionId) await this.auctionService.findById(actionId);
   }
 
-  private sentNotifications(email: string, title: string, body: string) {
+  private sentNotifications(user: any, title: string, body: string) {
     this.notificationService.send(ChannelType.EMAIL, {
-      recipientId: email,
+      recipientId: user.email,
       title: title,
       body: body,
     });

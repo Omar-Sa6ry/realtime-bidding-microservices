@@ -42,6 +42,10 @@ import { SqlInjectionInterceptor } from './common/interceptors/sql-injection.int
         },
       },
 
+      subscriptions: {
+        'graphql-ws': true,
+      },
+      
       gateway: {
         supergraphSdl: new IntrospectAndCompose({
           subgraphs: [
