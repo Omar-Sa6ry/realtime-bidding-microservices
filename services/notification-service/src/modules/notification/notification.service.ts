@@ -13,6 +13,7 @@ import { FindNotificationInput } from './inputs/findNotification.input';
 import { Notification } from './entity/notification.entity';
 import { UserService } from '../user/user.service';
 import { ChannelType, NotificationService } from '@bts-soft/notifications';
+import { AuctionService } from '../auction/auction.service';
 
 @Injectable()
 export class NotificationSubService {
@@ -20,29 +21,31 @@ export class NotificationSubService {
     private readonly i18n: I18nService,
     private readonly notificationService: NotificationService,
     private readonly userService: UserService,
+    private readonly auctionService: AuctionService,
 
     @InjectModel(Notification.name)
     private model: Model<Notification>,
   ) {}
 
   async createAndNotify(
-    data: CreateNotificationInput,
-    userId: string,email:string
+    input: CreateNotificationInput,
+    userId: string,
+    email: string,
   ): Promise<NotificationResponse> {
-    await this.userService.findById(userId);
+    await this.validateEntities(userId, input.actionId);
 
     const notification = await this.model.create({
-      type: data.type,
-      title: data.title,
-      message: data.message,
+      type: input.type,
+      title: input.title,
+      message: input.message,
       userId: new Types.ObjectId(userId),
-      ...(data.actionId && {
-        actionId: new Types.ObjectId(data.actionId),
+      ...(input.actionId && {
+        actionId: new Types.ObjectId(input.actionId),
       }),
     });
 
-    this.sentNotifications(email, data.title, data.message);
-    
+    this.sentNotifications(email, input.title, input.message);
+
     return {
       data: notification,
       statusCode: 201,
@@ -79,10 +82,10 @@ export class NotificationSubService {
     if (findNotificationInput.title)
       filter.title = new RegExp(findNotificationInput.title, 'i');
 
-    if (findNotificationInput.actionId)
-      filter.actionId = new Types.ObjectId(
-        findNotificationInput.actionId,
-      );
+    if (findNotificationInput.actionId) {
+      await this.auctionService.findById(findNotificationInput.actionId);
+      filter.actionId = new Types.ObjectId(findNotificationInput.actionId);
+    }
 
     const page = pagination?.page ?? 1;
     const limit = pagination?.limit ?? 10;
@@ -175,6 +178,13 @@ export class NotificationSubService {
       data: null,
       message: this.i18n.t('notification.DELETED'),
     };
+  }
+
+  // Private Methods
+  private async validateEntities(userId: string, actionId?: string) {
+    await this.userService.findById(userId);
+
+    if (actionId) await this.auctionService.findById(actionId);
   }
 
   private sentNotifications(email: string, title: string, body: string) {

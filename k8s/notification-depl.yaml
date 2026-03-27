@@ -19,19 +19,19 @@ spec:
             - containerPort: 3004
           env:
             - name: NODE_ENV
-              value: "development"
+              value: 'development'
             - name: PORT_NOTIFICATION
-              value: "3004"
+              value: '3004'
             - name: NATS_URL
-              value: "nats://nats-srv:4222"
+              value: 'nats://nats-srv:4222'
             - name: JWT_EXPIRE
-              value: "36000s"
+              value: '36000s'
             - name: REDIS_HOST
-              value: "redis-srv"
+              value: 'redis-srv'
             - name: REDIS_PORT
-              value: "6379"
+              value: '6379'
             - name: USER_SERVICE_URL
-              value: "user-srv:50051"
+              value: 'user-srv:50051'
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:
