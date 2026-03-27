@@ -31,8 +31,16 @@ async function bootstrap() {
       },
     },
   });
+
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.NATS,
+    options: {
+      servers: [process.env.NATS_URL || 'nats://nats-srv:4222'],
+    },
+  });
+
   await app.startAllMicroservices();
 
-  await app.listen(process.env.PORT_NOTIFICATION ?? 3004);
+  await app.listen(process.env.PORT_NOTIFICATION || 3004);
 }
 bootstrap();

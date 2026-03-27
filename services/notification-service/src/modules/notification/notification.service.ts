@@ -2,11 +2,6 @@ import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { CreateNotificationInput } from './inputs/createNotification.input';
-import {
-  NotificationCount,
-  NotificationResponse,
-  NotificationsResponse,
-} from './dtos/notificationResponse.dto';
 import { I18nService } from 'nestjs-i18n';
 import { PaginationInput } from './inputs/pagination.dto';
 import { FindNotificationInput } from './inputs/findNotification.input';
@@ -14,6 +9,14 @@ import { Notification } from './entity/notification.entity';
 import { UserService } from '../user/user.service';
 import { ChannelType, NotificationService } from '@bts-soft/notifications';
 import { AuctionService } from '../auction/auction.service';
+import { NotificationStrategy } from './strategies/interface/notification.strategy';
+import { NotificationStrategyFactory } from './strategies/notification-strategy.factory';
+import { NotificationEventData } from './strategies/interface/notification-events.interface';
+import {
+  NotificationCount,
+  NotificationResponse,
+  NotificationsResponse,
+} from './dtos/notificationResponse.dto';
 
 @Injectable()
 export class NotificationSubService {
@@ -22,35 +25,34 @@ export class NotificationSubService {
     private readonly notificationService: NotificationService,
     private readonly userService: UserService,
     private readonly auctionService: AuctionService,
+    private readonly strategyFactory: NotificationStrategyFactory,
 
     @InjectModel(Notification.name)
     private model: Model<Notification>,
   ) {}
 
-  async createAndNotify(
-    input: CreateNotificationInput,
-    userId: string,
-    email: string,
-  ): Promise<NotificationResponse> {
-    await this.validateEntities(userId, input.actionId);
+  async process(strategy: NotificationStrategy, data: NotificationEventData) {
+    const { title, message } = await strategy.getContent(data, this.i18n);
+    const userId = strategy.getUserId(data);
+    const actionId = strategy.getActionId
+      ? strategy.getActionId(data)
+      : undefined;
+
+    const type = strategy.getType(data);
 
     const notification = await this.model.create({
-      type: input.type,
-      title: input.title,
-      message: input.message,
+      type,
+      title,
+      message,
       userId: new Types.ObjectId(userId),
-      ...(input.actionId && {
-        actionId: new Types.ObjectId(input.actionId),
-      }),
+      ...(actionId && { actionId: new Types.ObjectId(actionId) }),
     });
 
-    this.sentNotifications(email, input.title, input.message);
+    // send notification via email via bts-sotf package
+    const user = await this.userService.findById(userId);
+    this.sentNotifications(user.email, title, message);
 
-    return {
-      data: notification,
-      statusCode: 201,
-      message: this.i18n.t('notification.CREATED'),
-    };
+    return notification;
   }
 
   async getById(id: string, userId: string): Promise<NotificationResponse> {
@@ -63,7 +65,7 @@ export class NotificationSubService {
       throw new NotFoundException(this.i18n.t('notification.NOT_FOUND'));
 
     return {
-      data: notification.toObject({ getters: true }) as any,
+      data: notification.toObject({ getters: true }) as unknown as Notification,
       message: this.i18n.t('notification.RETRIEVED'),
     };
   }
@@ -73,7 +75,7 @@ export class NotificationSubService {
     findNotificationInput: FindNotificationInput,
     pagination?: PaginationInput,
   ): Promise<NotificationsResponse> {
-    const filter: any = {
+    const filter: Record<string, unknown> = {
       userId: new Types.ObjectId(userId),
     };
 
@@ -100,7 +102,9 @@ export class NotificationSubService {
       throw new NotFoundException(this.i18n.t('notification.NOT_FOUNDS'));
 
     return {
-      items: notifications.map((n) => n.toObject({ getters: true })) as any,
+      items: notifications.map((n) =>
+        n.toObject({ getters: true }),
+      ) as unknown as Notification[],
       message: this.i18n.t('notification.RETRIEVED'),
     };
   }
@@ -134,7 +138,7 @@ export class NotificationSubService {
       throw new NotFoundException(this.i18n.t('notification.NOT_FOUND'));
 
     return {
-      data: notification.toObject({ getters: true }) as any,
+      data: notification.toObject({ getters: true }) as unknown as Notification,
       message: this.i18n.t('notification.UPDATED'),
     };
   }
@@ -157,7 +161,9 @@ export class NotificationSubService {
       throw new NotFoundException(this.i18n.t('notification.NOT_FOUND'));
 
     return {
-      items: notifications.map((n) => n.toObject({ getters: true })) as any,
+      items: notifications.map((n) =>
+        n.toObject({ getters: true }),
+      ) as unknown as Notification[],
       message: this.i18n.t('notification.UPDATED'),
     };
   }
@@ -178,6 +184,26 @@ export class NotificationSubService {
       data: null,
       message: this.i18n.t('notification.DELETED'),
     };
+  }
+
+  async createBidNotification(data: NotificationEventData) {
+    const strategy = this.strategyFactory.getStrategy('bid.created');
+    return this.process(strategy, data);
+  }
+
+  async createOutbidNotification(data: NotificationEventData) {
+    const strategy = this.strategyFactory.getStrategy('bid.outbid');
+    return this.process(strategy, data);
+  }
+
+  async createAuctionEndedNotification(data: NotificationEventData) {
+    const strategy = this.strategyFactory.getStrategy('auction.ended');
+    return this.process(strategy, data);
+  }
+
+  async createBidWonNotification(data: NotificationEventData) {
+    const strategy = this.strategyFactory.getStrategy('bid.won');
+    return this.process(strategy, data);
   }
 
   // Private Methods

@@ -10,6 +10,12 @@ import { RedisModule } from '@bts-soft/cache';
 import { NotificationModule } from '@bts-soft/notifications';
 import { AuctionService } from '../auction/auction.service';
 import { GrpcClientsModule } from '../grpc/grpc-clients.module';
+import { NotificationController } from './notification.controller';
+import { NotificationStrategyFactory } from './strategies/notification-strategy.factory';
+import { BidCreatedStrategy } from './strategies/bid-created.strategy';
+import { OutbidStrategy } from './strategies/outbid.strategy';
+import { AuctionEndedStrategy } from './strategies/auction-ended.strategy';
+import { BidWonStrategy } from './strategies/bid-won.strategy';
 
 @Module({
   imports: [
@@ -34,10 +40,18 @@ import { GrpcClientsModule } from '../grpc/grpc-clients.module';
 
     NotificationModule,
   ],
+  
   providers: [
     NotificationSubService,
     NotificationResolver,
     AuctionService,
+    NotificationStrategyFactory,
+    BidCreatedStrategy,
+    OutbidStrategy,
+    AuctionEndedStrategy,
+    BidWonStrategy,
   ],
+
+  controllers: [NotificationController],
 })
 export class NotificationSubModule {}

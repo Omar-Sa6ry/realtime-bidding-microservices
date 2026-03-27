@@ -1,7 +1,6 @@
 import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
 import { NotificationSubService } from './notification.service';
 import { Notification } from './entity/notification.entity';
-import { CreateNotificationInput } from './inputs/createNotification.input';
 import { FindNotificationInput } from './inputs/findNotification.input';
 import { PaginationInput } from './inputs/pagination.dto';
 import {
@@ -15,15 +14,6 @@ import { CurrentUserDtoN } from './dtos/currentUser.dto';
 @Resolver(() => Notification)
 export class NotificationResolver {
   constructor(private readonly notificationService: NotificationSubService) {}
-
-  @Mutation(() => NotificationResponse)
-  @Auth([Permission.CREATE_NOTIFICATION])
-  async createNotification(
-    @Args('input') input: CreateNotificationInput,
-    @CurrentUser() user: CurrentUserDtoN,
-  ) {
-    return this.notificationService.createAndNotify(input, user.id, user.email);
-  }
 
   @Query(() => NotificationResponse)
   @Auth([Permission.READ_NOTIFICATION])

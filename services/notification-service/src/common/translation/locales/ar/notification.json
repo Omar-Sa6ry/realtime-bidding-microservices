@@ -6,5 +6,13 @@
     "NOT_FOUND": "الإشعار غير موجود",
     "NOT_FOUNDS": "الإشعارات غير موجودة",
     "USER_NOT_FOUND": "المستخدم المستهدف غير موجود",
-    "AUCTION_NOT_FOUND": "المزاد المستهدف غير موجود"
+    "AUCTION_NOT_FOUND": "المزاد المستهدف غير موجود",
+    "BID_PLACED_TITLE": "تم تقديم عرض جديد",
+    "BID_PLACED_MESSAGE": "تم تقديم عرض جديد بقيمة {amount} على المزاد {auctionId}",
+    "OUTBID_TITLE": "تم تجاوز عرضك!",
+    "OUTBID_MESSAGE": "تم تقديم عرض أعلى بقيمة {amount}. قدم عرضًا جديدًا للبقاء في المنافسة!",
+    "AUCTION_ENDED_TITLE": "انتهى المزاد",
+    "AUCTION_ENDED_MESSAGE": "انتهى المزاد '{title}'.",
+    "BID_WON_TITLE": "مبروك! لقد فزت!",
+    "BID_WON_MESSAGE": "لقد فزت بالمزاد بعرض قيمته {amount} على المزاد {auctionId}."
 }

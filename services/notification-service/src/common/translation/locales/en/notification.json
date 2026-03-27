@@ -6,5 +6,13 @@
     "NOT_FOUND": "Notification not found",
     "NOT_FOUNDS": "Notifications not found",
     "USER_NOT_FOUND": "Target user does not exist",
-    "AUCTION_NOT_FOUND": "Target auction does not exist"
+    "AUCTION_NOT_FOUND": "Target auction does not exist",
+    "BID_PLACED_TITLE": "New Bid Placed",
+    "BID_PLACED_MESSAGE": "A new bid of {amount} has been placed on auction {auctionId}",
+    "OUTBID_TITLE": "You've been outbid!",
+    "OUTBID_MESSAGE": "Someone placed a higher bid of {amount}. Place a new bid to stay in the game!",
+    "AUCTION_ENDED_TITLE": "Auction Ended",
+    "AUCTION_ENDED_MESSAGE": "The auction '{title}' has ended.",
+    "BID_WON_TITLE": "Congratulations! You Won!",
+    "BID_WON_MESSAGE": "You won the auction with a bid of {amount} on auction {auctionId}."
 }

@@ -1,4 +1,3 @@
-// NATS message patterns shared across all services
 export enum UserEvents {
   GET_USER_BY_ID = 'user.get.by.id',
   GET_USER_BY_EMAIL = 'user.get.by.email',
@@ -20,6 +19,9 @@ export enum AuctionEvents {
 
 export enum BidEvents {
   PLACE_BID = 'bid.place',
+  BID_CREATED = 'bid.created',
+  BID_OUTBID = 'bid.outbid',
+  BID_WON = 'bid.won',
   BID_ACCEPTED = 'bid.accepted',
   BID_REJECTED = 'bid.rejected',
   GET_BIDS_FOR_AUCTION = 'bid.get.for.auction',
