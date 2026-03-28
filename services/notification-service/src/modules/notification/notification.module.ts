@@ -16,6 +16,10 @@ import { BidCreatedStrategy } from './strategies/bid-created.strategy';
 import { OutbidStrategy } from './strategies/outbid.strategy';
 import { AuctionEndedStrategy } from './strategies/auction-ended.strategy';
 import { BidWonStrategy } from './strategies/bid-won.strategy';
+import { NotificationRepository } from './repositories/notification.repository';
+import { EmailAdapter } from './adapters/email.adapter';
+import { UserClientAdapter } from './adapters/user-client.adapter';
+import { AuctionClientAdapter } from './adapters/auction-client.adapter';
 
 @Module({
   imports: [
@@ -50,6 +54,10 @@ import { BidWonStrategy } from './strategies/bid-won.strategy';
     OutbidStrategy,
     AuctionEndedStrategy,
     BidWonStrategy,
+    NotificationRepository,
+    EmailAdapter,
+    UserClientAdapter,
+    AuctionClientAdapter,
   ],
 
   controllers: [NotificationController],

@@ -54,9 +54,22 @@ import { PubSubModule } from './modules/pubsub/pubsub.module';
           path: '/graphql',
           onConnect: (context: any) => {
             const { connectionParams, extra } = context;
-            // Handle auth or language from connectionParams if needed
+            console.log(
+              `[WS-New] Subscription connection attempt. Params: ${JSON.stringify(connectionParams)}`,
+            );
             return {
               req: extra.request,
+              language: connectionParams?.['accept-language'] || 'en',
+            };
+          },
+        },
+        'subscriptions-transport-ws': {
+          path: '/graphql',
+          onConnect: (connectionParams: any) => {
+            console.log(
+              `[WS-Old] Subscription connection attempt. Params: ${JSON.stringify(connectionParams)}`,
+            );
+            return {
               language: connectionParams?.['accept-language'] || 'en',
             };
           },

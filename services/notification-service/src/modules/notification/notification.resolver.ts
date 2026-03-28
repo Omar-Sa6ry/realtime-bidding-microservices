@@ -21,14 +21,16 @@ export class NotificationResolver {
     @Inject(PUB_SUB) private readonly pubSub: RedisPubSub,
   ) {}
 
-  @Subscription(() => Notification, {
+  @Subscription(() => NotificationResponse, {
     filter: (payload, variables) => {
       return payload.notificationCreated.userId.toString() === variables.userId;
     },
     resolve: (payload) => payload.notificationCreated,
   })
-  notificationCreated(@Args('userId') userId: string) {
-    return this.pubSub.asyncIterator('NOTIFICATION_CREATED');
+  async notificationCreated(
+    @Args('userId') userId: string,
+  ): Promise<AsyncIterator<NotificationResponse>> {
+    return await this.pubSub.asyncIterator('NOTIFICATION_CREATED');
   }
 
   @Query(() => NotificationResponse)
@@ -36,17 +38,17 @@ export class NotificationResolver {
   async getNotificationById(
     @Args('id') id: string,
     @CurrentUser() user: CurrentUserDtoN,
-  ) {
+  ): Promise<NotificationResponse> {
     return this.notificationService.getById(id, user.id);
   }
 
   @Query(() => NotificationsResponse)
   @Auth([Permission.READ_NOTIFICATION])
   async getUserNotifications(
-    @Args('input') input: FindNotificationInput,
-    @Args('pagination', { nullable: true }) pagination: PaginationInput,
     @CurrentUser() user: CurrentUserDtoN,
-  ) {
+    @Args('input', { nullable: true }) input?: FindNotificationInput,
+    @Args('pagination', { nullable: true }) pagination?: PaginationInput,
+  ): Promise<NotificationsResponse> {
     return this.notificationService.getUserNotifications(
       user.id,
       input,
@@ -65,13 +67,15 @@ export class NotificationResolver {
   async markNotificationAsRead(
     @Args('id') id: string,
     @CurrentUser() user: CurrentUserDtoN,
-  ) {
+  ): Promise<NotificationResponse> {
     return this.notificationService.markAsRead(id, user.id);
   }
 
   @Mutation(() => NotificationsResponse)
   @Auth([Permission.UPDATE_NOTIFICATION])
-  async markAllNotificationsAsRead(@CurrentUser() user: CurrentUserDtoN) {
+  async markAllNotificationsAsRead(
+    @CurrentUser() user: CurrentUserDtoN,
+  ): Promise<NotificationsResponse> {
     return this.notificationService.markAllAsRead(user.id);
   }
 
@@ -80,7 +84,7 @@ export class NotificationResolver {
   async deleteNotification(
     @Args('id') id: string,
     @CurrentUser() user: CurrentUserDtoN,
-  ) {
+  ): Promise<NotificationResponse> {
     return this.notificationService.deleteNotification(id, user.id);
   }
 }

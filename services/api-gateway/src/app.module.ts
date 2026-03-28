@@ -42,17 +42,16 @@ import { SqlInjectionInterceptor } from './common/interceptors/sql-injection.int
         },
       },
 
-      subscriptions: {
-        'graphql-ws': true,
-      },
-      
       gateway: {
         supergraphSdl: new IntrospectAndCompose({
           subgraphs: [
             { name: 'user', url: 'http://user-srv:3000/user/graphql' },
             { name: 'auction', url: 'http://auction-srv:3002/graphql' },
             { name: 'bidding', url: 'http://bidding-srv:3003/graphql' },
-            { name: 'notification', url: 'http://notification-srv:3004/graphql' },
+            {
+              name: 'notification',
+              url: 'http://notification-srv:3004/graphql',
+            },
           ],
         }),
 
@@ -67,7 +66,10 @@ import { SqlInjectionInterceptor } from './common/interceptors/sql-injection.int
                 );
               }
               if (context.req?.headers?.['x-lang']) {
-                request.http.headers.set('x-lang', context.req.headers['x-lang']);
+                request.http.headers.set(
+                  'x-lang',
+                  context.req.headers['x-lang'],
+                );
               }
               if (context.req?.headers?.['accept-language']) {
                 request.http.headers.set(

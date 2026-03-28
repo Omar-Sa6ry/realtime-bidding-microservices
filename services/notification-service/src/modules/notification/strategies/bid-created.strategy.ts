@@ -1,11 +1,11 @@
+import { BaseNotificationStrategy } from './base.strategy';
 import { Injectable } from '@nestjs/common';
 import { NotificationType } from 'src/common/constant/enum.constant';
 import { I18nService } from 'nestjs-i18n';
-import { NotificationStrategy } from './interface/notification.strategy';
 import { BidEventPayload } from './interface/notification-events.interface';
 
 @Injectable()
-export class BidCreatedStrategy implements NotificationStrategy {
+export class BidCreatedStrategy extends BaseNotificationStrategy<BidEventPayload> {
   getType(): NotificationType {
     return NotificationType.BID_PLACED;
   }
@@ -16,8 +16,8 @@ export class BidCreatedStrategy implements NotificationStrategy {
   ): Promise<{ title: string; message: string }> {
     const auctionId = data.auction_id;
     const amount = data.amount;
-    const title = await i18n.t('notification.BID_PLACED_TITLE');
-    const message = await i18n.t('notification.BID_PLACED_MESSAGE', {
+    const title = i18n.t('notification.BID_PLACED_TITLE');
+    const message = i18n.t('notification.BID_PLACED_MESSAGE', {
       args: { amount, auctionId },
     });
     return { title, message };

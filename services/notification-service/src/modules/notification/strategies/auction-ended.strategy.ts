@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { NotificationType } from 'src/common/constant/enum.constant';
 import { I18nService } from 'nestjs-i18n';
-import { NotificationStrategy } from './interface/notification.strategy';
 import { AuctionEventPayload } from './interface/notification-events.interface';
+import { BaseNotificationStrategy } from './base.strategy';
 
 @Injectable()
-export class AuctionEndedStrategy implements NotificationStrategy {
+export class AuctionEndedStrategy extends BaseNotificationStrategy<AuctionEventPayload> {
   getType(): NotificationType {
     return NotificationType.AUCTION_WON;
   }
