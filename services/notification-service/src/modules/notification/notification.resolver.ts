@@ -28,7 +28,7 @@ export class NotificationResolver {
     resolve: (payload) => payload.notificationCreated,
   })
   async notificationCreated(
-    @Args('userId') userId: string,
+    @CurrentUser() user: CurrentUserDtoN,
   ): Promise<AsyncIterator<NotificationResponse>> {
     return await this.pubSub.asyncIterator('NOTIFICATION_CREATED');
   }

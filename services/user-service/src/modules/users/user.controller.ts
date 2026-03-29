@@ -40,7 +40,17 @@ export class UserNatsController {
   @GrpcMethod('UserService', 'GetUser')
   async getUser(data: { id: string }) {
     const user = await this.userService.findById(data.id);
-    return { user: user.data };
+    return {
+      user: {
+        id: user?.data?.id,
+        email: user?.data?.email,
+        balance: Number(user?.data?.balance),
+        firstname: user?.data?.firstName,
+        lastname: user?.data?.lastName,
+        role: user?.data?.role,
+        country: user?.data?.country,
+      },
+    };
   }
 
   @GrpcMethod('UserService', 'GetUsers')
@@ -50,9 +60,11 @@ export class UserNatsController {
       users: users.map((u) => ({
         id: u.id,
         email: u.email,
-        balance: u.balance,
+        balance: Number(u.balance),
         firstname: u.firstName,
         lastname: u.lastName,
+        role: u.role,
+        country: u.country,
       })),
     };
   }

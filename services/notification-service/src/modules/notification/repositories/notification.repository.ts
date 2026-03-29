@@ -13,14 +13,16 @@ export class NotificationRepository {
 
   async create(data: Partial<Notification>): Promise<Notification> {
     const notification = await this.model.create(data);
+    
     return notification.toObject({ getters: true }) as unknown as Notification;
   }
 
   async findById(id: string, userId: string): Promise<Notification | null> {
     const notification = await this.model.findOne({
       _id: new Types.ObjectId(id),
-      userId: new Types.ObjectId(userId),
+      userId: userId,
     });
+
     return notification
       ? (notification.toObject({ getters: true }) as unknown as Notification)
       : null;
@@ -55,6 +57,7 @@ export class NotificationRepository {
     const notification = await this.model.findOneAndUpdate(filter, data, {
       new: true,
     });
+
     return notification
       ? (notification.toObject({ getters: true }) as unknown as Notification)
       : null;
@@ -69,6 +72,7 @@ export class NotificationRepository {
 
   async delete(filter: any): Promise<Notification | null> {
     const notification = await this.model.findOneAndDelete(filter);
+
     return notification
       ? (notification.toObject({ getters: true }) as unknown as Notification)
       : null;

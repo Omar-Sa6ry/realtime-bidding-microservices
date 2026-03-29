@@ -1,0 +1,98 @@
+subscription {
+  notificationCreated {
+    data {
+      id
+      title
+      message
+    }
+  }
+}
+
+query {
+  getNotificationById(id: "69c82a53f182ed594213fea8") {
+    message
+    success
+    timeStamp
+    statusCode
+    data {
+      id
+      title
+      message
+      isRead
+      createdAt
+    }
+  }
+}
+
+query {
+  getUserNotifications {
+    message
+    success
+    timeStamp
+    statusCode
+    items {
+      id
+      title
+      message
+      isRead
+      createdAt
+    }
+    pagination {
+      totalPages
+      totalPages
+      currentPage
+    }
+  }
+}
+
+query {
+  getUnreadNotificationCount {
+    data
+  }
+}
+
+mutation {
+  markNotificationAsRead(id: "69c82a53f182ed594213fea8") {
+    message
+    success
+    timeStamp
+    statusCode
+    data {
+      id
+      title
+      message
+      isRead
+      createdAt
+    }
+  }
+}
+
+mutation {
+  markAllNotificationsAsRead {
+    message
+    success
+    timeStamp
+    statusCode
+    pagination {
+      totalPages
+      currentPage
+      totalItems
+    }
+    items {
+      id
+      title
+      message
+      isRead
+      createdAt
+    }
+  }
+}
+
+mutation {
+  deleteNotification(id: "69c82a46f182ed594213fea5") {
+    message
+    success
+    timeStamp
+    statusCode
+  }
+}

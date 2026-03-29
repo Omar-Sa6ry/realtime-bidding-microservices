@@ -11,8 +11,8 @@ export class Notification {
   _id: Types.ObjectId;
 
   @Field(() => String)
-  @Prop({ type: Types.ObjectId, required: true, index: true })
-  userId: Types.ObjectId;
+  @Prop({ required: true, index: true })
+  userId: string;
 
   @Field(() => NotificationType)
   @Prop({ required: true, enum: NotificationType })
@@ -31,8 +31,8 @@ export class Notification {
   isRead: boolean;
 
   @Field(() => String, { nullable: true })
-  @Prop({ type: Types.ObjectId })
-  actionId?: Types.ObjectId;
+  @Prop()
+  actionId?: string;
 
   @Field(() => Date)
   createdAt: Date;
