@@ -171,18 +171,31 @@ func (s *BiddingService) GetMyBids(ctx context.Context, pagination *model.Pagina
 }
 
 func (s *BiddingService) ResolveAuction(ctx context.Context, auctionID string, sellerID string) error {
+	// Distributed Lock for Resolution
+	lockID, err := s.redisRepo.Lock(ctx, "resolve:"+auctionID, 10*time.Second)
+	if err != nil {
+		return fmt.Errorf("failed to acquire resolution lock for auction %s: %w", auctionID, err)
+	}
+	defer s.redisRepo.Unlock(ctx, "resolve:"+auctionID, lockID)
+
 	highestBid, err := s.GetHighestBid(ctx, auctionID)
 	if err != nil {
 		return fmt.Errorf("failed to get highest bid during resolution: %w", err)
 	}
-	
+
 	if highestBid == nil {
+		logger.Info("BiddingService", fmt.Sprintf("No bids found for auction %s. No resolution needed.", auctionID))
+		return nil
+	}
+
+	if highestBid.Status == domains.StatusWinner {
+		logger.Info("BiddingService", fmt.Sprintf("Auction %s already resolved for winner %s", auctionID, highestBid.UserID))
 		return nil
 	}
 
 	highestBid.Status = domains.StatusWinnerPending
 	highestBid.UpdatedAt = time.Now()
-	_ = s.mongoRepo.PlaceBid(ctx, highestBid)
+	_ = s.mongoRepo.UpdateBidStatus(ctx, highestBid.ID, domains.StatusWinnerPending)
 
 	var success bool
 	maxRetries := 3
@@ -198,7 +211,7 @@ func (s *BiddingService) ResolveAuction(ctx context.Context, auctionID string, s
 
 	if !success {
 		logger.Error("BiddingService", fmt.Sprintf("CRITICAL: Failed to transfer funds after %d retries. Auction: %s, Seller: %s, Amount: %f", maxRetries, auctionID, sellerID, highestBid.Amount), nil)
-		return fmt.Errorf("robustness: funds was not transferred but auction is marked as WINNER_PENDING")
+		return fmt.Errorf("robustness: funds could not be transferred. Manual intervention required for auction %s", auctionID)
 	}
 
 	highestBid.Status = domains.StatusWinner
@@ -211,6 +224,7 @@ func (s *BiddingService) ResolveAuction(ctx context.Context, auctionID string, s
 	})
 	s.publishEvents(ctx, highestBid)
 
+	logger.Info("BiddingService", fmt.Sprintf("Successfully resolved auction %s. Winner: %s, Amount: %f", auctionID, highestBid.UserID, highestBid.Amount))
 	return nil
 }
 
