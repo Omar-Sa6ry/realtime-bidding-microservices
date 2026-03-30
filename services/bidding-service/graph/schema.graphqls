@@ -1,4 +1,34 @@
-directive @auth on FIELD_DEFINITION
+enum Permission {
+  # User
+  UPDATE_USER
+  DELETE_USER
+  EDIT_USER_ROLE
+  VIEW_USER
+  CREATE_INSTRUCTOR
+
+  # Auth
+  RESET_PASSWORD
+  CHANGE_PASSWORD
+  FORGOT_PASSWORD
+  RECHARGE_WALLET
+  LOGOUT
+
+  # Notification
+  CREATE_NOTIFICATION
+  READ_NOTIFICATION
+  UPDATE_NOTIFICATION
+  DELETE_NOTIFICATION
+
+  # Auction
+  CREATE_AUCTION
+  UPDATE_AUCTION
+  DELETE_AUCTION
+
+  # Bidding
+  CREATE_BID
+}
+
+directive @auth(permissions: [Permission!]) on FIELD_DEFINITION
 
 extend type Auction @key(fields: "id") {
   id: ID! @external
@@ -38,11 +68,11 @@ input PaginationInput {
 }
 
 extend type Mutation {
-  placeBid(auctionId: ID!, amount: Float!): BidResponse! @auth
+  placeBid(auctionId: ID!, amount: Float!): BidResponse! @auth(permissions: [CREATE_BID])
 }
 
 extend type Query {
   getHighestBid(auctionId: ID!): BidResponse!
   getAuctionHistory(auctionId: ID!, pagination: PaginationInput): BidsResponse!
-  getMyBids(pagination: PaginationInput): BidsResponse! @auth
+  getMyBids(pagination: PaginationInput): BidsResponse! @auth(permissions: [VIEW_USER])
 }

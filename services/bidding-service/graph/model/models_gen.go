@@ -3,6 +3,11 @@
 package model
 
 import (
+	"bytes"
+	"fmt"
+	"io"
+	"strconv"
+
 	domain "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/domains"
 )
 
@@ -40,4 +45,91 @@ type PaginationInput struct {
 }
 
 type Query struct {
+}
+
+type Permission string
+
+const (
+	PermissionUpdateUser         Permission = "UPDATE_USER"
+	PermissionDeleteUser         Permission = "DELETE_USER"
+	PermissionEditUserRole       Permission = "EDIT_USER_ROLE"
+	PermissionViewUser           Permission = "VIEW_USER"
+	PermissionCreateInstructor   Permission = "CREATE_INSTRUCTOR"
+	PermissionResetPassword      Permission = "RESET_PASSWORD"
+	PermissionChangePassword     Permission = "CHANGE_PASSWORD"
+	PermissionForgotPassword     Permission = "FORGOT_PASSWORD"
+	PermissionRechargeWallet     Permission = "RECHARGE_WALLET"
+	PermissionLogout             Permission = "LOGOUT"
+	PermissionCreateNotification Permission = "CREATE_NOTIFICATION"
+	PermissionReadNotification   Permission = "READ_NOTIFICATION"
+	PermissionUpdateNotification Permission = "UPDATE_NOTIFICATION"
+	PermissionDeleteNotification Permission = "DELETE_NOTIFICATION"
+	PermissionCreateAuction      Permission = "CREATE_AUCTION"
+	PermissionUpdateAuction      Permission = "UPDATE_AUCTION"
+	PermissionDeleteAuction      Permission = "DELETE_AUCTION"
+	PermissionCreateBid          Permission = "CREATE_BID"
+)
+
+var AllPermission = []Permission{
+	PermissionUpdateUser,
+	PermissionDeleteUser,
+	PermissionEditUserRole,
+	PermissionViewUser,
+	PermissionCreateInstructor,
+	PermissionResetPassword,
+	PermissionChangePassword,
+	PermissionForgotPassword,
+	PermissionRechargeWallet,
+	PermissionLogout,
+	PermissionCreateNotification,
+	PermissionReadNotification,
+	PermissionUpdateNotification,
+	PermissionDeleteNotification,
+	PermissionCreateAuction,
+	PermissionUpdateAuction,
+	PermissionDeleteAuction,
+	PermissionCreateBid,
+}
+
+func (e Permission) IsValid() bool {
+	switch e {
+	case PermissionUpdateUser, PermissionDeleteUser, PermissionEditUserRole, PermissionViewUser, PermissionCreateInstructor, PermissionResetPassword, PermissionChangePassword, PermissionForgotPassword, PermissionRechargeWallet, PermissionLogout, PermissionCreateNotification, PermissionReadNotification, PermissionUpdateNotification, PermissionDeleteNotification, PermissionCreateAuction, PermissionUpdateAuction, PermissionDeleteAuction, PermissionCreateBid:
+		return true
+	}
+	return false
+}
+
+func (e Permission) String() string {
+	return string(e)
+}
+
+func (e *Permission) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = Permission(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid Permission", str)
+	}
+	return nil
+}
+
+func (e Permission) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *Permission) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e Permission) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }

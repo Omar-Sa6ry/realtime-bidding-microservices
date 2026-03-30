@@ -8,6 +8,8 @@ export class TokenService {
   async generate(
     email: string,
     id: string,
+    role: string,
+    permissions: string[],
     expiresIn?: string,
   ): Promise<string> {
     const secret = process.env.JWT_SECRET as string;
@@ -15,6 +17,6 @@ export class TokenService {
     if (expiresIn) {
       options.expiresIn = expiresIn;
     }
-    return this.jwtService.signAsync({ email, id }, options);
+    return this.jwtService.signAsync({ email, id, role, permissions }, options);
   }
 }

@@ -8,7 +8,7 @@ import { LoginDto } from '../inputs/Login.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from '../inputs/CreateUserData.dto';
-import { Role } from '@bidding-micro/shared';
+import { Role, rolePermissionsMap } from '@bidding-micro/shared';
 import { PasswordServiceAdapter } from '../adapter/password.adapter';
 import { Transactional } from 'typeorm-transactional';
 import { RedisService } from '@bts-soft/core';
@@ -31,8 +31,8 @@ export class AuthServiceFacade {
   @Transactional()
   async register(createUserDto: CreateUserDto): Promise<AuthResponse> {
     const user = await this.createUser(createUserDto);
-
-    const token = await this.tokenService.generate(user.email, user.id);
+    const permissions = rolePermissionsMap[user.role] || [];
+    const token = await this.tokenService.generate(user.email, user.id, user.role, permissions);
 
     this.redisService.set(`user:${user.id}`, user);
     this.redisService.set(`user:email:${user.email}`, user);
@@ -69,9 +69,12 @@ export class AuthServiceFacade {
     if (!isValid) throw new BadRequestException('Invalid credentials');
 
     const expiresIn = loginDto.rememberMe ? '100y' : undefined;
+    const permissions = rolePermissionsMap[user.data.role] || [];
     const token = await this.tokenService.generate(
-      user?.data?.email,
-      user.data?.id,
+      user.data.email,
+      user.data.id,
+      user.data.role,
+      permissions,
       expiresIn,
     );
 
@@ -101,9 +104,12 @@ export class AuthServiceFacade {
     await roleValidator.validate(user.data);
     await passwordValidator.validate(user.data);
 
+    const permissions = rolePermissionsMap[user.data.role] || [];
     const token = await this.tokenService.generate(
       user.data.email,
       user.data.id,
+      user.data.role,
+      permissions,
     );
 
     await this.userRepo.save(user.data);

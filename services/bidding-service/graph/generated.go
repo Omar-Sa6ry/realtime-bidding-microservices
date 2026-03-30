@@ -37,7 +37,7 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
-	Auth func(ctx context.Context, obj any, next graphql.Resolver) (res any, err error)
+	Auth func(ctx context.Context, obj any, next graphql.Resolver, permissions []model.Permission) (res any, err error)
 }
 
 type ComplexityRoot struct {
@@ -504,6 +504,17 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) dir_auth_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "permissions", ec.unmarshalOPermission2ᚕgithubᚗcomᚋOmarᚑSa6ryᚋrealtimeᚑbiddingᚑmicroservicesᚋservicesᚋbiddingᚑserviceᚋgraphᚋmodelᚐPermissionᚄ)
+	if err != nil {
+		return nil, err
+	}
+	args["permissions"] = arg0
+	return args, nil
+}
 
 func (ec *executionContext) field_Entity_findBidByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
@@ -1325,11 +1336,16 @@ func (ec *executionContext) _Mutation_placeBid(ctx context.Context, field graphq
 			directive0 := next
 
 			directive1 := func(ctx context.Context) (any, error) {
+				permissions, err := ec.unmarshalOPermission2ᚕgithubᚗcomᚋOmarᚑSa6ryᚋrealtimeᚑbiddingᚑmicroservicesᚋservicesᚋbiddingᚑserviceᚋgraphᚋmodelᚐPermissionᚄ(ctx, []any{"CREATE_BID"})
+				if err != nil {
+					var zeroVal *model.BidResponse
+					return zeroVal, err
+				}
 				if ec.Directives.Auth == nil {
 					var zeroVal *model.BidResponse
 					return zeroVal, errors.New("directive auth is not implemented")
 				}
-				return ec.Directives.Auth(ctx, nil, directive0)
+				return ec.Directives.Auth(ctx, nil, directive0, permissions)
 			}
 
 			next = directive1
@@ -1503,11 +1519,16 @@ func (ec *executionContext) _Query_getMyBids(ctx context.Context, field graphql.
 			directive0 := next
 
 			directive1 := func(ctx context.Context) (any, error) {
+				permissions, err := ec.unmarshalOPermission2ᚕgithubᚗcomᚋOmarᚑSa6ryᚋrealtimeᚑbiddingᚑmicroservicesᚋservicesᚋbiddingᚑserviceᚋgraphᚋmodelᚐPermissionᚄ(ctx, []any{"VIEW_USER"})
+				if err != nil {
+					var zeroVal *model.BidsResponse
+					return zeroVal, err
+				}
 				if ec.Directives.Auth == nil {
 					var zeroVal *model.BidsResponse
 					return zeroVal, errors.New("directive auth is not implemented")
 				}
-				return ec.Directives.Auth(ctx, nil, directive0)
+				return ec.Directives.Auth(ctx, nil, directive0, permissions)
 			}
 
 			next = directive1
@@ -4391,6 +4412,16 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 	return res
 }
 
+func (ec *executionContext) unmarshalNPermission2githubᚗcomᚋOmarᚑSa6ryᚋrealtimeᚑbiddingᚑmicroservicesᚋservicesᚋbiddingᚑserviceᚋgraphᚋmodelᚐPermission(ctx context.Context, v any) (model.Permission, error) {
+	var res model.Permission
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNPermission2githubᚗcomᚋOmarᚑSa6ryᚋrealtimeᚑbiddingᚑmicroservicesᚋservicesᚋbiddingᚑserviceᚋgraphᚋmodelᚐPermission(ctx context.Context, sel ast.SelectionSet, v model.Permission) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -4846,6 +4877,43 @@ func (ec *executionContext) unmarshalOPaginationInput2ᚖgithubᚗcomᚋOmarᚑS
 	}
 	res, err := ec.unmarshalInputPaginationInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOPermission2ᚕgithubᚗcomᚋOmarᚑSa6ryᚋrealtimeᚑbiddingᚑmicroservicesᚋservicesᚋbiddingᚑserviceᚋgraphᚋmodelᚐPermissionᚄ(ctx context.Context, v any) ([]model.Permission, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]model.Permission, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNPermission2githubᚗcomᚋOmarᚑSa6ryᚋrealtimeᚑbiddingᚑmicroservicesᚋservicesᚋbiddingᚑserviceᚋgraphᚋmodelᚐPermission(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOPermission2ᚕgithubᚗcomᚋOmarᚑSa6ryᚋrealtimeᚑbiddingᚑmicroservicesᚋservicesᚋbiddingᚑserviceᚋgraphᚋmodelᚐPermissionᚄ(ctx context.Context, sel ast.SelectionSet, v []model.Permission) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNPermission2githubᚗcomᚋOmarᚑSa6ryᚋrealtimeᚑbiddingᚑmicroservicesᚋservicesᚋbiddingᚑserviceᚋgraphᚋmodelᚐPermission(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v any) (string, error) {

@@ -34,12 +34,42 @@ type Query {
   findAuctionByID(id: ID!): AuctionResponse
 }
 
-directive @auth on FIELD_DEFINITION
+enum Permission {
+  # User
+  UPDATE_USER
+  DELETE_USER
+  EDIT_USER_ROLE
+  VIEW_USER
+  CREATE_INSTRUCTOR
+
+  # Auth
+  RESET_PASSWORD
+  CHANGE_PASSWORD
+  FORGOT_PASSWORD
+  RECHARGE_WALLET
+  LOGOUT
+
+  # Notification
+  CREATE_NOTIFICATION
+  READ_NOTIFICATION
+  UPDATE_NOTIFICATION
+  DELETE_NOTIFICATION
+
+  # Auction
+  CREATE_AUCTION
+  UPDATE_AUCTION
+  DELETE_AUCTION
+
+  # Bidding
+  CREATE_BID
+}
+
+directive @auth(permissions: [Permission!]) on FIELD_DEFINITION
 
 type Mutation {
-  createAuction(input: CreateAuctionInput!): AuctionResponse! @auth
-  updateAuction(id: ID!, input: UpdateAuctionInput!): AuctionResponse! @auth
-  deleteAuction(id: ID!): AuctionResponse @auth
+  createAuction(input: CreateAuctionInput!): AuctionResponse! @auth(permissions: [CREATE_AUCTION])
+  updateAuction(id: ID!, input: UpdateAuctionInput!): AuctionResponse! @auth(permissions: [UPDATE_AUCTION])
+  deleteAuction(id: ID!): AuctionResponse @auth(permissions: [DELETE_AUCTION])
 }
 
 type Auction @key(fields: "id") {

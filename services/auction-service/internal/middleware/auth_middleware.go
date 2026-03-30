@@ -11,7 +11,11 @@ import (
 
 type contextKey string
 
-const UserIDKey contextKey = "userId"
+const (
+	UserIDKey      contextKey = "userId"
+	UserRoleKey    contextKey = "userRole"
+	UserPermsKey   contextKey = "userPermissions"
+)
 
 func AuthMiddleware(secretKey string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -33,7 +37,6 @@ func AuthMiddleware(secretKey string) func(http.Handler) http.Handler {
 				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 					return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 				}
-
 				return []byte(secretKey), nil
 			})
 
@@ -43,10 +46,21 @@ func AuthMiddleware(secretKey string) func(http.Handler) http.Handler {
 			}
 
 			if claims, ok := token.Claims.(jwt.MapClaims); ok {
+				ctx := r.Context()
 				if userID, ok := claims["id"].(string); ok {
-					ctx := context.WithValue(r.Context(), UserIDKey, userID)
-					r = r.WithContext(ctx)
+					ctx = context.WithValue(ctx, UserIDKey, userID)
 				}
+				if role, ok := claims["role"].(string); ok {
+					ctx = context.WithValue(ctx, UserRoleKey, role)
+				}
+				if perms, ok := claims["permissions"].([]interface{}); ok {
+					permStrings := make([]string, len(perms))
+					for i, v := range perms {
+						permStrings[i] = fmt.Sprint(v)
+					}
+					ctx = context.WithValue(ctx, UserPermsKey, permStrings)
+				}
+				r = r.WithContext(ctx)
 			}
 
 			next.ServeHTTP(w, r)
@@ -57,4 +71,14 @@ func AuthMiddleware(secretKey string) func(http.Handler) http.Handler {
 func GetUserIDFromContext(ctx context.Context) string {
 	userID, _ := ctx.Value(UserIDKey).(string)
 	return userID
+}
+
+func GetUserRoleFromContext(ctx context.Context) string {
+	role, _ := ctx.Value(UserRoleKey).(string)
+	return role
+}
+
+func GetUserPermissionsFromContext(ctx context.Context) []string {
+	perms, _ := ctx.Value(UserPermsKey).([]string)
+	return perms
 }
