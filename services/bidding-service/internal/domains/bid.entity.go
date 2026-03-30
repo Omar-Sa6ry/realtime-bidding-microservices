@@ -4,12 +4,12 @@ import "time"
 
 type Bid struct {
 	ID           string               `json:"id" bson:"_id"`
-	AuctionID    string               `json:"auction_id" bson:"auction_id"`
-	UserID       string               `json:"user_id" bson:"user_id"`
+	AuctionID    string               `json:"auctionId" bson:"auction_id"`
+	UserID       string               `json:"userId" bson:"user_id"`
 	Amount       float64              `json:"amount" bson:"amount"`
 	Status       BidStatus            `json:"status" bson:"status"`
-	CreatedAt    time.Time            `json:"created_at" bson:"created_at"`
-	UpdatedAt    time.Time            `json:"updated_at" bson:"updated_at"`
+	CreatedAt    time.Time            `json:"createdAt" bson:"created_at"`
+	UpdatedAt    time.Time            `json:"updatedAt" bson:"updated_at"`
 	DomainEvents []interface{}        `bson:"-" json:"-"`
 }
 

@@ -1,4 +1,11 @@
-import { Resolver, Query, Mutation, Args, Subscription } from '@nestjs/graphql';
+import {
+  Resolver,
+  Query,
+  Mutation,
+  Args,
+  Subscription,
+  ID,
+} from '@nestjs/graphql';
 import { NotificationSubService } from './notification.service';
 import { Notification } from './entity/notification.entity';
 import { FindNotificationInput } from './inputs/findNotification.input';
@@ -13,6 +20,7 @@ import { CurrentUserDtoN } from './dtos/currentUser.dto';
 import { Inject } from '@nestjs/common';
 import { PUB_SUB } from '../pubsub/pubsub.module';
 import { RedisPubSub } from 'graphql-redis-subscriptions';
+import { AuctionUpdate, BidUpdate } from './dtos/update.dto';
 
 @Resolver(() => Notification)
 export class NotificationResolver {
@@ -31,6 +39,25 @@ export class NotificationResolver {
     @CurrentUser() user: CurrentUserDtoN,
   ): Promise<AsyncIterator<NotificationResponse>> {
     return await this.pubSub.asyncIterator('NOTIFICATION_CREATED');
+  }
+
+  @Subscription(() => BidUpdate, {
+    filter: (payload, variables) => {
+      return payload.bidUpdated.auctionId === variables.auctionId;
+    },
+    resolve: (payload) => payload.bidUpdated,
+  })
+  async bidUpdated(
+    @Args('auctionId', { type: () => ID }) auctionId: string,
+  ): Promise<AsyncIterator<BidUpdate>> {
+    return await this.pubSub.asyncIterator(`BID_UPDATED_${auctionId}`);
+  }
+
+  @Subscription(() => AuctionUpdate, {
+    resolve: (payload) => payload.auctionCreated,
+  })
+  async auctionCreated(): Promise<AsyncIterator<AuctionUpdate>> {
+    return await this.pubSub.asyncIterator('AUCTION_CREATED');
   }
 
   @Query(() => NotificationResponse)

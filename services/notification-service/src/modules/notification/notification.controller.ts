@@ -1,14 +1,39 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Inject } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
 import { NotificationSubService } from './notification.service';
+import { PUB_SUB } from '../pubsub/pubsub.module';
+import { RedisPubSub } from 'graphql-redis-subscriptions';
 
 @Controller()
 export class NotificationController {
-  constructor(private readonly notificationService: NotificationSubService) {}
+  constructor(
+    private readonly notificationService: NotificationSubService,
+    @Inject(PUB_SUB) private readonly pubSub: RedisPubSub,
+  ) {}
 
   @EventPattern('bid.created')
-  async handleBidCreated(@Payload() data: Record<string, unknown>) {
+  async handleBidCreated(@Payload() data: any) {
     await this.notificationService.createBidNotification(data);
+
+    this.pubSub.publish(`BID_UPDATED_${data.auctionId}`, {
+      bidUpdated: {
+        auctionId: data.auctionId,
+        amount: data.amount,
+        userId: data.userId,
+      },
+    });
+  }
+
+  @EventPattern('auction.create')
+  async handleAuctionCreated(@Payload() data: any) {
+    // Broadcast new auction to everyone
+    this.pubSub.publish('AUCTION_CREATED', {
+      auctionCreated: {
+        id: data.id,
+        title: data.title,
+        startingPrice: data.startingPrice,
+      },
+    });
   }
 
   @EventPattern('bid.outbid')
