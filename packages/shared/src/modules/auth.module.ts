@@ -24,10 +24,9 @@ export class AuthCommonModule {
       providers: [
         RoleGuard,
         ...(options.providers || []),
-        options.userService,
         {
           provide: 'USER_SERVICE',
-          useClass: options.userService,
+          useExisting: options.userService,
         },
       ],
       exports: ['USER_SERVICE', JwtModule, RoleGuard, options.userService],

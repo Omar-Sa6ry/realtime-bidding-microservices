@@ -1,10 +1,11 @@
-import { Controller } from '@nestjs/common';
+import { Controller, UseFilters } from '@nestjs/common';
 import { GrpcMethod, MessagePattern, Payload } from '@nestjs/microservices';
 import { UserService } from './users.service';
-import { UserEvents } from '@bidding-micro/shared';
+import { UserEvents, GrpcExceptionFilter } from '@bidding-micro/shared';
 import { TransactionType } from './interfaces/ItransactionType.interface';
 
 @Controller()
+@UseFilters(GrpcExceptionFilter)
 export class UserNatsController {
   constructor(private readonly userService: UserService) {}
 

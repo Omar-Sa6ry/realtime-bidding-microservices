@@ -10,6 +10,7 @@ import { UserService } from '../users/users.service';
 import { PaymentService } from './payment.service';
 import { RedisModule } from '@bts-soft/core';
 import { User } from '../users/entity/user.entity';
+import { Transaction } from '../users/entity/transaction.entity';
 
 @Module({
   imports: [
@@ -17,7 +18,7 @@ import { User } from '../users/entity/user.entity';
     AuthCommonModule.register({
       userService: UserService,
       imports: [
-        TypeOrmModule.forFeature([User]),
+        TypeOrmModule.forFeature([User, Transaction]),
         RedisModule,
         TranslationModule,
       ],

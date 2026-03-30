@@ -9,9 +9,10 @@ import { In, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
 import { Transactional } from 'typeorm-transactional';
 import { I18nService } from 'nestjs-i18n';
 import { RedisService } from '@bts-soft/core';
+import { Transaction } from './entity/transaction.entity';
 import { User } from './entity/user.entity';
 import { UpdateUserDto } from './inputs/UpdateUser.dto';
-import { Limit, Page, Role } from '@bidding-micro/shared';
+import { Limit, Page, Role, TransactionStatus, TransactionType as DBTransactionType } from '@bidding-micro/shared';
 import {
   UserCountPercentageResponse,
   UserResponse,
@@ -27,6 +28,8 @@ export class UserService {
     private readonly i18n: I18nService,
     private readonly redisService: RedisService,
     @InjectRepository(User) private readonly userRepo: Repository<User>,
+    @InjectRepository(Transaction)
+    private readonly transactionRepo: Repository<Transaction>,
   ) {}
 
   async findById(id: string): Promise<UserResponse> {
@@ -181,6 +184,15 @@ export class UserService {
 
     user.balance = Number(user.balance) + amount;
     await this.userRepo.save(user);
+
+    this.transactionRepo.save({
+      userId,
+      amount,
+      type: DBTransactionType.CREDIT,
+      status: TransactionStatus.COMPLETED,
+      description: 'Wallet recharge',
+    });
+
     await this.notifyUpdate(user);
 
     return { data: user, message: await this.i18n.t('user.UPDATED') };
@@ -198,6 +210,7 @@ export class UserService {
 
     let balance = Number(user.balance || 0);
     const parsedAmount = Number(amount);
+    let dbType: DBTransactionType;
 
     if (transactionType === TransactionType.DEDUCT) {
       if (balance < parsedAmount) {
@@ -208,8 +221,10 @@ export class UserService {
         };
       }
       balance -= parsedAmount;
+      dbType = DBTransactionType.DEBIT;
     } else if (transactionType === TransactionType.ADD) {
       balance += parsedAmount;
+      dbType = DBTransactionType.CREDIT;
     } else {
       return {
         success: false,
@@ -220,6 +235,18 @@ export class UserService {
 
     user.balance = balance;
     await this.userRepo.save(user);
+
+    this.transactionRepo.save({
+      userId,
+      amount: parsedAmount,
+      type: dbType,
+      status: TransactionStatus.COMPLETED,
+      description:
+        transactionType === TransactionType.DEDUCT
+          ? 'Bid placement'
+          : 'Bid refund / Auction settlement',
+    });
+
     await this.notifyUpdate(user);
 
     return {

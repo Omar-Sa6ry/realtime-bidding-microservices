@@ -34,6 +34,19 @@ export enum PaymentMethod {
   PAYMOB = 'PAYMOB',
 }
 
+export enum TransactionType {
+  CREDIT = 'CREDIT',
+  DEBIT = 'DEBIT',
+  REFUND = 'REFUND',
+  SETTLEMENT = 'SETTLEMENT',
+}
+
+export enum TransactionStatus {
+  PENDING = 'PENDING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+}
+
 registerEnumType(PaymentMethod, {
   name: 'PaymentMethod',
   description: 'Available payment methods in the system',
@@ -47,4 +60,12 @@ registerEnumType(Permission, {
 registerEnumType(Role, {
   name: 'Role',
   description: 'User roles in the system',
+});
+
+registerEnumType(TransactionType, {
+  name: 'TransactionType',
+});
+
+registerEnumType(TransactionStatus, {
+  name: 'TransactionStatus',
 });

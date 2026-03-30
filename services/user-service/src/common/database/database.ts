@@ -4,6 +4,7 @@ import { addTransactionalDataSource } from 'typeorm-transactional';
 import { DataSource } from 'typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { User } from '../../modules/users/entity/user.entity';
+import { Transaction } from '../../modules/users/entity/transaction.entity';
 
 @Module({
   imports: [
@@ -18,7 +19,7 @@ import { User } from '../../modules/users/entity/user.entity';
         username: configService.get<string>('DB_USERNAME'),
         password: configService.get<string>('POSTGRES_PASSWORD'),
         database: configService.get<string>('DB_NAME'),
-        entities: [User],
+        entities: [User, Transaction],
         // logging: ['error', 'warn', 'query'], // Logs queries in development
         synchronize: true,
       }),

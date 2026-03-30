@@ -10,6 +10,9 @@ export * from './decorators/currentUser.decorator';
 // Guards
 export * from './guard/role.guard';
 
+// Filters
+export * from './filters/grpc-exception.filter';
+
 // Interfaces
 export * from './interfaces/user.interface';
 

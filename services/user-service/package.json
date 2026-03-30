@@ -25,7 +25,7 @@
     "@apollo/subgraph": "^2.13.1",
     "@as-integrations/express5": "^1.1.2",
     "@as-integrations/fastify": "^3.1.0",
-    "@bidding-micro/shared": "^1.1.0",
+    "@bidding-micro/shared": "^1.1.6",
     "@bts-soft/core": "^2.2.6",
     "@grpc/grpc-js": "^1.14.3",
     "@grpc/proto-loader": "^0.8.0",

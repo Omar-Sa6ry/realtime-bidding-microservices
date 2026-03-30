@@ -4,6 +4,7 @@ import { AuthResolver } from './auth.resolver';
 import { AuthService } from './auth.service';
 import { UserModule } from '../users/users.module';
 import { User } from '../users/entity/user.entity';
+import { Transaction } from '../users/entity/transaction.entity';
 import { NotificationModule, RedisModule } from '@bts-soft/core';
 import { JwtModule } from './jwt/jwt.module';
 import { TokenService } from './jwt/jwt.service';
@@ -16,7 +17,7 @@ import { TranslationModule } from '../../common/translation/translation.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, Transaction]),
     UserModule,
     RedisModule,
     NotificationModule,
@@ -25,7 +26,7 @@ import { TranslationModule } from '../../common/translation/translation.module';
     AuthCommonModule.register({
       userService: UserService,
       imports: [
-        TypeOrmModule.forFeature([User]),
+        TypeOrmModule.forFeature([User, Transaction]),
         RedisModule,
         TranslationModule,
       ],
