@@ -15,9 +15,12 @@ message GetAuctionRequest {
 
 message GetAuctionResponse {
   bool exists = 1;
-  double current_price = 2;
-  string seller_id = 3;
-  string status = 4;
+  string title = 2;
+  string description = 3;
+  double current_price = 4;
+  string end_time = 5;
+  string seller_id = 6;
+  string status = 7;
 }
 
 message ValidateAuctionRequest {

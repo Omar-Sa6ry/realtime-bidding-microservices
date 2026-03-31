@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package bidding;
+
+option go_package = "realtime-bidding-microservices/services/bidding-service/internal/grpc/pb";
+
+service BiddingService {
+  rpc GetUserBids (GetUserBidsRequest) returns (GetUserBidsResponse) {}
+}
+
+message GetUserBidsRequest {
+  string auction_id = 1;
+  string user_id = 2;
+}
+
+message Bid {
+  string id = 1;
+  double amount = 2;
+  string created_at = 3;
+}
+
+message GetUserBidsResponse {
+  repeated Bid bids = 1;
+}
