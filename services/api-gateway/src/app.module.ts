@@ -45,6 +45,7 @@ import { SqlInjectionInterceptor } from './common/interceptors/sql-injection.int
       gateway: {
         supergraphSdl: new IntrospectAndCompose({
           subgraphs: [
+            { name: 'ai', url: 'http://ai-srv:3005/graphql' },
             { name: 'user', url: 'http://user-srv:3000/user/graphql' },
             { name: 'auction', url: 'http://auction-srv:3002/graphql' },
             { name: 'bidding', url: 'http://bidding-srv:3003/graphql' },

@@ -8,8 +8,7 @@ async function bootstrap() {
   
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
   
-  const port = process.env.PORT || 3005;
+  const port = process.env.PORT_AI || 3005;
   await app.listen(port);
-  logger.log(`AI Service is running on port ${port}`);
 }
 bootstrap();

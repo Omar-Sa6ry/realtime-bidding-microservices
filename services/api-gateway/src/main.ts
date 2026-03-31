@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { WebSocketServer } from 'ws';
 
-async function waitForService(url: string, retries = 120, delay = 5000) {
+async function waitForService(url: string, retries = 360, delay = 5000) {
   for (let i = 0; i < retries; i++) {
     try {
       const res = await fetch(url, {
@@ -31,9 +31,10 @@ async function bootstrap() {
   // Wait for subgraph services to be available
   await Promise.all([
     waitForService('http://user-srv:3000/user/graphql'),
+    waitForService('http://ai-srv:3005/graphql'),
+    waitForService('http://notification-srv:3004/graphql'),
     waitForService('http://auction-srv:3002/graphql'),
     waitForService('http://bidding-srv:3003/graphql'),
-    waitForService('http://notification-srv:3004/graphql'),
   ]);
 
   const app = await NestFactory.create(AppModule);
@@ -41,12 +42,15 @@ async function bootstrap() {
 
   const port = process.env.PORT_GATEWAY || 4000;
   const server = await app.listen(port, '0.0.0.0');
-  console.log(`API Gateway is running on: https://bidding.test/graphql or http://localhost:${port}/graphql`);
+  console.log(
+    `API Gateway is running on: https://bidding.test/graphql or http://localhost:${port}/graphql`,
+  );
 
   // WebSocket Proxy: Forward subscription connections to notification-service
-  const NOTIFICATION_WS_URL = process.env.NOTIFICATION_WS_URL || 'ws://notification-srv:3004/graphql';
+  const NOTIFICATION_WS_URL =
+    process.env.NOTIFICATION_WS_URL || 'ws://notification-srv:3004/graphql';
 
-  const wss = new WebSocketServer({ 
+  const wss = new WebSocketServer({
     noServer: true,
     handleProtocols: (protocols) => {
       console.log(`[WS Proxy] Handshake protocols: ${Array.from(protocols)}`);
@@ -54,28 +58,31 @@ async function bootstrap() {
       if (protocols.has('graphql-transport-ws')) return 'graphql-transport-ws';
       if (protocols.has('graphql-ws')) return 'graphql-ws';
       return false;
-    }
+    },
   });
 
   server.on('upgrade', (req, socket, head) => {
     console.log(`[WS Proxy] Upgrade request received for URL: ${req.url}`);
-    
-    // Support both /graphql and /graphql/
+
     const isGraphqlPath = req.url?.startsWith('/graphql');
-    
+
     if (isGraphqlPath) {
       wss.handleUpgrade(req, socket, head, (clientWs) => {
         const agreedProtocol = clientWs.protocol;
         console.log(`[WS Proxy] Client connected. Protocol: ${agreedProtocol}`);
-        
+
         const { WebSocket: WsClient } = require('ws');
         // Connect to upstream using the agreed protocol
-        const upstreamWs = new WsClient(NOTIFICATION_WS_URL, agreedProtocol || undefined, {
-          headers: {
-            authorization: req.headers.authorization || '',
-            'accept-language': req.headers['accept-language'] || 'en',
+        const upstreamWs = new WsClient(
+          NOTIFICATION_WS_URL,
+          agreedProtocol || undefined,
+          {
+            headers: {
+              authorization: req.headers.authorization || '',
+              'accept-language': req.headers['accept-language'] || 'en',
+            },
           },
-        });
+        );
 
         const pendingMessages: any[] = [];
 
@@ -113,7 +120,9 @@ async function bootstrap() {
         clientWs.on('close', () => cleanup('Client closed'));
         upstreamWs.on('close', () => cleanup('Upstream closed'));
         clientWs.on('error', (err) => cleanup(`Client error: ${err.message}`));
-        upstreamWs.on('error', (err) => cleanup(`Upstream error: ${err.reason || (err as any).message}`));
+        upstreamWs.on('error', (err) =>
+          cleanup(`Upstream error: ${err.reason || (err as any).message}`),
+        );
       });
     } else {
       socket.destroy();
