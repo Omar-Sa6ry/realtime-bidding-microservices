@@ -18,6 +18,7 @@ import {
 import { ChatThread, ChatThreadSchema } from './schemas/chat-thread.schema';
 import { ChatMessage, ChatMessageSchema } from './schemas/chat-message.schema';
 import { PubSubModule } from './common/pubsub/pubsub.module';
+import { GrpcClientsModule } from './modules/grpc/grpc-clients.module';
 
 @Module({
   imports: [
@@ -99,6 +100,7 @@ import { PubSubModule } from './common/pubsub/pubsub.module';
 
     ThrottlerModule,
     PubSubModule,
+    GrpcClientsModule,
     TranslationModule,
   ],
   providers: [
