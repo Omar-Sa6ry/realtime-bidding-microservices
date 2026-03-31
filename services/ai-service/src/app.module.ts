@@ -15,6 +15,9 @@ import {
   ThrottlerModule,
   TranslationModule,
 } from '@bts-soft/core';
+import { ChatThread, ChatThreadSchema } from './schemas/chat-thread.schema';
+import { ChatMessage, ChatMessageSchema } from './schemas/chat-message.schema';
+import { PubSubModule } from './common/pubsub/pubsub.module';
 
 @Module({
   imports: [
@@ -28,7 +31,10 @@ import {
       }),
     }),
 
-    ThrottlerModule,
+    MongooseModule.forFeature([
+      { name: ChatThread.name, schema: ChatThreadSchema },
+      { name: ChatMessage.name, schema: ChatMessageSchema },
+    ]),
 
     GraphQLModule.forRoot<ApolloFederationDriverConfig>({
       driver: ApolloFederationDriver,
@@ -91,6 +97,8 @@ import {
       },
     }),
 
+    ThrottlerModule,
+    PubSubModule,
     TranslationModule,
   ],
   providers: [
