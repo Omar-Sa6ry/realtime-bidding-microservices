@@ -50,4 +50,11 @@ export class NotificationController {
   async handleAuctionEnded(@Payload() data: Record<string, unknown>) {
     await this.notificationService.createAuctionEndedNotification(data);
   }
+
+  @EventPattern('ai.message.chunk')
+  async handleAiMessageChunk(@Payload() data: any) {
+    this.pubSub.publish('AI_MESSAGE_CHUNK', {
+      aiMessageChunk: data,
+    });
+  }
 }

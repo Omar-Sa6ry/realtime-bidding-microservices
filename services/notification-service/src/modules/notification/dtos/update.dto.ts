@@ -21,3 +21,18 @@ export class AuctionUpdate {
   @Field()
   startingPrice: number;
 }
+
+@ObjectType()
+export class AiMessageChunk {
+  @Field()
+  userId: string;
+  
+  @Field()
+  threadId: string;
+
+  @Field()
+  chunk: string;
+
+  @Field()
+  isFinal: boolean;
+}

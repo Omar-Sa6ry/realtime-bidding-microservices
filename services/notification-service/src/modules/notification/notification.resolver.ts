@@ -20,7 +20,7 @@ import { CurrentUserDtoN } from './dtos/currentUser.dto';
 import { Inject } from '@nestjs/common';
 import { PUB_SUB } from '../pubsub/pubsub.module';
 import { RedisPubSub } from 'graphql-redis-subscriptions';
-import { AuctionUpdate, BidUpdate } from './dtos/update.dto';
+import { AuctionUpdate, BidUpdate, AiMessageChunk } from './dtos/update.dto';
 
 @Resolver(() => Notification)
 export class NotificationResolver {
@@ -58,6 +58,18 @@ export class NotificationResolver {
   })
   async auctionCreated(): Promise<AsyncIterator<AuctionUpdate>> {
     return await this.pubSub.asyncIterator('AUCTION_CREATED');
+  }
+
+  @Subscription(() => AiMessageChunk, {
+    filter: (payload, variables) => {
+      return payload.aiMessageChunk.userId === variables.userId;
+    },
+    resolve: (payload) => payload.aiMessageChunk,
+  })
+  async aiMessageChunk(
+    @CurrentUser() user: CurrentUserDtoN,
+  ): Promise<AsyncIterator<AiMessageChunk>> {
+    return await this.pubSub.asyncIterator('AI_MESSAGE_CHUNK');
   }
 
   @Query(() => NotificationResponse)
