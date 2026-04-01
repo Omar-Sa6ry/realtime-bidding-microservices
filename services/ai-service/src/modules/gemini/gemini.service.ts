@@ -1,4 +1,10 @@
-import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  OnModuleInit,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
 import { InjectModel } from '@nestjs/mongoose';
@@ -11,7 +17,12 @@ import { NATS_SERVICE } from '../nats/nats.module';
 import { SendMessageInput } from './inputs/sendMessage.input';
 import { ChatRole } from '../../common/constants/role.enum';
 import { I18nService } from 'nestjs-i18n';
-import { SendMessageResponse } from './dtos/sendMessage.dto';
+import {
+  GetChatMessagesResponse,
+  GetChatThreadsResponse,
+  SendMessageResponse,
+} from './dtos/aiService.dto';
+import { PaginationInputA } from './inputs/pagination.input';
 
 @Injectable()
 export class GeminiService implements OnModuleInit {
@@ -108,10 +119,14 @@ export class GeminiService implements OnModuleInit {
         content: fullResponse,
       });
     } catch (error) {
-      this.logger.error(`Error in Gemini stream: ${error.message}`, error.stack);
-      
-      const errorMessage = 'I apologize, but I am having trouble processing your request right now. Please try again in a moment.';
-      
+      this.logger.error(
+        `Error in Gemini stream: ${error.message}`,
+        error.stack,
+      );
+
+      const errorMessage =
+        'I apologize, but I am having trouble processing your request right now. Please try again in a moment.';
+
       this.natsClient.emit('ai.message.chunk', {
         userId,
         threadId: thread._id,
@@ -130,7 +145,69 @@ export class GeminiService implements OnModuleInit {
     return {
       data: { threadId: thread._id.toString(), isFinal: true, userId },
       message: await this.i18n.t('ai.MESSAGE_SENT_SUCCESSFULLY'),
+    };
+  }
+
+  async getUserChatThreads(
+    userId: string,
+    pagination?: PaginationInputA,
+  ): Promise<GetChatThreadsResponse> {
+    const { page = 1, limit = 10 } = pagination || {};
+    const skip = (page - 1) * limit;
+
+    const [items, total] = await Promise.all([
+      this.threadModel
+        .find({ userId })
+        .sort({ updatedAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      this.threadModel.countDocuments({ userId }),
+    ]);
+
+    return {
+      items: items as any,
+      pagination: {
+        totalItems: total,
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+      },
+      message: await this.i18n.t('ai.CHAT_MESSAGES_RETRIEVED_SUCCESSFULLY'),
       statusCode: 200,
+      success: true,
+    };
+  }
+
+  async getChatMessages(
+    threadId: string,
+    userId: string,
+    pagination?: PaginationInputA,
+  ): Promise<GetChatMessagesResponse> {
+    const thread = await this.threadModel.findOne({ _id: threadId, userId });
+    if (!thread)
+      throw new NotFoundException(await this.i18n.t('ai.THREAD_NOT_FOUND'));
+
+    const { page = 1, limit = 20 } = pagination || {};
+    const skip = (page - 1) * limit;
+
+    const [items, total] = await Promise.all([
+      this.messageModel
+        .find({ threadId })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      this.messageModel.countDocuments({ threadId }),
+    ]);
+
+    return {
+      items: items.reverse() as any,
+      pagination: {
+        totalItems: total,
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+      },
+      message: await this.i18n.t('ai.CHAT_MESSAGES_RETRIEVED_SUCCESSFULLY'),
     };
   }
 

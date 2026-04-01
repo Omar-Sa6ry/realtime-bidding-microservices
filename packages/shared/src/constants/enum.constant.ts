@@ -29,6 +29,8 @@ export enum Permission {
 
   // Ai
   SEND_MESSAGE = 'send_message',
+  VIEW_CHAT_THREADS = 'view_chat_threads',
+  VIEW_CHAT_HISTORY = 'view_chat_history',
 }
 
 export enum PaymentMethod {

@@ -6,7 +6,7 @@ import { ChatRole } from '../../../common/constants/role.enum';
 @ObjectType()
 @Schema({ timestamps: true })
 export class ChatMessage extends Document {
-  @Field()
+  @Field(() => String)
   @Prop({ required: true, type: Types.ObjectId, ref: 'ChatThread' })
   threadId: Types.ObjectId;
 

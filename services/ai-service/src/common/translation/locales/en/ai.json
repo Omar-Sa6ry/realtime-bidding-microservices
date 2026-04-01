@@ -1,3 +1,7 @@
 {
-  "MESSAGE_SENT_SUCCESSFULLY": "Message sent successfully"
+  "MESSAGE_SENT_SUCCESSFULLY": "Message sent successfully",
+  "THREAD_NOT_FOUND": "Thread not found or access denied",
+  "NO_THREADS_FOUND": "No threads found",
+  "CHAT_MESSAGES_RETRIEVED_SUCCESSFULLY": "Chat messages retrieved successfully",
+  "NO_MESSAGES_FOUND": "No messages found"
 }

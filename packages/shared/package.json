@@ -1,6 +1,6 @@
 {
   "name": "@bidding-micro/shared",
-  "version": "1.1.7",
+  "version": "1.1.8",
   "description": "Shared constants, decorators, guards and NATS helpers for bidding microservices",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

@@ -1,3 +1,7 @@
 {
- "MESSAGE_SENT_SUCCESSFULLY": "تم إرسال الرسالة بنجاح"
+ "MESSAGE_SENT_SUCCESSFULLY": "تم إرسال الرسالة بنجاح",
+ "THREAD_NOT_FOUND": "المحادثة غير موجودة",
+ "NO_THREADS_FOUND": "لا توجد محادثات",
+ "CHAT_MESSAGES_RETRIEVED_SUCCESSFULLY": "تم استرجاع رسائل المحادثة بنجاح",
+ "NO_MESSAGES_FOUND": "لا توجد رسائل"
 }

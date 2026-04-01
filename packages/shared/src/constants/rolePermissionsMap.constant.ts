@@ -22,6 +22,8 @@ export const rolePermissionsMap: Record<Role, Permission[]> = {
 
     // Ai
     Permission.SEND_MESSAGE,
+    Permission.VIEW_CHAT_THREADS,
+    Permission.VIEW_CHAT_HISTORY,
   ],
 
   [Role.USER]: [
@@ -41,5 +43,7 @@ export const rolePermissionsMap: Record<Role, Permission[]> = {
 
     // Ai
     Permission.SEND_MESSAGE,
+    Permission.VIEW_CHAT_THREADS,
+    Permission.VIEW_CHAT_HISTORY,
   ],
 };
