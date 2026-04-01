@@ -1,18 +1,18 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-import { ChatThread } from './chat-thread.schema';
 import { ObjectType, Field } from '@nestjs/graphql';
+import { ChatRole } from '../../../common/constants/role.enum';
 
-ObjectType();
+@ObjectType()
 @Schema({ timestamps: true })
 export class ChatMessage extends Document {
   @Field()
-  @Prop({ type: Types.ObjectId, ref: 'ChatThread', required: true })
+  @Prop({ required: true, type: Types.ObjectId, ref: 'ChatThread' })
   threadId: Types.ObjectId;
 
-  @Field(() => String)
-  @Prop({ required: true, enum: ['user', 'model'] })
-  role: string;
+  @Field(() => ChatRole)
+  @Prop({ required: true, enum: ChatRole })
+  role: ChatRole;
 
   @Field(() => String)
   @Prop({ required: true })

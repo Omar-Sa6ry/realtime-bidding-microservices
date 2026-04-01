@@ -19,7 +19,7 @@
     "@apollo/subgraph": "^2.13.1",
     "@as-integrations/express5": "^1.1.2",
     "@as-integrations/fastify": "^3.1.0",
-    "@bidding-micro/shared": "^1.1.6",
+    "@bidding-micro/shared": "^1.1.7",
     "@bts-soft/core": "^2.2.6",
     "@google/generative-ai": "^0.24.1",
     "@grpc/grpc-js": "^1.14.3",

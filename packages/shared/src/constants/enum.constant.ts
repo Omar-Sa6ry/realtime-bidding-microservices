@@ -26,6 +26,9 @@ export enum Permission {
   READ_NOTIFICATION = 'read_notification',
   UPDATE_NOTIFICATION = 'update_notification',
   DELETE_NOTIFICATION = 'delete_notification',
+
+  // Ai
+  SEND_MESSAGE = 'send_message',
 }
 
 export enum PaymentMethod {

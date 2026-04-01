@@ -19,6 +19,9 @@ export const rolePermissionsMap: Record<Role, Permission[]> = {
     Permission.READ_NOTIFICATION,
     Permission.UPDATE_NOTIFICATION,
     Permission.DELETE_NOTIFICATION,
+
+    // Ai
+    Permission.SEND_MESSAGE,
   ],
 
   [Role.USER]: [
@@ -35,5 +38,8 @@ export const rolePermissionsMap: Record<Role, Permission[]> = {
     Permission.READ_NOTIFICATION,
     Permission.UPDATE_NOTIFICATION,
     Permission.DELETE_NOTIFICATION,
+
+    // Ai
+    Permission.SEND_MESSAGE,
   ],
 };

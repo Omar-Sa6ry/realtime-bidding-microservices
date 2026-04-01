@@ -10,15 +10,17 @@ import { join } from 'path';
 import { AppService } from './app.service';
 import { AppResolver } from './app.resolver';
 import { APP_FILTER } from '@nestjs/core';
+import { HttpExceptionFilter, ThrottlerModule } from '@bts-soft/core';
 import {
-  HttpExceptionFilter,
-  ThrottlerModule,
-  TranslationModule,
-} from '@bts-soft/core';
-import { ChatThread, ChatThreadSchema } from './schemas/chat-thread.schema';
-import { ChatMessage, ChatMessageSchema } from './schemas/chat-message.schema';
+  ChatThread,
+  ChatThreadSchema,
+} from './modules/ai/schemas/chat-thread.schema';
+import {
+  ChatMessage,
+  ChatMessageSchema,
+} from './modules/ai/schemas/chat-message.schema';
 import { PubSubModule } from './common/pubsub/pubsub.module';
-import { GrpcClientsModule } from './modules/grpc/grpc-clients.module';
+import { AiModule } from './modules/ai/ai.module';
 
 @Module({
   imports: [
@@ -100,8 +102,8 @@ import { GrpcClientsModule } from './modules/grpc/grpc-clients.module';
 
     ThrottlerModule,
     PubSubModule,
-    GrpcClientsModule,
-    TranslationModule,
+
+    AiModule,
   ],
   providers: [
     AppService,
