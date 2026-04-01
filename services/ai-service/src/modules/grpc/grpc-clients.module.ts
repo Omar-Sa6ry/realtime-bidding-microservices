@@ -1,3 +1,4 @@
+import { RedisModule } from '@bts-soft/core';
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { join } from 'path';
@@ -5,6 +6,7 @@ import { ContextService } from './context.service';
 
 @Module({
   imports: [
+    RedisModule,
     ClientsModule.register([
       {
         name: 'GRPC_USER_SERVICE',

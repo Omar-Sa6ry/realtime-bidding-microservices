@@ -3,6 +3,8 @@ import { GeminiService } from './gemini.service';
 import { SendMessageResponse } from './dtos/sendMessage.dto';
 import { Permission, Auth, CurrentUser } from '@bidding-micro/shared';
 import { CurrentUserDto } from '@bts-soft/core';
+import { UseGuards } from '@nestjs/common';
+import { ThrottlerGuard } from '@nestjs/throttler';
 
 @Resolver()
 export class GeminiResolver {
@@ -10,6 +12,7 @@ export class GeminiResolver {
 
   @Mutation(() => SendMessageResponse)
   @Auth([Permission.SEND_MESSAGE])
+  @UseGuards(ThrottlerGuard)
   async sendMessage(
     @CurrentUser() user: CurrentUserDto,
     @Args('auctionId', { type: () => String }) auctionId: string,

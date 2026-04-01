@@ -59,45 +59,66 @@ export class GeminiService implements OnModuleInit {
       content: text,
     });
 
-    const context = await this.contextService.getAiContext(auctionId, userId);
+    if (!text || text.trim().length === 0) {
+      return {
+        data: { threadId: thread._id.toString(), isFinal: true, userId },
+        message: 'Message cannot be empty',
+        statusCode: 400,
+      };
+    }
 
-    const history = await this.messageModel
-      .find({ threadId: thread._id })
-      .sort({ createdAt: -1 })
-      .limit(10)
-      .lean();
+    try {
+      const context = await this.contextService.getAiContext(auctionId, userId);
 
-    const systemPrompt = this.buildSystemPrompt(context);
-    const geminiHistory = history.reverse().map((msg) => ({
-      role: msg.role === ChatRole.USER ? ChatRole.USER : ChatRole.MODEL,
-      parts: [{ text: msg.content }],
-    }));
+      const history = await this.messageModel
+        .find({ threadId: thread._id })
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .lean();
 
-    const chat = this.model.startChat({
-      history: geminiHistory,
-      systemInstruction: systemPrompt,
-    });
+      const systemPrompt = this.buildSystemPrompt(context);
+      const geminiHistory = history.reverse().map((msg) => ({
+        role: msg.role === ChatRole.USER ? ChatRole.USER : ChatRole.MODEL,
+        parts: [{ text: msg.content }],
+      }));
 
-    const result = await chat.sendMessageStream(text);
-    let fullResponse = '';
+      const chat = this.model.startChat({
+        history: geminiHistory,
+        systemInstruction: systemPrompt,
+      });
 
-    for await (const chunk of result.stream) {
-      const chunkText = chunk.text();
-      fullResponse += chunkText;
+      const result = await chat.sendMessageStream(text);
+      let fullResponse = '';
 
+      for await (const chunk of result.stream) {
+        const chunkText = chunk.text();
+        fullResponse += chunkText;
+
+        this.natsClient.emit('ai.message.chunk', {
+          userId,
+          threadId: thread._id,
+          chunk: chunkText,
+          isFinal: false,
+        });
+      }
+
+      await this.messageModel.create({
+        threadId: thread._id,
+        role: ChatRole.MODEL,
+        content: fullResponse,
+      });
+    } catch (error) {
+      this.logger.error(`Error in Gemini stream: ${error.message}`, error.stack);
+      
+      const errorMessage = 'I apologize, but I am having trouble processing your request right now. Please try again in a moment.';
+      
       this.natsClient.emit('ai.message.chunk', {
         userId,
         threadId: thread._id,
-        chunk: chunkText,
+        chunk: errorMessage,
         isFinal: false,
       });
     }
-
-    await this.messageModel.create({
-      threadId: thread._id,
-      role: ChatRole.MODEL,
-      content: fullResponse,
-    });
 
     this.natsClient.emit('ai.message.chunk', {
       userId,
