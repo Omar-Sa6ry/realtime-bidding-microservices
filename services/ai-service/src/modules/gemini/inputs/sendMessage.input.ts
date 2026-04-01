@@ -9,4 +9,7 @@ export class SendMessageInput {
   userId: string;
   @Field()
   text: string;
+
+  @Field({ nullable: true })
+  language?: string;
 }

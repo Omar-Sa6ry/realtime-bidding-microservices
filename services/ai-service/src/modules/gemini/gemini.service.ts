@@ -87,7 +87,7 @@ export class GeminiService implements OnModuleInit {
         .limit(10)
         .lean();
 
-      const systemPrompt = this.buildSystemPrompt(context);
+      const systemPrompt = this.buildSystemPrompt(context, sendMessageInput.language || 'en');
       const geminiHistory = history.reverse().map((msg) => ({
         role: msg.role === ChatRole.USER ? ChatRole.USER : ChatRole.MODEL,
         parts: [{ text: msg.content }],
@@ -211,10 +211,38 @@ export class GeminiService implements OnModuleInit {
     };
   }
 
-  private buildSystemPrompt(context: any): string {
+  private buildSystemPrompt(context: any, language: string): string {
     const { auction, userBids, user } = context;
+    const isArabic = language?.startsWith('ar');
 
-    let prompt = `You are a helpful bidding assistant. 
+    let prompt = '';
+    if (isArabic) {
+      prompt = `أنت مساعد مزاد محترف وودود. 
+    المستخدم الحالي: ${user ? `${user.firstname} ${user.lastname}` : 'غير معروف'}.
+    رصيد المستخدم: ${user?.balance || 0} جنيه مصري.
+    
+    سياق المزاد:
+    - العنصر: ${auction?.title || 'غير معروف'}
+    - الوصف: ${auction?.description || 'لا يوجد وصف'}
+    - السعر الحالي: ${auction?.current_price || 0} جنيه مصري
+    - وقت الانتهاء: ${auction?.end_time || 'غير معروف'}
+    - الحالة: ${auction?.status || 'غير معروف'}
+    
+    تاريخ مزايدات المستخدم في هذا المزاد:
+    ${
+      userBids.length > 0
+        ? userBids.map((b) => `- ${b.amount} جنيه في ${b.created_at}`).join('\n')
+        : 'المستخدم لم يقم بأي مزايدات بعد في هذا المزاد.'
+    }
+    
+    تعليمات هامة:
+    1. يجب أن تكون جميع ردودك باللغة العربية حصراً وبشكل مهذب ومختصر.
+    2. ساعد المستخدمين في فهم المنتج وحالة مزايداتهم.
+    3. إذا طلب المستخدم المزايدة، ذكره باستخدام زر أو نموذج المزايدة المخصص.
+    4. استخدم السياق المقدم للإجابة بدقة.
+    `;
+    } else {
+      prompt = `You are a helpful and professional bidding assistant. 
     Current user: ${user ? `${user.firstname} ${user.lastname}` : 'Unknown'}.
     User Balance: ${user?.balance || 0} EGP.
     
@@ -228,16 +256,17 @@ export class GeminiService implements OnModuleInit {
     User Bidding History in this auction:
     ${
       userBids.length > 0
-        ? userBids.map((b) => `- ${b.amount} USD at ${b.created_at}`).join('\n')
+        ? userBids.map((b) => `- ${b.amount} EGP at ${b.created_at}`).join('\n')
         : 'User has no bids yet in this auction.'
     }
     
     Instructions:
-    1. Be concise and professional.
+    1. Your responses must be entirely in English, concise and professional.
     2. Help users understand the product and their bidding status.
     3. If they ask to bid, remind them to use the bid button/form.
     4. Use the provided context to answer accurately.
     `;
+    }
 
     return prompt;
   }

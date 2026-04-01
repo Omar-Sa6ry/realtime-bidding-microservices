@@ -10,6 +10,8 @@ import { CurrentUserDto } from '@bts-soft/core';
 import { UseGuards } from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { PaginationInputA } from './inputs/pagination.input';
+import { I18nLang } from 'nestjs-i18n';
+import { SendMessageInput } from './inputs/sendMessage.input';
 
 @Resolver()
 export class GeminiResolver {
@@ -20,10 +22,14 @@ export class GeminiResolver {
   @UseGuards(ThrottlerGuard)
   async sendMessage(
     @CurrentUser() user: CurrentUserDto,
-    @Args('auctionId', { type: () => String }) auctionId: string,
-    @Args('text', { type: () => String }) text: string,
+    @I18nLang() lang: string,
+    @Args('input', { type: () => SendMessageInput }) input: SendMessageInput,
   ): Promise<SendMessageResponse> {
-    return this.geminiService.sendMessage({ auctionId, userId: user.id, text });
+    return this.geminiService.sendMessage({
+      ...input,
+      userId: user.id,
+      language: input.language || lang,
+    });
   }
 
   @Query(() => GetChatThreadsResponse)
