@@ -8,10 +8,10 @@ import {
 import { Permission, Auth, CurrentUser } from '@bidding-micro/shared';
 import { CurrentUserDto } from '@bts-soft/core';
 import { UseGuards } from '@nestjs/common';
-import { ThrottlerGuard } from '@nestjs/throttler';
 import { PaginationInputA } from './inputs/pagination.input';
 import { I18nLang } from 'nestjs-i18n';
 import { SendMessageInput } from './inputs/sendMessage.input';
+import { GqlThrottlerGuard } from '../../common/guards/gql-throttler.guard';
 
 @Resolver()
 export class GeminiResolver {
@@ -19,15 +19,14 @@ export class GeminiResolver {
 
   @Mutation(() => SendMessageResponse)
   @Auth([Permission.SEND_MESSAGE])
-  @UseGuards(ThrottlerGuard)
+  @UseGuards(GqlThrottlerGuard)
   async sendMessage(
     @CurrentUser() user: CurrentUserDto,
     @I18nLang() lang: string,
     @Args('input', { type: () => SendMessageInput }) input: SendMessageInput,
   ): Promise<SendMessageResponse> {
-    return this.geminiService.sendMessage({
+    return this.geminiService.sendMessage(user.id, {
       ...input,
-      userId: user.id,
       language: input.language || lang,
     });
   }

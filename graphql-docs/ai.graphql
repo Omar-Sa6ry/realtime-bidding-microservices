@@ -1,0 +1,53 @@
+query {
+  aiHello
+}
+
+subscription {
+  aiMessageChunk {
+    chunk
+    isFinal
+    threadId
+    userId
+  }
+}
+
+mutation {
+  sendMessage(
+    input: {
+      auctionId: "65f1234567890abcdef12345"
+      text: "Could you tell me the details of this auction? And is the price suitable for my balance?"
+    }
+  ) {
+    data {
+      threadId
+      userId
+      isFinal
+    }
+    message
+    statusCode
+  }
+}
+
+query {
+  getUserChatThreads(pagination: { page: 1, limit: 5 }) {
+    statusCode
+    items {
+      userId
+      title
+      auctionId
+    }
+  }
+}
+
+query {
+  getChatMessages(threadId: "69ce09396afcac69532f3aea") {
+    success
+    message
+    timeStamp
+    items {
+      role
+      content
+      threadId
+    }
+  }
+}

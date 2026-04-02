@@ -9,6 +9,8 @@ import { ChatMessage, ChatMessageSchema } from './schemas/chat-message.schema';
 import { RedisModule, TranslationModule } from '@bts-soft/core';
 import { AuthCommonModule } from '@bidding-micro/shared';
 import { UserService } from '../user/user.service';
+import { GeminiProviderAdapter } from '../gemini/providers/gemini-provider.adapter';
+import { PromptFactory } from '../gemini/factories/prompt-factory.service';
 
 @Module({
   imports: [
@@ -36,7 +38,7 @@ import { UserService } from '../user/user.service';
 
     NatsModule,
   ],
-  providers: [GeminiService, GeminiResolver],
+  providers: [GeminiService, GeminiResolver, GeminiProviderAdapter, PromptFactory],
   exports: [GeminiService],
 })
 export class AiModule {}

@@ -48,8 +48,9 @@ import { AiModule } from './modules/ai/ai.module';
         federation: 2,
       },
 
-      context: ({ req }) => ({
+      context: ({ req, res }) => ({
         req,
+        res,
         user: req.user,
         language: req.headers['accept-language'] || 'en',
       }),

@@ -3,10 +3,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
-  OnModuleInit,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ChatMessage } from '../ai/schemas/chat-message.schema';
@@ -23,18 +20,19 @@ import {
   SendMessageResponse,
 } from './dtos/aiService.dto';
 import { PaginationInputA } from './inputs/pagination.input';
+import { GeminiProviderAdapter } from './providers/gemini-provider.adapter';
+import { PromptFactory } from './factories/prompt-factory.service';
 
 @Injectable()
-export class GeminiService implements OnModuleInit {
+export class GeminiService {
   private readonly logger = new Logger(GeminiService.name);
-  private genAI: GoogleGenerativeAI;
-  private model: GenerativeModel;
 
   constructor(
-    private readonly configService: ConfigService,
     private readonly contextService: ContextService,
     private readonly i18n: I18nService,
     @Inject(NATS_SERVICE) private readonly natsClient: ClientProxy,
+    private readonly aiProvider: GeminiProviderAdapter,
+    private readonly promptFactory: PromptFactory,
 
     @InjectModel(ChatMessage.name)
     private readonly messageModel: Model<ChatMessage>,
@@ -43,26 +41,16 @@ export class GeminiService implements OnModuleInit {
     private readonly threadModel: Model<ChatThread>,
   ) {}
 
-  onModuleInit() {
-    const apiKey = this.configService.get<string>('GEMINI_API_KEY');
-    if (!apiKey)
-      throw new Error(
-        'GEMINI_API_KEY is not defined in the process environment.',
-      );
-
-    this.genAI = new GoogleGenerativeAI(apiKey);
-    this.model = this.genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',
-    });
-  }
-
   async sendMessage(
+    userId: string,
     sendMessageInput: SendMessageInput,
   ): Promise<SendMessageResponse> {
-    const { auctionId, userId, text } = sendMessageInput;
+    const { auctionId, text, language = 'en' } = sendMessageInput;
 
     let thread = await this.threadModel.findOne({ auctionId, userId });
-    if (!thread) thread = await this.threadModel.create({ auctionId, userId });
+    if (!thread) {
+      thread = await this.threadModel.create({ auctionId, userId });
+    }
 
     await this.messageModel.create({
       threadId: thread._id,
@@ -80,35 +68,33 @@ export class GeminiService implements OnModuleInit {
 
     try {
       const context = await this.contextService.getAiContext(auctionId, userId);
-
       const history = await this.messageModel
         .find({ threadId: thread._id })
         .sort({ createdAt: -1 })
         .limit(10)
         .lean();
 
-      const systemPrompt = this.buildSystemPrompt(context, sendMessageInput.language || 'en');
-      const geminiHistory = history.reverse().map((msg) => ({
-        role: msg.role === ChatRole.USER ? ChatRole.USER : ChatRole.MODEL,
-        parts: [{ text: msg.content }],
+      const strategy = this.promptFactory.getStrategy('auction');
+      const systemInstruction = strategy.build(context, language);
+
+      const aiHistory = history.reverse().map((msg) => ({
+        role: msg.role,
+        content: msg.content,
       }));
 
-      const chat = this.model.startChat({
-        history: geminiHistory,
-        systemInstruction: systemPrompt,
-      });
+      const stream = this.aiProvider.sendMessageStream(
+        text,
+        aiHistory,
+        systemInstruction,
+      );
 
-      const result = await chat.sendMessageStream(text);
       let fullResponse = '';
-
-      for await (const chunk of result.stream) {
-        const chunkText = chunk.text();
-        fullResponse += chunkText;
-
+      for await (const chunk of stream) {
+        fullResponse += chunk;
         this.natsClient.emit('ai.message.chunk', {
           userId,
           threadId: thread._id,
-          chunk: chunkText,
+          chunk,
           isFinal: false,
         });
       }
@@ -119,14 +105,8 @@ export class GeminiService implements OnModuleInit {
         content: fullResponse,
       });
     } catch (error) {
-      this.logger.error(
-        `Error in Gemini stream: ${error.message}`,
-        error.stack,
-      );
-
-      const errorMessage =
-        'I apologize, but I am having trouble processing your request right now. Please try again in a moment.';
-
+      this.logger.error(`AI Error: ${error.message}`, error.stack);
+      const errorMessage = 'Service temporarily unavailable.';
       this.natsClient.emit('ai.message.chunk', {
         userId,
         threadId: thread._id,
@@ -209,65 +189,5 @@ export class GeminiService implements OnModuleInit {
       },
       message: await this.i18n.t('ai.CHAT_MESSAGES_RETRIEVED_SUCCESSFULLY'),
     };
-  }
-
-  private buildSystemPrompt(context: any, language: string): string {
-    const { auction, userBids, user } = context;
-    const isArabic = language?.startsWith('ar');
-
-    let prompt = '';
-    if (isArabic) {
-      prompt = `أنت مساعد مزاد محترف وودود. 
-    المستخدم الحالي: ${user ? `${user.firstname} ${user.lastname}` : 'غير معروف'}.
-    رصيد المستخدم: ${user?.balance || 0} جنيه مصري.
-    
-    سياق المزاد:
-    - العنصر: ${auction?.title || 'غير معروف'}
-    - الوصف: ${auction?.description || 'لا يوجد وصف'}
-    - السعر الحالي: ${auction?.current_price || 0} جنيه مصري
-    - وقت الانتهاء: ${auction?.end_time || 'غير معروف'}
-    - الحالة: ${auction?.status || 'غير معروف'}
-    
-    تاريخ مزايدات المستخدم في هذا المزاد:
-    ${
-      userBids.length > 0
-        ? userBids.map((b) => `- ${b.amount} جنيه في ${b.created_at}`).join('\n')
-        : 'المستخدم لم يقم بأي مزايدات بعد في هذا المزاد.'
-    }
-    
-    تعليمات هامة:
-    1. يجب أن تكون جميع ردودك باللغة العربية حصراً وبشكل مهذب ومختصر.
-    2. ساعد المستخدمين في فهم المنتج وحالة مزايداتهم.
-    3. إذا طلب المستخدم المزايدة، ذكره باستخدام زر أو نموذج المزايدة المخصص.
-    4. استخدم السياق المقدم للإجابة بدقة.
-    `;
-    } else {
-      prompt = `You are a helpful and professional bidding assistant. 
-    Current user: ${user ? `${user.firstname} ${user.lastname}` : 'Unknown'}.
-    User Balance: ${user?.balance || 0} EGP.
-    
-    Auction Context:
-    - Item: ${auction?.title || 'Unknown Item'}
-    - Description: ${auction?.description || 'N/A'}
-    - Current Price: ${auction?.current_price || 0} EGP
-    - End Time: ${auction?.end_time || 'Unknown'}
-    - Status: ${auction?.status || 'Unknown'}
-    
-    User Bidding History in this auction:
-    ${
-      userBids.length > 0
-        ? userBids.map((b) => `- ${b.amount} EGP at ${b.created_at}`).join('\n')
-        : 'User has no bids yet in this auction.'
-    }
-    
-    Instructions:
-    1. Your responses must be entirely in English, concise and professional.
-    2. Help users understand the product and their bidding status.
-    3. If they ask to bid, remind them to use the bid button/form.
-    4. Use the provided context to answer accurately.
-    `;
-    }
-
-    return prompt;
   }
 }

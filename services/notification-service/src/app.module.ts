@@ -70,6 +70,7 @@ import { PubSubModule } from './modules/pubsub/pubsub.module';
               `[WS-Old] Subscription connection attempt. Params: ${JSON.stringify(connectionParams)}`,
             );
             return {
+              user: connectionParams?.user || {},
               language: connectionParams?.['accept-language'] || 'en',
             };
           },
