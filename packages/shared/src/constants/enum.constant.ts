@@ -31,6 +31,14 @@ export enum Permission {
   SEND_MESSAGE = 'send_message',
   VIEW_CHAT_THREADS = 'view_chat_threads',
   VIEW_CHAT_HISTORY = 'view_chat_history',
+
+  // Auction
+  CREATE_AUCTION = 'CREATE_AUCTION',
+  UPDATE_AUCTION = 'UPDATE_AUCTION',
+  DELETE_AUCTION = 'DELETE_AUCTION',
+
+  // Bidding
+  CREATE_BID = 'CREATE_BID',
 }
 
 export enum PaymentMethod {

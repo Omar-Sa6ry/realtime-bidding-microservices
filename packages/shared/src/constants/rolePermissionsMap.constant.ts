@@ -24,6 +24,14 @@ export const rolePermissionsMap: Record<Role, Permission[]> = {
     Permission.SEND_MESSAGE,
     Permission.VIEW_CHAT_THREADS,
     Permission.VIEW_CHAT_HISTORY,
+
+    // Auction
+    Permission.CREATE_AUCTION,
+    Permission.UPDATE_AUCTION,
+    Permission.DELETE_AUCTION,
+
+    // Bidding
+    Permission.CREATE_BID,
   ],
 
   [Role.USER]: [
@@ -45,5 +53,13 @@ export const rolePermissionsMap: Record<Role, Permission[]> = {
     Permission.SEND_MESSAGE,
     Permission.VIEW_CHAT_THREADS,
     Permission.VIEW_CHAT_HISTORY,
+
+    // Auction
+    Permission.CREATE_AUCTION,
+    Permission.UPDATE_AUCTION,
+    Permission.DELETE_AUCTION,
+
+    // Bidding
+    Permission.CREATE_BID,
   ],
 };

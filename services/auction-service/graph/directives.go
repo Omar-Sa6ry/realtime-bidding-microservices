@@ -10,6 +10,11 @@ import (
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/auction-service/internal/middleware"
 )
 
+var rolePermissions = map[string][]string{
+	"admin": {"CREATE_AUCTION", "UPDATE_AUCTION", "DELETE_AUCTION", "VIEW_AUCTION", "VIEW_AUCTION_BY_ID", "VIEW_AUCTION_CATEGORIES"},
+	"user": {"CREATE_AUCTION", "UPDATE_AUCTION", "DELETE_AUCTION", "VIEW_AUCTION", "VIEW_AUCTION_BY_ID", "VIEW_AUCTION_CATEGORIES"},
+}
+
 func AuthDirective(ctx context.Context, obj interface{}, next graphql.Resolver, permissions []model.Permission) (interface{}, error) {
 	userID := middleware.GetUserIDFromContext(ctx)
 	if userID == "" {
@@ -18,6 +23,12 @@ func AuthDirective(ctx context.Context, obj interface{}, next graphql.Resolver, 
 
 	if len(permissions) > 0 {
 		userPerms := middleware.GetUserPermissionsFromContext(ctx)
+		userRole := strings.ToLower(middleware.GetUserRoleFromContext(ctx))
+
+		if defaultPerms, ok := rolePermissions[userRole]; ok {
+			userPerms = append(userPerms, defaultPerms...)
+		}
+
 		for _, required := range permissions {
 			found := false
 			for _, userPerm := range userPerms {
