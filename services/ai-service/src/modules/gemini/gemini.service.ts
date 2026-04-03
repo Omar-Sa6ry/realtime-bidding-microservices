@@ -8,6 +8,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ChatMessage } from '../ai/schemas/chat-message.schema';
 import { ChatThread } from '../ai/schemas/chat-thread.schema';
+import { ChatMessage as IChatMessage } from './interfaces/ai-provider.interface';
 import { ContextService } from '../grpc/context.service';
 import { ClientProxy } from '@nestjs/microservices';
 import { NATS_SERVICE } from '../nats/nats.module';
@@ -22,6 +23,7 @@ import {
 import { PaginationInputA } from './inputs/pagination.input';
 import { GeminiProviderAdapter } from './providers/gemini-provider.adapter';
 import { PromptFactory } from './factories/prompt-factory.service';
+import { lastValueFrom } from 'rxjs';
 
 @Injectable()
 export class GeminiService {
@@ -52,19 +54,23 @@ export class GeminiService {
       thread = await this.threadModel.create({ auctionId, userId });
     }
 
+    if (!text || text.trim().length === 0) {
+      return {
+        data: { threadId: thread._id.toString(), isFinal: true, userId },
+        message: 'Message cannot be empty',
+        statusCode: 400,
+        success: false,
+        timeStamp: new Date().toISOString(),
+      };
+    }
+
     await this.messageModel.create({
       threadId: thread._id,
       role: ChatRole.USER,
       content: text,
     });
 
-    if (!text || text.trim().length === 0) {
-      return {
-        data: { threadId: thread._id.toString(), isFinal: true, userId },
-        message: 'Message cannot be empty',
-        statusCode: 400,
-      };
-    }
+    const threadId = thread._id.toString();
 
     try {
       const context = await this.contextService.getAiContext(auctionId, userId);
@@ -77,23 +83,28 @@ export class GeminiService {
       const strategy = this.promptFactory.getStrategy('auction');
       const systemInstruction = strategy.build(context, language);
 
-      const aiHistory = history.reverse().map((msg) => ({
-        role: msg.role,
+      const aiHistory: IChatMessage[] = history.reverse().map((msg) => ({
+        role: msg.role === ChatRole.USER ? ChatRole.USER : ChatRole.MODEL,
         content: msg.content,
       }));
 
+      // Gemini requires the conversation to start with a 'user' message
+      while (aiHistory.length > 0 && aiHistory[0].role !== ChatRole.USER) {
+        aiHistory.shift();
+      }
+
+      let fullResponse = '';
       const stream = this.aiProvider.sendMessageStream(
         text,
         aiHistory,
         systemInstruction,
       );
-
-      let fullResponse = '';
+      
       for await (const chunk of stream) {
         fullResponse += chunk;
-        this.natsClient.emit('ai.message.chunk', {
+        await this.emitChunk({
           userId,
-          threadId: thread._id,
+          threadId,
           chunk,
           isFinal: false,
         });
@@ -105,26 +116,38 @@ export class GeminiService {
         content: fullResponse,
       });
     } catch (error) {
-      this.logger.error(`AI Error: ${error.message}`, error.stack);
-      const errorMessage = 'Service temporarily unavailable.';
-      this.natsClient.emit('ai.message.chunk', {
+      this.logger.warn(`AI Error: ${error.message}`);
+      const errorMessage =
+        'As an AI assistant, I am currently experiencing high load. Please try again in a few moments.';
+
+      await this.emitChunk({
         userId,
-        threadId: thread._id,
+        threadId,
         chunk: errorMessage,
         isFinal: false,
       });
+
+      await this.messageModel.create({
+        threadId: thread._id,
+        role: ChatRole.MODEL,
+        content: errorMessage,
+      });
     }
 
-    this.natsClient.emit('ai.message.chunk', {
+    // Send the final "done" chunk
+    await this.emitChunk({
       userId,
-      threadId: thread._id,
+      threadId,
       chunk: '',
       isFinal: true,
     });
 
     return {
-      data: { threadId: thread._id.toString(), isFinal: true, userId },
+      data: { threadId, isFinal: true, userId },
       message: await this.i18n.t('ai.MESSAGE_SENT_SUCCESSFULLY'),
+      statusCode: 200,
+      success: true,
+      timeStamp: new Date().toISOString(),
     };
   }
 
@@ -155,6 +178,7 @@ export class GeminiService {
       message: await this.i18n.t('ai.CHAT_MESSAGES_RETRIEVED_SUCCESSFULLY'),
       statusCode: 200,
       success: true,
+      timeStamp: new Date().toISOString(),
     };
   }
 
@@ -188,6 +212,23 @@ export class GeminiService {
         totalPages: Math.ceil(total / limit),
       },
       message: await this.i18n.t('ai.CHAT_MESSAGES_RETRIEVED_SUCCESSFULLY'),
+      statusCode: 200,
+      success: true,
+      timeStamp: new Date().toISOString(),
     };
   }
+
+  private async emitChunk(data: {
+    userId: string;
+    threadId: string;
+    chunk: string;
+    isFinal: boolean;
+  }): Promise<void> {
+    try {
+      await lastValueFrom(this.natsClient.emit('ai.message.chunk', data));
+    } catch (err) {
+      this.logger.error(`Failed to emit NATS chunk: ${err.message}`);
+    }
+  }
 }
+

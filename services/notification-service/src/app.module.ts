@@ -39,11 +39,17 @@ import { PubSubModule } from './modules/pubsub/pubsub.module';
         federation: 2,
       },
 
-      context: ({ req }) => ({
-        req,
-        user: req.user,
-        language: req.headers['accept-language'] || 'en',
-      }),
+      context: ({ req, connection }: any) => {
+        if (connection) {
+          return connection.context;
+        }
+
+        return {
+          req,
+          user: req?.user,
+          language: req?.headers?.['accept-language'] || 'en',
+        };
+      },
 
       playground: true,
       debug: false,
@@ -54,11 +60,24 @@ import { PubSubModule } from './modules/pubsub/pubsub.module';
           path: '/graphql',
           onConnect: (context: any) => {
             const { connectionParams, extra } = context;
+
+            let user = {};
+            const authHeader = connectionParams?.authorization;
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+              try {
+                const token = authHeader.split(' ')[1];
+                user = JSON.parse(
+                  Buffer.from(token.split('.')[1], 'base64').toString('utf8'),
+                );
+              } catch (e) {}
+            }
+
             console.log(
               `[WS-New] Subscription connection attempt. Params: ${JSON.stringify(connectionParams)}`,
             );
             return {
               req: extra.request,
+              user,
               language: connectionParams?.['accept-language'] || 'en',
             };
           },
@@ -66,11 +85,22 @@ import { PubSubModule } from './modules/pubsub/pubsub.module';
         'subscriptions-transport-ws': {
           path: '/graphql',
           onConnect: (connectionParams: any) => {
+            let user = connectionParams?.user || {};
+            const authHeader = connectionParams?.authorization;
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+              try {
+                const token = authHeader.split(' ')[1];
+                user = JSON.parse(
+                  Buffer.from(token.split('.')[1], 'base64').toString('utf8'),
+                );
+              } catch (e) {}
+            }
+
             console.log(
               `[WS-Old] Subscription connection attempt. Params: ${JSON.stringify(connectionParams)}`,
             );
             return {
-              user: connectionParams?.user || {},
+              user,
               language: connectionParams?.['accept-language'] || 'en',
             };
           },

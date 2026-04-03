@@ -53,7 +53,10 @@ export class NotificationController {
 
   @EventPattern('ai.message.chunk')
   async handleAiMessageChunk(@Payload() data: any) {
-    this.pubSub.publish('AI_MESSAGE_CHUNK', {
+    console.log(
+      `[NATS] Received ai.message.chunk — userId: ${data.userId}, threadId: ${data.threadId}, isFinal: ${data.isFinal}, chunkLen: ${data.chunk?.length ?? 0}`,
+    );
+    await this.pubSub.publish('AI_MESSAGE_CHUNK', {
       aiMessageChunk: data,
     });
   }

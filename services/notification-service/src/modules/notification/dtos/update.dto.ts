@@ -30,7 +30,7 @@ export class AiMessageChunk {
   @Field()
   threadId: string;
 
-  @Field()
+  @Field({ nullable: true, defaultValue: '' })
   chunk: string;
 
   @Field()

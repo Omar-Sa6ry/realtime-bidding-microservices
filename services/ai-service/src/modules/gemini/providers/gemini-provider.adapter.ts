@@ -1,13 +1,15 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { IAIProvider, ChatMessage } from '../interfaces/ai-provider.interface';
-import { ChatRole } from "src/common/constants/role.enum";
+import { ChatRole } from 'src/common/constants/role.enum';
 
 @Injectable()
 export class GeminiProviderAdapter implements IAIProvider, OnModuleInit {
+  private readonly logger = new Logger(GeminiProviderAdapter.name);
   private genAI: GoogleGenerativeAI;
-  private model: GenerativeModel;
+
+  private models: string[];
 
   constructor(private readonly configService: ConfigService) {}
 
@@ -16,7 +18,25 @@ export class GeminiProviderAdapter implements IAIProvider, OnModuleInit {
     if (!apiKey) throw new Error('GEMINI_API_KEY is not defined.');
 
     this.genAI = new GoogleGenerativeAI(apiKey);
-    this.model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+    const primary =
+      this.configService.get<string>('GEMINI_MODEL') || 'gemini-2.0-flash';
+
+    this.models = [primary, 'gemini-2.0-flash-lite', 'gemini-1.5-pro'].filter(
+      (v, i, a) => a.indexOf(v) === i,
+    );
+
+    this.logger.log(`Gemini models (in priority): ${this.models.join(', ')}`);
+  }
+
+  private isFatalError(error: any): boolean {
+    const msg = error?.message || '';
+    return (
+      msg.includes('401') ||
+      msg.includes('403') ||
+      msg.includes('API_KEY_INVALID') ||
+      msg.includes('PERMISSION_DENIED')
+    );
   }
 
   async *sendMessageStream(
@@ -29,17 +49,43 @@ export class GeminiProviderAdapter implements IAIProvider, OnModuleInit {
       parts: [{ text: msg.content }],
     }));
 
-    const chat = this.model.startChat({
-      history: geminiHistory,
-      systemInstruction: {
-        role: 'user',
-        parts: [{ text: systemInstruction }],
-      },
-    });
+    let lastError: any;
 
-    const result = await chat.sendMessageStream(text);
-    for await (const chunk of result.stream) {
-      yield chunk.text();
+    for (const modelName of this.models) {
+      try {
+        this.logger.log(`Trying model: ${modelName}`);
+        const model = this.genAI.getGenerativeModel({ model: modelName });
+
+        const chat = model.startChat({
+          history: geminiHistory,
+          systemInstruction: {
+            role: 'user',
+            parts: [{ text: systemInstruction }],
+          },
+        });
+
+        const result = await chat.sendMessageStream(text);
+        for await (const chunk of result.stream) {
+          yield chunk.text();
+        }
+        return;
+      } catch (error) {
+        lastError = error;
+
+        if (this.isFatalError(error)) {
+          throw error;
+        }
+
+        this.logger.warn(
+          `Model "${modelName}" failed: ${error.message?.substring(0, 120)} — trying next model...`,
+        );
+        continue;
+      }
     }
+
+    this.logger.error(
+      'All Gemini models exhausted. No model could process the request.',
+    );
+    throw lastError;
   }
 }

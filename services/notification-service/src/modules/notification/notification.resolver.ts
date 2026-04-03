@@ -30,14 +30,13 @@ export class NotificationResolver {
   ) {}
 
   @Subscription(() => NotificationResponse, {
-    filter: (payload, variables) => {
-      return payload.notificationCreated.userId.toString() === variables.userId;
+    filter: (payload, variables, context) => {
+      const currentUserId = context?.user?.id || context?.req?.user?.id;
+      return payload.notificationCreated.userId.toString() === currentUserId;
     },
     resolve: (payload) => payload.notificationCreated,
   })
-  async notificationCreated(
-    @CurrentUser() user: CurrentUserDtoN,
-  ): Promise<AsyncIterator<NotificationResponse>> {
+  async notificationCreated(): Promise<AsyncIterator<NotificationResponse>> {
     return await this.pubSub.asyncIterator('NOTIFICATION_CREATED');
   }
 
@@ -61,14 +60,17 @@ export class NotificationResolver {
   }
 
   @Subscription(() => AiMessageChunk, {
-    filter: (payload, variables) => {
-      return payload.aiMessageChunk.userId === variables.userId;
+    filter: (payload, variables, context) => {
+      const currentUserId = context?.user?.id || context?.req?.user?.id;
+      const payloadUserId = payload.aiMessageChunk.userId;
+      console.log(
+        `[Sub Filter] aiMessageChunk — currentUserId: ${currentUserId}, payloadUserId: ${payloadUserId}, match: ${payloadUserId === currentUserId}`,
+      );
+      return payloadUserId === currentUserId;
     },
     resolve: (payload) => payload.aiMessageChunk,
   })
-  async aiMessageChunk(
-    @CurrentUser() user: CurrentUserDtoN,
-  ): Promise<AsyncIterator<AiMessageChunk>> {
+  async aiMessageChunk(): Promise<AsyncIterator<AiMessageChunk>> {
     return await this.pubSub.asyncIterator('AI_MESSAGE_CHUNK');
   }
 
