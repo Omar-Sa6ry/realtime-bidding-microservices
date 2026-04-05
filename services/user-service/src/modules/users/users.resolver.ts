@@ -56,7 +56,7 @@ export class UserResolver {
     @CurrentUser() user: CurrentUserDto,
     @Args('updateUserDto') updateUserDto: UpdateUserDto,
   ): Promise<UserResponse> {
-    return this.userService.update(updateUserDto, user.id);
+    return this.userService.update(user.id, updateUserDto);
   }
 
   @Mutation((returns) => UserResponse)
@@ -65,7 +65,7 @@ export class UserResolver {
     @CurrentUser() user: CurrentUserDto,
     @Args('updateUserDto') updateUserDto: UpdateUserDto,
   ): Promise<UserResponse> {
-    return this.userService.update(updateUserDto, user.id);
+    return this.userService.update(user.id, updateUserDto);
   }
 
   @Query((returns) => UserResponse)

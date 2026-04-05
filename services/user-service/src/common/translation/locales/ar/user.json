@@ -20,5 +20,8 @@
   "ROLE": "أنت لست شريكًا",
   "INSUFFICIENT_PERMISSIONS": "صلاحيات غير كافية",
   "LOGISANE_PASSWORD": "لقد أدخلت نفس كلمة المرور",
-  "REGISTER": "تم تسجيل المستخدم بنجاح"
+  "REGISTER": "تم تسجيل المستخدم بنجاح",
+  "BALANCE_UPDATED": "تم تحديث الرصيد بنجاح",
+  "INSUFFICIENT_BALANCE": "رصيد غير كافٍ",
+  "INVALID_TRANSACTION_TYPE": "نوع المعاملة غير صالح"
 }

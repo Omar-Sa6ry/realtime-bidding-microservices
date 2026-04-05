@@ -12,7 +12,13 @@ import { RedisService } from '@bts-soft/core';
 import { Transaction } from './entity/transaction.entity';
 import { User } from './entity/user.entity';
 import { UpdateUserDto } from './inputs/UpdateUser.dto';
-import { Limit, Page, Role, TransactionStatus, TransactionType as DBTransactionType } from '@bidding-micro/shared';
+import {
+  Limit,
+  Page,
+  Role,
+  TransactionStatus,
+  TransactionType as DBTransactionType,
+} from '@bidding-micro/shared';
 import {
   UserCountPercentageResponse,
   UserResponse,
@@ -136,8 +142,8 @@ export class UserService {
 
   @Transactional()
   async update(
-    updateUserDto: UpdateUserDto,
     id: string,
+    updateUserDto: UpdateUserDto,
   ): Promise<UserResponse> {
     const user = (await this.findById(id))?.data;
     if (!user)
@@ -145,57 +151,16 @@ export class UserService {
 
     const updatedUser = await this.userRepo.update(id, updateUserDto);
 
+    if (updatedUser.affected === 0)
+      throw new NotFoundException(await this.i18n.t('user.NOT_FOUND'));
+
+    const finalUser = updatedUser.raw || { ...user, ...updateUserDto };
+    await this.notifyUpdate(finalUser);
+
     return {
-      data: updatedUser.raw || user,
+      data: finalUser,
       message: await this.i18n.t('user.UPDATED'),
     };
-  }
-
-  @Transactional()
-  async deleteUser(id: string): Promise<UserResponse> {
-    const user = await this.userRepo.findOne({ where: { id } });
-    if (!user)
-      throw new BadRequestException(await this.i18n.t('user.NOT_FOUND'));
-
-    await this.userRepo.remove(user);
-    await this.notifyDelete(user.id, user.email);
-
-    return { message: await this.i18n.t('user.DELETED') };
-  }
-
-  @Transactional()
-  async editUserRole(id: string): Promise<UserResponse> {
-    const user = await this.userRepo.findOne({ where: { id } });
-    if (!user)
-      throw new BadRequestException(await this.i18n.t('user.NOT_FOUND'));
-
-    user.role = Role.ADMIN;
-    await this.userRepo.save(user);
-    await this.notifyUpdate(user);
-
-    return { data: user, message: await this.i18n.t('user.UPDATED') };
-  }
-
-  @Transactional()
-  async chargeMoney(userId: string, amount: number) {
-    const user = await this.userRepo.findOne({ where: { id: userId } });
-    if (!user)
-      throw new BadRequestException(await this.i18n.t('user.NOT_FOUND'));
-
-    user.balance = Number(user.balance) + amount;
-    await this.userRepo.save(user);
-
-    this.transactionRepo.save({
-      userId,
-      amount,
-      type: DBTransactionType.CREDIT,
-      status: TransactionStatus.COMPLETED,
-      description: 'Wallet recharge',
-    });
-
-    await this.notifyUpdate(user);
-
-    return { data: user, message: await this.i18n.t('user.UPDATED') };
   }
 
   @Transactional()
@@ -206,7 +171,7 @@ export class UserService {
   ): Promise<{ success: boolean; new_balance: number; message: string }> {
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user)
-      return { success: false, new_balance: 0, message: 'User not found' };
+      return { success: false, new_balance: 0, message: await this.i18n.t('user.NOT_FOUND') };
 
     let balance = Number(user.balance || 0);
     const parsedAmount = Number(amount);
@@ -217,7 +182,7 @@ export class UserService {
         return {
           success: false,
           new_balance: balance,
-          message: 'Insufficient balance',
+          message: await this.i18n.t('user.INSUFFICIENT_BALANCE'),
         };
       }
       balance -= parsedAmount;
@@ -229,7 +194,7 @@ export class UserService {
       return {
         success: false,
         new_balance: balance,
-        message: 'Invalid transaction type',
+        message: await this.i18n.t('user.INVALID_TRANSACTION_TYPE'),
       };
     }
 
@@ -252,17 +217,70 @@ export class UserService {
     return {
       success: true,
       new_balance: balance,
-      message: 'Balance updated successfully',
+      message: await this.i18n.t('user.BALANCE_UPDATED'),
+    };
+  }
+
+  @Transactional()
+  async editUserRole(id: string): Promise<UserResponse> {
+    const user = await this.userRepo.findOne({ where: { id } });
+    if (!user) throw new NotFoundException(await this.i18n.t('user.NOT_FOUND'));
+
+    user.role = Role.ADMIN;
+    await this.userRepo.save(user);
+    await this.notifyUpdate(user);
+
+    return { data: user, message: await this.i18n.t('user.UPDATED') };
+  }
+
+  @Transactional()
+  async deleteUser(id: string): Promise<UserResponse> {
+    const user = await this.userRepo.findOne({ where: { id } });
+    if (!user) throw new NotFoundException(await this.i18n.t('user.NOT_FOUND'));
+
+    await this.userRepo.remove(user);
+    await this.notifyDelete(user.id, user.email);
+
+    return { message: await this.i18n.t('user.DELETED') };
+  }
+
+  @Transactional()
+  async chargeMoney(userId: string, amount: number) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user)
+      return {
+        success: false,
+        new_balance: 0,
+        message: await this.i18n.t('user.NOT_FOUND'),
+      };
+
+    user.balance = Number(user.balance) + amount;
+    await this.userRepo.save(user);
+
+    await this.transactionRepo.save({
+      userId,
+      amount,
+      type: DBTransactionType.CREDIT,
+      status: TransactionStatus.COMPLETED,
+      description: 'Wallet recharge',
+    });
+
+    await this.notifyUpdate(user);
+
+    return {
+      success: true,
+      new_balance: user.balance,
+      message: await this.i18n.t('user.BALANCE_UPDATED'),
     };
   }
 
   private async notifyUpdate(user: User): Promise<void> {
     this.redisService.set(`user:${user.id}`, user);
-     this.redisService.set(`user:email:${user.email}`, user);
+    this.redisService.set(`user:email:${user.email}`, user);
   }
 
   private async notifyDelete(userId: string, email: string): Promise<void> {
-     this.redisService.del(`user:${userId}`);
-     this.redisService.del(`user:email:${email}`);
+    this.redisService.del(`user:${userId}`);
+    this.redisService.del(`user:email:${email}`);
   }
 }

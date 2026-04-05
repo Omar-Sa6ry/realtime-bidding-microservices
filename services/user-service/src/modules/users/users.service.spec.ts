@@ -7,6 +7,9 @@ import { RedisService } from '@bts-soft/core';
 import { I18nService } from 'nestjs-i18n';
 import { NotFoundException } from '@nestjs/common';
 import { In } from 'typeorm';
+import { UpdateUserDto } from './inputs/UpdateUser.dto';
+import { TransactionType } from './interfaces/ItransactionType.interface';
+import { Role } from '@bidding-micro/shared';
 
 jest.mock('typeorm-transactional', () => ({
   Transactional: () => () => ({}),
@@ -32,11 +35,12 @@ describe('UserService', () => {
   const mockRedisService = {
     get: jest.fn(),
     set: jest.fn(),
+    update: jest.fn(),
     del: jest.fn(),
   };
 
   const mockI18nService = {
-    t: jest.fn((key: string) => `translated: ${key}`),
+    t: jest.fn((key: string) => Promise.resolve(`translated: ${key}`)),
   };
 
   beforeEach(async () => {
@@ -241,6 +245,242 @@ describe('UserService', () => {
         usersThisMonth: 2,
         percentageIncrease: 100,
       });
+    });
+  });
+
+  describe('update', () => {
+    it('should update user if user exists', async () => {
+      const user = { id: 'user-1', email: 'omar@test.com' };
+      const updateUserDto: UpdateUserDto = {
+        id: 'user-1',
+        firstName: 'Omar New',
+      };
+      const updatedUser = { ...user, ...updateUserDto };
+
+      mockRedisService.get.mockResolvedValueOnce({ data: user });
+      mockUserRepository.update.mockResolvedValueOnce({
+        affected: 1,
+        raw: updatedUser,
+      });
+      mockRedisService.set.mockResolvedValueOnce(true);
+
+      const result = await service.update('user-1', updateUserDto);
+
+      expect(result.data).toEqual(updatedUser);
+      expect(mockRedisService.set).toHaveBeenCalledWith(
+        'user:user-1',
+        updatedUser,
+      );
+      expect(mockRedisService.set).toHaveBeenCalledWith(
+        'user:email:omar@test.com',
+        updatedUser,
+      );
+    });
+
+    it('should throw NotFoundException if user not found in findById', async () => {
+      const updateUserDto: UpdateUserDto = {
+        id: 'invalid-id',
+        firstName: 'Omar New',
+      };
+
+      mockRedisService.get.mockResolvedValueOnce(null);
+      mockUserRepository.findOne.mockResolvedValueOnce(null);
+
+      await expect(service.update('invalid-id', updateUserDto)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should throw NotFoundException if update affects 0 rows', async () => {
+      const user = { id: 'user-1', email: 'omar@test.com' };
+      const updateUserDto: UpdateUserDto = {
+        id: 'user-1',
+        firstName: 'Omar New',
+      };
+
+      mockRedisService.get.mockResolvedValueOnce({ data: user });
+      mockUserRepository.update.mockResolvedValueOnce({ affected: 0 });
+
+      await expect(service.update('user-1', updateUserDto)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('updateBalance', () => {
+    it('should add balance successfully', async () => {
+      const user = { id: 'user-1', email: 'omar@test.com', balance: 100 };
+      mockUserRepository.findOne.mockResolvedValueOnce(user);
+      mockUserRepository.save.mockResolvedValueOnce({ ...user, balance: 150 });
+      mockTransactionRepository.save.mockResolvedValueOnce({});
+      mockI18nService.t.mockResolvedValueOnce(
+        'translated: user.BALANCE_UPDATED',
+      );
+
+      const result = await service.updateBalance(
+        'user-1',
+        50,
+        TransactionType.ADD,
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.new_balance).toBe(150);
+      expect(result.message).toBe('translated: user.BALANCE_UPDATED');
+      expect(mockUserRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ balance: 150 }),
+      );
+      expect(mockTransactionRepository.save).toHaveBeenCalled();
+    });
+
+    it('should deduct balance successfully', async () => {
+      const user = { id: 'user-1', email: 'omar@test.com', balance: 100 };
+      mockUserRepository.findOne.mockResolvedValueOnce(user);
+      mockUserRepository.save.mockResolvedValueOnce({ ...user, balance: 50 });
+      mockTransactionRepository.save.mockResolvedValueOnce({});
+
+      const result = await service.updateBalance(
+        'user-1',
+        50,
+        TransactionType.DEDUCT,
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.new_balance).toBe(50);
+      expect(result.message).toBe('translated: user.BALANCE_UPDATED');
+    });
+
+    it('should return failure if balance is insufficient', async () => {
+      const user = { id: 'user-1', email: 'omar@test.com', balance: 30 };
+      mockUserRepository.findOne.mockResolvedValueOnce(user);
+
+      const result = await service.updateBalance(
+        'user-1',
+        50,
+        TransactionType.DEDUCT,
+      );
+
+      expect(result.success).toBe(false);
+      expect(result.message).toBe('translated: user.INSUFFICIENT_BALANCE');
+      expect(mockUserRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('should return failure if user is not found', async () => {
+      mockUserRepository.findOne.mockResolvedValueOnce(null);
+
+      const result = await service.updateBalance(
+        'user-1',
+        50,
+        TransactionType.ADD,
+      );
+
+      expect(result.success).toBe(false);
+      expect(result.message).toBe('translated: user.NOT_FOUND');
+    });
+  });
+
+  describe('editUserRole', () => {
+    it('should edit user role if user exists', async () => {
+      const user = { id: 'user-1', email: 'omar@test.com' };
+      mockUserRepository.findOne.mockResolvedValueOnce(user);
+      mockUserRepository.save.mockResolvedValueOnce({
+        ...user,
+        role: Role.ADMIN,
+      });
+      mockRedisService.set.mockResolvedValueOnce(true);
+
+      const result = await service.editUserRole('user-1');
+
+      expect(result.message).toBe('translated: user.UPDATED');
+      expect(mockUserRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ role: Role.ADMIN }),
+      );
+      expect(mockRedisService.set).toHaveBeenCalledWith(
+        'user:user-1',
+        expect.objectContaining({ role: Role.ADMIN }),
+      );
+      expect(mockRedisService.set).toHaveBeenCalledWith(
+        'user:email:omar@test.com',
+        expect.objectContaining({ role: Role.ADMIN }),
+      );
+    });
+
+    it('should throw NotFoundException if user not found', async () => {
+      mockUserRepository.findOne.mockResolvedValueOnce(null);
+
+      await expect(service.editUserRole('user-1')).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.editUserRole('user-1')).rejects.toThrow(
+        'translated: user.NOT_FOUND',
+      );
+    });
+  });
+
+  describe('deleteUser', () => {
+    it('should delete user if user exists', async () => {
+      const user = { id: 'user-1', email: 'omar@test.com' };
+      mockUserRepository.findOne.mockResolvedValueOnce(user);
+      mockUserRepository.remove.mockResolvedValueOnce(user);
+      mockRedisService.del.mockResolvedValue(true);
+
+      const result = await service.deleteUser('user-1');
+
+      expect(result.message).toBe('translated: user.DELETED');
+      expect(mockUserRepository.remove).toHaveBeenCalledWith(user);
+      expect(mockRedisService.del).toHaveBeenCalledWith('user:user-1');
+      expect(mockRedisService.del).toHaveBeenCalledWith(
+        'user:email:omar@test.com',
+      );
+    });
+
+    it('should throw NotFoundException if user not found', async () => {
+      mockUserRepository.findOne.mockResolvedValueOnce(null);
+
+      await expect(service.deleteUser('user-1')).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.deleteUser('user-1')).rejects.toThrow(
+        'translated: user.NOT_FOUND',
+      );
+    });
+  });
+
+  describe('chargeMoney', () => {
+    it('should charge money successfully', async () => {
+      const user = { id: 'user-1', email: 'omar@test.com', balance: 100 };
+      mockUserRepository.findOne.mockResolvedValueOnce(user);
+      mockUserRepository.save.mockResolvedValueOnce({ ...user, balance: 150 });
+      mockTransactionRepository.save.mockResolvedValueOnce({});
+      mockI18nService.t.mockResolvedValueOnce(
+        'translated: user.BALANCE_UPDATED',
+      );
+
+      const result = await service.chargeMoney('user-1', 50);
+
+      expect(result.success).toBe(true);
+      expect(result.new_balance).toBe(150);
+      expect(result.message).toBe('translated: user.BALANCE_UPDATED');
+      expect(mockUserRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ balance: 150 }),
+      );
+      expect(mockTransactionRepository.save).toHaveBeenCalled();
+      expect(mockRedisService.set).toHaveBeenCalledWith(
+        'user:user-1',
+        expect.objectContaining({ balance: 150 }),
+      );
+      expect(mockRedisService.set).toHaveBeenCalledWith(
+        'user:email:omar@test.com',
+        expect.objectContaining({ balance: 150 }),
+      );
+    });
+
+    it('should return failure if user is not found', async () => {
+      mockUserRepository.findOne.mockResolvedValueOnce(null);
+
+      const result = await service.chargeMoney('user-1', 50);
+
+      expect(result.success).toBe(false);
+      expect(result.message).toBe('translated: user.NOT_FOUND');
     });
   });
 });

@@ -24,5 +24,8 @@
   "OLD_IS_EQUAL_NEW": "old password is equal to new password",
   "ROLE": "you arenot partner",
   "INSUFFICIENT_PERMISSIONS": "Insuffuent permission",
-  "LOGISANE_PASSWORD": "you enter same password"
+  "LOGISANE_PASSWORD": "you enter same password",
+  "BALANCE_UPDATED": "Balance updated successfully",
+  "INSUFFICIENT_BALANCE": "Insufficient balance",
+  "INVALID_TRANSACTION_TYPE": "Invalid transaction type"
 }
