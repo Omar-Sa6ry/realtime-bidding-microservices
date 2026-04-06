@@ -13,11 +13,25 @@
   "private": false,
   "scripts": {
     "build": "rimraf dist && tsc",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage"
   },
   "devDependencies": {
+    "@nestjs/common": "^11.1.16",
+    "@nestjs/core": "^11.1.16",
+    "@nestjs/graphql": "^13.2.4",
+    "@nestjs/jwt": "^11.0.2",
+    "@nestjs/testing": "^11.1.16",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^25.3.5",
+    "jest": "^30.2.0",
+    "nestjs-i18n": "^10.6.0",
+    "reflect-metadata": "^0.2.2",
     "rimraf": "^5.0.0",
-    "typescript": "^5.0.0"
+    "ts-jest": "^29.4.6",
+    "typescript": "^5.9.3"
   },
   "peerDependencies": {
     "@nestjs/common": ">=11",
@@ -28,5 +42,22 @@
     "@nestjs/typeorm": ">=11",
     "nestjs-i18n": ">=10",
     "typeorm": ">=0.3"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": "src",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "collectCoverageFrom": [
+      "**/*.(t|j)s"
+    ],
+    "coverageDirectory": "../coverage",
+    "testEnvironment": "node"
   }
 }
