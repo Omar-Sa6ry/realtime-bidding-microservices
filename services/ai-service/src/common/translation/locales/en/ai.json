@@ -3,5 +3,6 @@
   "THREAD_NOT_FOUND": "Thread not found or access denied",
   "NO_THREADS_FOUND": "No threads found",
   "CHAT_MESSAGES_RETRIEVED_SUCCESSFULLY": "Chat messages retrieved successfully",
-  "NO_MESSAGES_FOUND": "No messages found"
+  "NO_MESSAGES_FOUND": "No messages found",
+  "AI_HIGH_LOAD": "As an AI assistant, I am currently experiencing high load. Please try again in a few moments."
 }

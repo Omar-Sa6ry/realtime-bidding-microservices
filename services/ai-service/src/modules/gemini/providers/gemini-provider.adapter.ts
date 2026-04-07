@@ -20,9 +20,9 @@ export class GeminiProviderAdapter implements IAIProvider, OnModuleInit {
     this.genAI = new GoogleGenerativeAI(apiKey);
 
     const primary =
-      this.configService.get<string>('GEMINI_MODEL') || 'gemini-2.0-flash';
+      this.configService.get<string>('GEMINI_MODEL') || 'gemini-1.5-flash';
 
-    this.models = [primary, 'gemini-2.0-flash-lite', 'gemini-1.5-pro'].filter(
+    this.models = [primary, 'gemini-2.0-flash', 'gemini-1.5-pro'].filter(
       (v, i, a) => a.indexOf(v) === i,
     );
 
@@ -54,7 +54,10 @@ export class GeminiProviderAdapter implements IAIProvider, OnModuleInit {
     for (const modelName of this.models) {
       try {
         this.logger.log(`Trying model: ${modelName}`);
-        const model = this.genAI.getGenerativeModel({ model: modelName });
+        const model = this.genAI.getGenerativeModel(
+          { model: modelName },
+          { apiVersion: 'v1' },
+        );
 
         const chat = model.startChat({
           history: geminiHistory,

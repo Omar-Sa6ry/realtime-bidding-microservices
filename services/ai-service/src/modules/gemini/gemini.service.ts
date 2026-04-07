@@ -117,8 +117,9 @@ export class GeminiService {
       });
     } catch (error) {
       this.logger.warn(`AI Error: ${error.message}`);
-      const errorMessage =
-        'As an AI assistant, I am currently experiencing high load. Please try again in a few moments.';
+      const errorMessage = await this.i18n.translate('ai.AI_HIGH_LOAD', {
+        lang: language,
+      });
 
       await this.emitChunk({
         userId,

@@ -68,7 +68,12 @@ export class NotificationResolver {
       );
       return payloadUserId === currentUserId;
     },
-    resolve: (payload) => payload.aiMessageChunk,
+    resolve: (payload) => {
+      console.log(
+        `[Sub Resolve] aiMessageChunk — chunk: ${payload.aiMessageChunk.chunk?.substring(0, 20)}...`,
+      );
+      return payload.aiMessageChunk;
+    },
   })
   async aiMessageChunk(): Promise<AsyncIterator<AiMessageChunk>> {
     return await this.pubSub.asyncIterator('AI_MESSAGE_CHUNK');
