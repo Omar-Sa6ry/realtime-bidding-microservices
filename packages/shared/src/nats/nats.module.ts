@@ -3,9 +3,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { NatsService } from './nats.service';
 
 export interface NatsModuleOptions {
-  /** Injection token to use with @Inject() - e.g. 'USER_NATS_SERVICE' */
   name: string;
-  /** NATS queue group for this service - enables load balancing */
   queue: string;
 }
 

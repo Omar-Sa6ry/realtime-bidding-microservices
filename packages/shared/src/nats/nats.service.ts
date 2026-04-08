@@ -8,16 +8,12 @@ export class NatsService {
   private client: ClientProxy;
 
   constructor(private readonly tokenName: string) {
-    // Client will be set by the module via setClient()
   }
 
   setClient(client: ClientProxy) {
     this.client = client;
   }
 
-  /**
-   * Send a request and wait for a response (request-reply).
-   */
   async send<TResponse = any>(pattern: string, data: any): Promise<TResponse> {
     try {
       return await firstValueFrom(this.client.send<TResponse>(pattern, data));
@@ -27,9 +23,6 @@ export class NatsService {
     }
   }
 
-  /**
-   * Fire-and-forget event emit (pub/sub).
-   */
   emit(pattern: string, data: any): void {
     try {
       this.client.emit(pattern, data);
