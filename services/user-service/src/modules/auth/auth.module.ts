@@ -25,6 +25,7 @@ import { TranslationModule } from '../../common/translation/translation.module';
 
     AuthCommonModule.register({
       userService: UserService,
+      providers: [UserService],
       imports: [
         TypeOrmModule.forFeature([User, Transaction]),
         RedisModule,

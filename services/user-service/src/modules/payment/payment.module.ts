@@ -17,6 +17,7 @@ import { Transaction } from '../users/entity/transaction.entity';
     UserModule,
     AuthCommonModule.register({
       userService: UserService,
+      providers: [UserService],
       imports: [
         TypeOrmModule.forFeature([User, Transaction]),
         RedisModule,

@@ -24,6 +24,7 @@ export class AuthCommonModule {
       providers: [
         RoleGuard,
         ...(options.providers || []),
+        options.userService,
         {
           provide: 'USER_SERVICE',
           useExisting: options.userService,

@@ -15,6 +15,7 @@ import { AuthCommonModule } from '@bidding-micro/shared';
     RedisModule,
     AuthCommonModule.register({
       userService: UserService,
+      providers: [UserService],
       imports: [
         TypeOrmModule.forFeature([User, Transaction]),
         RedisModule,

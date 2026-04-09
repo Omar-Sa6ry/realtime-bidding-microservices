@@ -32,6 +32,7 @@ import { AuctionClientAdapter } from './adapters/auction-client.adapter';
 
     AuthCommonModule.register({
       userService: UserService,
+      providers: [UserService],
       imports: [
         MongooseModule.forFeature([
           { name: Notification.name, schema: NotificationSchema },
