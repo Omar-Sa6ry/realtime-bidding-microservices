@@ -41,6 +41,8 @@ export class AuthServiceFacade {
     if (cachedUser) this.redisService.set(`user-count`, +cachedUser + 1);
 
     return {
+      success: true,
+      statusCode: 201,
       message: await this.i18n.t('user.REGISTER'),
       data: {
         user,
@@ -83,6 +85,8 @@ export class AuthServiceFacade {
     this.redisService.set(`user:${user.data.id}`, user.data);
     this.redisService.set(`user:email:${user.data.email}`, user.data);
     return {
+      success: true,
+      statusCode: 200,
       data: { user: user.data, token },
       message: await this.i18n.t('user.LOGIN'),
     };
@@ -117,6 +121,8 @@ export class AuthServiceFacade {
     this.redisService.set(`user:${user.data.id}`, user.data);
     this.redisService.set(`user:email:${user.data.email}`, user.data);
     return {
+      success: true,
+      statusCode: 200,
       data: { user: user.data, token },
       message: await this.i18n.t('user.LOGIN'),
     };

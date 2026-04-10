@@ -43,14 +43,14 @@ export class UserService {
     const cachedUser: any = await this.redisService.get(cacheKey);
     if (cachedUser) {
       const data = cachedUser.data || cachedUser;
-      return { data: data as User };
+      return { success: true, statusCode: 200, data: data as User };
     }
 
     const user = await this.userRepo.findOne({ where: { id } });
     if (!user) throw new NotFoundException(await this.i18n.t('user.NOT_FOUND'));
 
     await this.notifyUpdate(user);
-    return { data: user };
+    return { success: true, statusCode: 200, data: user };
   }
 
   async findByIds(ids: string[]): Promise<User[]> {
@@ -66,14 +66,14 @@ export class UserService {
 
     if (cachedUser) {
       const data = (cachedUser as any).data || cachedUser;
-      return { data: data as User };
+      return { success: true, statusCode: 200, data: data as User };
     }
 
     const user = await this.userRepo.findOne({ where: { email } });
     if (!user) throw new NotFoundException(await this.i18n.t('user.NOT_FOUND'));
 
     await this.notifyUpdate(user);
-    return { data: user };
+    return { success: true, statusCode: 200, data: user };
   }
 
   async findUsers(
@@ -88,6 +88,8 @@ export class UserService {
     });
 
     return {
+      success: true,
+      statusCode: 200,
       items,
       pagination: {
         totalItems: total,
@@ -149,15 +151,12 @@ export class UserService {
     if (!user)
       throw new BadRequestException(await this.i18n.t('user.NOT_FOUND'));
 
-    const updatedUser = await this.userRepo.update(id, updateUserDto);
-
-    if (updatedUser.affected === 0)
-      throw new NotFoundException(await this.i18n.t('user.NOT_FOUND'));
-
-    const finalUser = updatedUser.raw || { ...user, ...updateUserDto };
+    const finalUser = await this.userRepo.save({ ...user, ...updateUserDto });
     await this.notifyUpdate(finalUser);
 
     return {
+      success: true,
+      statusCode: 200,
       data: finalUser,
       message: await this.i18n.t('user.UPDATED'),
     };
@@ -171,7 +170,11 @@ export class UserService {
   ): Promise<{ success: boolean; new_balance: number; message: string }> {
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user)
-      return { success: false, new_balance: 0, message: await this.i18n.t('user.NOT_FOUND') };
+      return {
+        success: false,
+        new_balance: 0,
+        message: await this.i18n.t('user.NOT_FOUND'),
+      };
 
     let balance = Number(user.balance || 0);
     const parsedAmount = Number(amount);

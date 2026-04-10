@@ -1,0 +1,175 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+"""Metadata describing pagination details"""
+type PaginationInfo {
+  """Total number of pages"""
+  totalPages: Int!
+
+  """Current page number"""
+  currentPage: Int!
+
+  """Total number of records/items"""
+  totalItems: Int!
+}
+
+type User {
+  """Unique identifier for the entity"""
+  id: ID!
+
+  """Record creation date"""
+  createdAt: DateTime!
+
+  """Record last update date"""
+  updatedAt: DateTime!
+  firstName: String!
+  lastName: String!
+  email: String!
+  country: String!
+  balance: Float!
+  firstname: String
+  lastname: String
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type AuthOutPut {
+  user: User!
+  token: String!
+}
+
+type AuthResponse {
+  message: String
+  success: Boolean
+  timeStamp: String
+  statusCode: Float
+  data: AuthOutPut
+}
+
+type UserResponse {
+  message: String
+  success: Boolean
+  timeStamp: String
+  statusCode: Float
+  data: User
+}
+
+type UrlResponse {
+  message: String
+  success: Boolean
+  timeStamp: String
+  statusCode: Float
+  data: String
+}
+
+type UsersResponse {
+  message: String
+  success: Boolean
+  timeStamp: String
+  statusCode: Float
+  items: [User!]
+  pagination: PaginationInfo
+}
+
+type UserCountPercentage {
+  totalUsers: Float!
+  usersThisMonth: Float!
+  percentageIncrease: Float!
+}
+
+type UserCountPercentageResponse {
+  message: String
+  success: Boolean
+  timeStamp: String
+  statusCode: Float
+  data: UserCountPercentage
+}
+
+type UserCount {
+  message: String
+  success: Boolean
+  timeStamp: String
+  statusCode: Float
+  user: User
+  coursesCount: Int
+}
+
+type Query {
+  sayHello: String!
+  getUserById(id: UserIdInput!): UserResponse!
+  getUserByOfMe: UserResponse!
+  getUserByEmail(email: EmailInput!): UserResponse!
+  getUsers(page: Int, limit: Int): UsersResponse!
+  getUsersCount: UserCountPercentageResponse!
+  deleteUser(id: UserIdInput!): UserResponse!
+}
+
+input UserIdInput {
+  UserId: String!
+}
+
+input EmailInput {
+  email: String!
+}
+
+type Mutation {
+  updateProfile(updateUserDto: UpdateUserDto!): UserResponse!
+  updateUser(updateUserDto: UpdateUserDto!): UserResponse!
+  UpdateUserRoleToAdmin(id: UserIdInput!): UserResponse!
+  register(createUserDto: CreateUserDto!): AuthResponse!
+  login(loginDto: LoginDto!): AuthResponse!
+  roleBasedLogin(role: Role!, loginDto: LoginDto!): AuthResponse!
+  forgotPassword(email: String!): AuthResponse!
+  resetPassword(resetPasswordDto: ResetPasswordDto!): UserResponse!
+  changePassword(changePasswordDto: ChangePasswordDto!): UserResponse!
+
+  """Generates a payment checkout URL to recharge user balance"""
+  rechargeWallet(amount: Float!, method: PaymentMethod! = STRIPE): UrlResponse!
+}
+
+input UpdateUserDto {
+  id: String!
+  firstName: String
+  lastName: String
+  country: String
+}
+
+input CreateUserDto {
+  firstName: String!
+  lastName: String!
+  email: String!
+  password: String!
+  country: String
+}
+
+input LoginDto {
+  email: String!
+  password: String!
+  rememberMe: Boolean
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+input ResetPasswordDto {
+  token: String!
+  password: String!
+}
+
+input ChangePasswordDto {
+  password: String!
+  newPassword: String!
+}
+
+"""Available payment methods in the system"""
+enum PaymentMethod {
+  STRIPE
+  PAYPAL
+  PAYMOB
+}
