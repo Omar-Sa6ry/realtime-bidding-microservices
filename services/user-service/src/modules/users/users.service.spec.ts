@@ -15,6 +15,10 @@ jest.mock('typeorm-transactional', () => ({
   Transactional: () => () => ({}),
 }));
 
+const mockDate = new Date('2026-04-10T00:00:00Z');
+jest.useFakeTimers();
+jest.setSystemTime(mockDate);
+
 describe('UserService', () => {
   let service: UserService;
 
@@ -85,6 +89,14 @@ describe('UserService', () => {
       expect(result.data).toEqual(cachedUser);
       expect(mockRedisService.get).toHaveBeenCalledWith('user:user-1');
       expect(mockUserRepository.findOne).not.toHaveBeenCalled();
+    });
+
+    it('should return user from redis cache directly if no data wrapper exists', async () => {
+      const cachedUser = { id: 'user-1', email: 'omar@test.com' };
+      mockRedisService.get.mockResolvedValueOnce(cachedUser);
+
+      const result = await service.findById('user-1');
+      expect(result.data).toEqual(cachedUser);
     });
 
     it('should fetch from DB if not in cache, then update cache', async () => {
@@ -186,6 +198,20 @@ describe('UserService', () => {
       });
     });
 
+    it('should calculate skip and take correctly based on page and limit', async () => {
+      mockUserRepository.findAndCount.mockResolvedValueOnce([[], 0]);
+
+      await service.findUsers(3, 15);
+
+      expect(mockUserRepository.findAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({
+          skip: 30, // (3-1) * 15
+          take: 15,
+          where: { role: Role.USER },
+        }),
+      );
+    });
+
     it('should return users with pagination and filters', async () => {
       const users = [{ id: 'user-1', email: 'omar@test.com' }];
       mockUserRepository.findAndCount.mockResolvedValueOnce([users, 1]);
@@ -246,6 +272,27 @@ describe('UserService', () => {
         percentageIncrease: 100,
       });
     });
+
+    it('should query correct date ranges for monthly stats', async () => {
+      mockRedisService.get.mockResolvedValueOnce(null);
+      mockUserRepository.count.mockResolvedValue(0);
+
+      await service.getUsersCount();
+
+      // Verify total users count filter
+      expect(mockUserRepository.count).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { role: Role.USER } }),
+      );
+
+      // Verify this month's count uses first of current month
+      expect(mockUserRepository.count).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            createdAt: expect.anything(), // MoreThanOrEqual(startOfMonth)
+          }),
+        }),
+      );
+    });
   });
 
   describe('update', () => {
@@ -275,6 +322,24 @@ describe('UserService', () => {
         'user:email:omar@test.com',
         updatedUser,
       );
+    });
+
+    it('should manually merge data if updatedUser.raw is not provided', async () => {
+      const user = { id: 'user-1', email: 'omar@test.com', firstName: 'Old' };
+      const updateUserDto: UpdateUserDto = {
+        id: 'user-1',
+        firstName: 'New',
+      };
+
+      mockRedisService.get.mockResolvedValueOnce({ data: user });
+      mockUserRepository.update.mockResolvedValueOnce({
+        affected: 1,
+      });
+
+      const result = await service.update('user-1', updateUserDto);
+
+      expect(result?.data?.firstName).toBe('New');
+      expect(result?.data?.email).toBe('omar@test.com');
     });
 
     it('should throw NotFoundException if user not found in findById', async () => {
@@ -375,6 +440,20 @@ describe('UserService', () => {
 
       expect(result.success).toBe(false);
       expect(result.message).toBe('translated: user.NOT_FOUND');
+    });
+
+    it('should return failure for invalid transaction type', async () => {
+      const user = { id: 'user-1', balance: 100 };
+      mockUserRepository.findOne.mockResolvedValueOnce(user);
+
+      const result = await service.updateBalance(
+        'user-1',
+        50,
+        'INVALID' as any,
+      );
+
+      expect(result.success).toBe(false);
+      expect(result.message).toBe('translated: user.INVALID_TRANSACTION_TYPE');
     });
   });
 
