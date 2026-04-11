@@ -1,4 +1,9 @@
-import { Injectable, Inject, NotFoundException, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  OnModuleInit,
+} from '@nestjs/common';
 import type { ClientGrpc } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
 import { I18nService } from 'nestjs-i18n';
@@ -18,7 +23,8 @@ export class UserService implements OnModuleInit {
   ) {}
 
   onModuleInit() {
-    this.userGrpcService = this.client.getService<UserGrpcService>('UserService');
+    this.userGrpcService =
+      this.client.getService<UserGrpcService>('UserService');
   }
 
   async findById(userId: string): Promise<IUser> {
@@ -27,9 +33,8 @@ export class UserService implements OnModuleInit {
         this.userGrpcService.getUser({ id: userId }),
       );
 
-      if (!response || !response.user) {
+      if (!response || !response.user)
         throw new NotFoundException(this.i18n.t('notification.USER_NOT_FOUND'));
-      }
 
       return response.user as IUser;
     } catch (error) {
