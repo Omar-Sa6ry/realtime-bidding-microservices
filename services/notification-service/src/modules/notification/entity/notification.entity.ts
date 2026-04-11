@@ -15,7 +15,7 @@ export class Notification {
   userId: string;
 
   @Field(() => NotificationType)
-  @Prop({ required: true, enum: NotificationType })
+  @Prop({ required: true, enum: NotificationType, type: String })
   type: NotificationType;
 
   @Field(() => String)
