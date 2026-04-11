@@ -305,10 +305,7 @@ describe('UserService', () => {
       const updatedUser = { ...user, ...updateUserDto };
 
       mockRedisService.get.mockResolvedValueOnce({ data: user });
-      mockUserRepository.update.mockResolvedValueOnce({
-        affected: 1,
-        raw: updatedUser,
-      });
+      mockUserRepository.save.mockResolvedValueOnce(updatedUser);
       mockRedisService.set.mockResolvedValueOnce(true);
 
       const result = await service.update('user-1', updateUserDto);
@@ -324,7 +321,7 @@ describe('UserService', () => {
       );
     });
 
-    it('should manually merge data if updatedUser.raw is not provided', async () => {
+    it('should manually merge data before saving', async () => {
       const user = { id: 'user-1', email: 'omar@test.com', firstName: 'Old' };
       const updateUserDto: UpdateUserDto = {
         id: 'user-1',
@@ -332,14 +329,15 @@ describe('UserService', () => {
       };
 
       mockRedisService.get.mockResolvedValueOnce({ data: user });
-      mockUserRepository.update.mockResolvedValueOnce({
-        affected: 1,
-      });
+      mockUserRepository.save.mockImplementationOnce((u) => Promise.resolve(u));
 
       const result = await service.update('user-1', updateUserDto);
 
       expect(result?.data?.firstName).toBe('New');
       expect(result?.data?.email).toBe('omar@test.com');
+      expect(mockUserRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ firstName: 'New', email: 'omar@test.com' }),
+      );
     });
 
     it('should throw NotFoundException if user not found in findById', async () => {
@@ -356,20 +354,7 @@ describe('UserService', () => {
       );
     });
 
-    it('should throw NotFoundException if update affects 0 rows', async () => {
-      const user = { id: 'user-1', email: 'omar@test.com' };
-      const updateUserDto: UpdateUserDto = {
-        id: 'user-1',
-        firstName: 'Omar New',
-      };
 
-      mockRedisService.get.mockResolvedValueOnce({ data: user });
-      mockUserRepository.update.mockResolvedValueOnce({ affected: 0 });
-
-      await expect(service.update('user-1', updateUserDto)).rejects.toThrow(
-        NotFoundException,
-      );
-    });
   });
 
   describe('updateBalance', () => {

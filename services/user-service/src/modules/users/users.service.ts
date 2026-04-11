@@ -147,9 +147,7 @@ export class UserService {
     id: string,
     updateUserDto: UpdateUserDto,
   ): Promise<UserResponse> {
-    const user = (await this.findById(id))?.data;
-    if (!user)
-      throw new BadRequestException(await this.i18n.t('user.NOT_FOUND'));
+    const user = (await this.findById(id)).data;
 
     const finalUser = await this.userRepo.save({ ...user, ...updateUserDto });
     await this.notifyUpdate(finalUser);
