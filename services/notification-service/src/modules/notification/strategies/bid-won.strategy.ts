@@ -23,11 +23,11 @@ export class BidWonStrategy extends BaseNotificationStrategy<BidEventPayload> {
     return { title, message };
   }
 
-  getUserId(data: BidEventPayload): string {
-    return data.user_id;
+  getUserId(data: any): string {
+    return data.user_id || data.userId;
   }
 
-  getActionId(data: BidEventPayload): string {
-    return data.auction_id;
+  getActionId(data: any): string {
+    return data.auction_id || data.actionId || data.id || data._id;
   }
 }

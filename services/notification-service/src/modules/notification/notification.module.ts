@@ -20,6 +20,7 @@ import { NotificationRepository } from './repositories/notification.repository';
 import { EmailAdapter } from './adapters/email.adapter';
 import { UserClientAdapter } from './adapters/user-client.adapter';
 import { AuctionClientAdapter } from './adapters/auction-client.adapter';
+import { PubSubModule } from '../pubsub/pubsub.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { AuctionClientAdapter } from './adapters/auction-client.adapter';
 
     TranslationModule,
     GrpcClientsModule,
+    PubSubModule,
 
     AuthCommonModule.register({
       userService: UserService,

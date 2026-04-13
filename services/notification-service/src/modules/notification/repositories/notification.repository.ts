@@ -12,20 +12,25 @@ export class NotificationRepository {
   ) {}
 
   async create(data: Partial<Notification>): Promise<Notification> {
-    const notification = await this.model.create(data);
-    
+    const doc = new this.model(data);
+    const notification = await doc.save();
     return notification.toObject({ getters: true }) as unknown as Notification;
   }
 
   async findById(id: string, userId: string): Promise<Notification | null> {
-    const notification = await this.model.findOne({
-      _id: new Types.ObjectId(id),
-      userId: userId,
-    });
+    try {
+      const oid = typeof id === 'string' ? new Types.ObjectId(id) : id;
+      const query: any = { _id: oid };
+      if (userId) query.userId = userId;
 
-    return notification
-      ? (notification.toObject({ getters: true }) as unknown as Notification)
-      : null;
+      const notification = await this.model.findOne(query).exec();
+
+      return notification
+        ? (notification.toObject({ getters: true }) as unknown as Notification)
+        : null;
+    } catch (e) {
+      return null;
+    }
   }
 
   async find(
@@ -39,7 +44,8 @@ export class NotificationRepository {
       .find(filter)
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
-      .limit(limit);
+      .limit(limit)
+      .exec();
 
     return notifications.map(
       (n) => n.toObject({ getters: true }) as unknown as Notification,
@@ -47,34 +53,75 @@ export class NotificationRepository {
   }
 
   async count(filter: any): Promise<number> {
-    return this.model.countDocuments(filter);
+    return this.model.countDocuments(filter).exec();
   }
 
   async update(
     filter: any,
     data: Partial<Notification>,
   ): Promise<Notification | null> {
-    const notification = await this.model.findOneAndUpdate(filter, data, {
-      new: true,
-    });
+    try {
+      const id = filter._id;
+      const userId = filter.userId;
+      const oid = typeof id === 'string' ? new Types.ObjectId(id) : id;
+      
+      const doc = await this.model.findOne({ _id: oid }).exec();
+      if (!doc) {
+        console.log(`[Repository] update: NOT FOUND ID=${oid} (original=${id})`);
+        return null;
+      }
+      
+      const docUserId = String(doc.get('userId'));
+      const filterUserId = String(userId);
+      
+      if (userId && docUserId !== filterUserId) {
+        console.log(`[Repository] update: OWNER MISMATCH. DocUID=${docUserId}, FilterUID=${filterUserId}`);
+        return null;
+      }
 
-    return notification
-      ? (notification.toObject({ getters: true }) as unknown as Notification)
-      : null;
+      const updated = await this.model.findOneAndUpdate({ _id: oid }, data, { new: true }).exec();
+      return updated
+        ? (updated.toObject({ getters: true }) as unknown as Notification)
+        : null;
+    } catch (e) {
+      console.log(`[Repository] update: ERROR: ${e.message}`);
+      return null;
+    }
   }
 
   async updateMany(
     filter: any,
     data: Partial<Notification>,
   ): Promise<void> {
-    await this.model.updateMany(filter, data);
+    await this.model.updateMany(filter, data).exec();
   }
 
   async delete(filter: any): Promise<Notification | null> {
-    const notification = await this.model.findOneAndDelete(filter);
+    try {
+      const id = filter._id;
+      const userId = filter.userId;
+      const oid = typeof id === 'string' ? new Types.ObjectId(id) : id;
+      
+      const doc = await this.model.findOne({ _id: oid }).exec();
+      if (!doc) {
+        console.log(`[Repository] delete: NOT FOUND ID=${oid}`);
+        return null;
+      }
+      
+      const docUserId = String(doc.get('userId'));
+      const filterUserId = String(userId);
+      
+      if (userId && docUserId !== filterUserId) {
+        console.log(`[Repository] delete: OWNER MISMATCH. DocUID=${docUserId}, FilterUID=${filterUserId}`);
+        return null;
+      }
 
-    return notification
-      ? (notification.toObject({ getters: true }) as unknown as Notification)
-      : null;
+      const deleted = await this.model.findOneAndDelete({ _id: oid }).exec();
+      return deleted
+        ? (deleted.toObject({ getters: true }) as unknown as Notification)
+        : null;
+    } catch (e) {
+      return null;
+    }
   }
 }

@@ -1,0 +1,99 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type Notification {
+  userId: String!
+  type: NotificationType!
+  title: String!
+  message: String!
+  isRead: Boolean!
+  actionId: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  id: String!
+}
+
+"""Notification types in the system"""
+enum NotificationType {
+  BID_PLACED
+  AUCTION_WON
+  OUTBID
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+"""Metadata describing pagination details"""
+type PaginationInfoN {
+  """Total number of pages"""
+  totalPages: Int!
+
+  """Current page number"""
+  currentPage: Int!
+
+  """Total number of records/items"""
+  totalItems: Int!
+}
+
+type NotificationResponse {
+  message: String
+  success: Boolean
+  timeStamp: String
+  statusCode: Float
+  data: Notification
+}
+
+type NotificationsResponse {
+  message: String
+  success: Boolean
+  timeStamp: String
+  statusCode: Float
+  items: [Notification!]
+  pagination: PaginationInfoN
+}
+
+type NotificationCount {
+  message: String
+  success: Boolean
+  timeStamp: String
+  statusCode: Float
+  data: Int
+}
+
+type AiMessageChunkResponse {
+  chunk: String!
+  isFinal: Boolean!
+  threadId: String
+  userId: String!
+}
+
+type Query {
+  notificationHello: String!
+  getUserNotifications(findNotificationInput: FindNotificationInput, pagination: PaginationInput): NotificationsResponse!
+  getUnreadNotificationCount: NotificationCount!
+}
+
+input FindNotificationInput {
+  type: NotificationType
+  title: String
+  actionId: String
+}
+
+input PaginationInput {
+  page: Int! = 1
+  limit: Int! = 10
+}
+
+type Mutation {
+  markNotificationAsRead(id: String!): NotificationResponse!
+  markAllNotificationsAsRead: NotificationsResponse!
+  deleteNotification(id: String!): NotificationResponse!
+}
+
+type Subscription {
+  notificationCreated: NotificationResponse!
+  aiMessageChunk: AiMessageChunkResponse!
+}

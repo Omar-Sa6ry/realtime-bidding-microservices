@@ -22,7 +22,7 @@ export class OutbidStrategy implements NotificationStrategy {
     return { title, message };
   }
 
-  getUserId(data: OutbidEventPayload): string {
-    return data.userId;
+  getUserId(data: any): string {
+    return data.userId || data.user_id;
   }
 }

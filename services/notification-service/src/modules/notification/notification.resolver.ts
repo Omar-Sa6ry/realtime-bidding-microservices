@@ -1,115 +1,85 @@
-import {
-  Resolver,
-  Query,
-  Mutation,
-  Args,
-  Subscription,
-  ID,
-} from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Subscription, Args } from '@nestjs/graphql';
+import { Inject, OnModuleInit } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import { NotificationSubService } from './notification.service';
-import { Notification } from './entity/notification.entity';
-import { FindNotificationInput } from './inputs/findNotification.input';
-import { PaginationInput } from './inputs/pagination.dto';
 import {
-  NotificationCount,
   NotificationResponse,
   NotificationsResponse,
+  NotificationCount,
 } from './dtos/notificationResponse.dto';
+import { FindNotificationInput } from './inputs/findNotification.input';
+import { PaginationInput } from './inputs/pagination.dto';
 import { Auth, CurrentUser, Permission } from '@bidding-micro/shared';
 import { CurrentUserDtoN } from './dtos/currentUser.dto';
-import { Inject } from '@nestjs/common';
-import { PUB_SUB } from '../pubsub/pubsub.module';
+import { AiMessageChunkResponse } from './dtos/aiMessageChunk.dto';
 import { RedisPubSub } from 'graphql-redis-subscriptions';
-import { AuctionUpdate, BidUpdate, AiMessageChunk } from './dtos/update.dto';
 
-@Resolver(() => Notification)
-export class NotificationResolver {
-  constructor(
-    private readonly notificationService: NotificationSubService,
-    @Inject(PUB_SUB) private readonly pubSub: RedisPubSub,
-  ) {}
+@Resolver()
+export class NotificationResolver implements OnModuleInit {
+  private notificationService: NotificationSubService;
+  private pubSub: RedisPubSub;
+
+  constructor(private readonly moduleRef: ModuleRef) {}
+
+  onModuleInit() {
+    this.notificationService = this.moduleRef.get(NotificationSubService, {
+      strict: false,
+    });
+    this.pubSub = this.moduleRef.get('PUB_SUB', { strict: false });
+  }
 
   @Subscription(() => NotificationResponse, {
     filter: (payload, variables, context) => {
       const currentUserId = context?.user?.id || context?.req?.user?.id;
-      return payload.notificationCreated.userId.toString() === currentUserId;
+      return payload.notificationCreated.userId === currentUserId;
     },
-    resolve: (payload) => payload.notificationCreated,
   })
-  async notificationCreated(): Promise<AsyncIterator<NotificationResponse>> {
-    return await this.pubSub.asyncIterator('NOTIFICATION_CREATED');
+  notificationCreated() {
+    return this.pubSub.asyncIterator('NOTIFICATION_CREATED');
   }
 
-  @Subscription(() => BidUpdate, {
-    filter: (payload, variables) => {
-      return payload.bidUpdated.auctionId === variables.auctionId;
-    },
-    resolve: (payload) => payload.bidUpdated,
-  })
-  async bidUpdated(
-    @Args('auctionId', { type: () => ID }) auctionId: string,
-  ): Promise<AsyncIterator<BidUpdate>> {
-    return await this.pubSub.asyncIterator(`BID_UPDATED_${auctionId}`);
-  }
-
-  @Subscription(() => AuctionUpdate, {
-    resolve: (payload) => payload.auctionCreated,
-  })
-  async auctionCreated(): Promise<AsyncIterator<AuctionUpdate>> {
-    return await this.pubSub.asyncIterator('AUCTION_CREATED');
-  }
-
-  @Subscription(() => AiMessageChunk, {
+  @Subscription(() => AiMessageChunkResponse, {
     filter: (payload, variables, context) => {
-      const currentUserId = context?.user?.id || context?.req?.user?.id;
-      const payloadUserId = payload.aiMessageChunk.userId;
-      console.log(
-        `[Sub Filter] aiMessageChunk — currentUserId: ${currentUserId}, payloadUserId: ${payloadUserId}, match: ${payloadUserId === currentUserId}`,
-      );
-      return payloadUserId === currentUserId;
-    },
-    resolve: (payload) => {
-      console.log(
-        `[Sub Resolve] aiMessageChunk — chunk: ${payload.aiMessageChunk.chunk?.substring(0, 20)}...`,
-      );
-      return payload.aiMessageChunk;
+      const user = context?.user || context?.req?.user;
+      const currentUserId = user?.id || user?._id;
+      const match = payload.aiMessageChunk.userId === currentUserId;
+      console.log(`[Subscription Filter] Payload UID: ${payload.aiMessageChunk.userId}, Context UID: ${currentUserId}, Object: ${JSON.stringify(user)}, Match: ${match}`);
+      return match;
     },
   })
-  async aiMessageChunk(): Promise<AsyncIterator<AiMessageChunk>> {
-    return await this.pubSub.asyncIterator('AI_MESSAGE_CHUNK');
+  aiMessageChunk() {
+    return this.pubSub.asyncIterator('AI_MESSAGE_CHUNK');
   }
 
-  @Query(() => NotificationResponse)
   @Auth([Permission.READ_NOTIFICATION])
-  async getNotificationById(
-    @Args('id') id: string,
-    @CurrentUser() user: CurrentUserDtoN,
-  ): Promise<NotificationResponse> {
-    return this.notificationService.getById(id, user.id);
-  }
-
   @Query(() => NotificationsResponse)
-  @Auth([Permission.READ_NOTIFICATION])
   async getUserNotifications(
     @CurrentUser() user: CurrentUserDtoN,
-    @Args('input', { nullable: true }) input?: FindNotificationInput,
-    @Args('pagination', { nullable: true }) pagination?: PaginationInput,
+    @Args('findNotificationInput', {
+      type: () => FindNotificationInput,
+      nullable: true,
+    })
+    findNotificationInput?: FindNotificationInput,
+    @Args('pagination', { type: () => PaginationInput, nullable: true })
+    pagination?: PaginationInput,
   ): Promise<NotificationsResponse> {
     return this.notificationService.getUserNotifications(
       user.id,
-      input,
+      findNotificationInput,
       pagination,
     );
   }
 
-  @Query(() => NotificationCount)
   @Auth([Permission.READ_NOTIFICATION])
-  async getUnreadNotificationCount(@CurrentUser() user: CurrentUserDtoN) {
+  @Query(() => NotificationCount)
+  async getUnreadNotificationCount(
+    @CurrentUser() user: CurrentUserDtoN,
+  ): Promise<NotificationCount> {
     return this.notificationService.getUnreadCount(user.id);
   }
 
-  @Mutation(() => NotificationResponse)
   @Auth([Permission.UPDATE_NOTIFICATION])
+  @Mutation(() => NotificationResponse)
   async markNotificationAsRead(
     @Args('id') id: string,
     @CurrentUser() user: CurrentUserDtoN,
@@ -117,16 +87,16 @@ export class NotificationResolver {
     return this.notificationService.markAsRead(id, user.id);
   }
 
-  @Mutation(() => NotificationsResponse)
   @Auth([Permission.UPDATE_NOTIFICATION])
+  @Mutation(() => NotificationsResponse)
   async markAllNotificationsAsRead(
     @CurrentUser() user: CurrentUserDtoN,
   ): Promise<NotificationsResponse> {
     return this.notificationService.markAllAsRead(user.id);
   }
 
-  @Mutation(() => NotificationResponse)
   @Auth([Permission.DELETE_NOTIFICATION])
+  @Mutation(() => NotificationResponse)
   async deleteNotification(
     @Args('id') id: string,
     @CurrentUser() user: CurrentUserDtoN,

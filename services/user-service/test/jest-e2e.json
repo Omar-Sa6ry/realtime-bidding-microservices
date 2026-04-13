@@ -6,6 +6,8 @@
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   },
+  "globalSetup": "<rootDir>/utils/global-setup.js",
+  "globalTeardown": "<rootDir>/utils/global-teardown.js",
   "setupFilesAfterEnv": ["<rootDir>/utils/e2e-setup.ts"],
   "testTimeout": 120000
 }

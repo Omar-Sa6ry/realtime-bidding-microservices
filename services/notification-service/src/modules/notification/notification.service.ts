@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException, Inject } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, OnModuleInit } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import { I18nService } from 'nestjs-i18n';
 import { PaginationInput } from './inputs/pagination.dto';
 import { FindNotificationInput } from './inputs/findNotification.input';
@@ -19,35 +20,54 @@ import { UserClientAdapter } from './adapters/user-client.adapter';
 import { AuctionClientAdapter } from './adapters/auction-client.adapter';
 
 @Injectable()
-export class NotificationSubService {
-  constructor(
-    private readonly i18n: I18nService,
-    private readonly strategyFactory: NotificationStrategyFactory,
-    private readonly repository: NotificationRepository,
-    private readonly emailAdapter: EmailAdapter,
-    private readonly userClient: UserClientAdapter,
-    private readonly auctionClient: AuctionClientAdapter,
+export class NotificationSubService implements OnModuleInit {
+  private i18n: I18nService;
+  private strategyFactory: NotificationStrategyFactory;
+  private repository: NotificationRepository;
+  private emailAdapter: EmailAdapter;
+  private userClient: UserClientAdapter;
+  private auctionClient: AuctionClientAdapter;
+  private pubSub: RedisPubSub;
 
-    @Inject(PUB_SUB)
-    private readonly pubSub: RedisPubSub,
-  ) {}
+  constructor(private readonly moduleRef: ModuleRef) {}
+
+  onModuleInit() {
+    this.i18n = this.moduleRef.get(I18nService, { strict: false });
+    this.strategyFactory = this.moduleRef.get(NotificationStrategyFactory, {
+      strict: false,
+    });
+    this.repository = this.moduleRef.get(NotificationRepository, {
+      strict: false,
+    });
+    this.emailAdapter = this.moduleRef.get(EmailAdapter, { strict: false });
+    this.userClient = this.moduleRef.get(UserClientAdapter, { strict: false });
+    this.auctionClient = this.moduleRef.get(AuctionClientAdapter, {
+      strict: false,
+    });
+    this.pubSub = this.moduleRef.get<RedisPubSub>('PUB_SUB', { strict: false });
+  }
 
   async process(strategy: NotificationStrategy, data: NotificationEventData) {
+    console.log('SubService process started with data:', data);
     const { title, message } = await strategy.getContent(data, this.i18n);
+    console.log('Content generated:', { title, message });
     const userId = strategy.getUserId(data);
+    console.log('Resulting userId from strategy:', userId);
     const actionId = strategy.getActionId
       ? strategy.getActionId(data)
       : undefined;
 
     const type = strategy.getType(data);
-
-    const notification = await this.repository.create({
+    const createData = {
       type,
       title,
       message,
-      userId: userId as any,
-      ...(actionId && { actionId: actionId as any }),
-    });
+      userId,
+      ...(actionId && { actionId }),
+    };
+    console.log('Final object passed to repository.create:', createData);
+
+    const notification = await this.repository.create(createData as any);
 
     // Real-time broadcast
     this.pubSub.publish('NOTIFICATION_CREATED', {

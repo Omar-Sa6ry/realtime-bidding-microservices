@@ -39,14 +39,37 @@ import { PubSubModule } from './modules/pubsub/pubsub.module';
         federation: 2,
       },
 
-      context: ({ req, connection }: any) => {
+      context: (args: any) => {
+        const req = args.req || args.extra?.request;
+        const connection = args.connection;
+        const extra = args.extra;
+
         if (connection) {
           return connection.context;
         }
 
+        if (extra) {
+          return extra; 
+        }
+
+        // Fallback token parsing if middleware missed it
+        let user = req?.user;
+        if (!user && req?.headers?.authorization) {
+          const authHeader = req.headers.authorization;
+          if (authHeader.startsWith('Bearer ')) {
+            try {
+              const token = authHeader.split(' ')[1];
+              user = JSON.parse(
+                Buffer.from(token.split('.')[1], 'base64').toString('utf8'),
+              );
+              console.log('[AppContext] Parsed user from header:', user?.id);
+            } catch (e) {}
+          }
+        }
+
         return {
           req,
-          user: req?.user,
+          user,
           language: req?.headers?.['accept-language'] || 'en',
         };
       },
@@ -58,27 +81,31 @@ import { PubSubModule } from './modules/pubsub/pubsub.module';
       subscriptions: {
         'graphql-ws': {
           path: '/graphql',
-          onConnect: (context: any) => {
-            const { connectionParams, extra } = context;
+          onConnect: (ctx: any) => {
+            const { connectionParams, extra } = ctx;
 
-            let user = {};
-            const authHeader = connectionParams?.authorization;
+            let user: any = {};
+            const authHeader = connectionParams?.authorization || connectionParams?.Authorization;
             if (authHeader && authHeader.startsWith('Bearer ')) {
               try {
                 const token = authHeader.split(' ')[1];
                 user = JSON.parse(
                   Buffer.from(token.split('.')[1], 'base64').toString('utf8'),
                 );
-              } catch (e) {}
+              } catch (e) {
+                console.error('[WS] Token parse error:', e.message);
+              }
             }
 
-            console.log(
-              `[WS-New] Subscription connection attempt. Params: ${JSON.stringify(connectionParams)}`,
-            );
+            console.log(`[WS-New] Connection. User ID: ${user?.id}`);
+            
+            // For graphql-ws, we attach user to extra so it's available in context factory
+            extra.user = user;
+            extra.language = connectionParams?.['accept-language'] || 'en';
+            
             return {
-              req: extra.request,
               user,
-              language: connectionParams?.['accept-language'] || 'en',
+              language: extra.language,
             };
           },
         },
