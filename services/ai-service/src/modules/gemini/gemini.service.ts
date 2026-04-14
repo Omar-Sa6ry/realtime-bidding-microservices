@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { ChatMessage } from '../ai/schemas/chat-message.schema';
 import { ChatThread } from '../ai/schemas/chat-thread.schema';
 import { ChatMessage as IChatMessage } from './interfaces/ai-provider.interface';
@@ -64,11 +64,13 @@ export class GeminiService {
       };
     }
 
-    await this.messageModel.create({
+    const msg = await this.messageModel.create({
       threadId: thread._id,
       role: ChatRole.USER,
       content: text,
     });
+    console.log('DEBUG: Saved USER message:', msg._id, 'for thread:', thread._id);
+
 
     const threadId = thread._id.toString();
 
@@ -195,15 +197,18 @@ export class GeminiService {
     const { page = 1, limit = 20 } = pagination || {};
     const skip = (page - 1) * limit;
 
+    console.log('DEBUG: Querying messages for thread:', threadId, 'cast to:', new Types.ObjectId(threadId));
     const [items, total] = await Promise.all([
       this.messageModel
-        .find({ threadId })
+        .find({ threadId: new Types.ObjectId(threadId) })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .lean(),
-      this.messageModel.countDocuments({ threadId }),
+      this.messageModel.countDocuments({ threadId: new Types.ObjectId(threadId) }),
     ]);
+    console.log('DEBUG: Found messages:', items.length, 'Total:', total);
+
 
     return {
       items: items.reverse() as any,

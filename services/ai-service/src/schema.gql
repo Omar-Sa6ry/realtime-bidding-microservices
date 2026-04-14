@@ -1,0 +1,80 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type ChatThread {
+  userId: String!
+  auctionId: String!
+  title: String!
+}
+
+type ChatMessage {
+  threadId: String!
+  role: ChatRole!
+  content: String!
+}
+
+"""ChatRole in the system"""
+enum ChatRole {
+  USER
+  MODEL
+}
+
+type AIPaginationInfo {
+  totalItems: Int!
+  currentPage: Int!
+  totalPages: Int!
+}
+
+type SendMessageChunkDto {
+  isFinal: Boolean!
+  userId: String!
+  threadId: String!
+}
+
+type SendMessageResponse {
+  message: String
+  success: Boolean
+  timeStamp: String
+  statusCode: Float
+  data: SendMessageChunkDto
+}
+
+type GetChatMessagesResponse {
+  message: String
+  success: Boolean
+  timeStamp: String
+  statusCode: Float
+  items: [ChatMessage!]
+  pagination: AIPaginationInfo
+}
+
+type GetChatThreadsResponse {
+  message: String
+  success: Boolean
+  timeStamp: String
+  statusCode: Float
+  items: [ChatThread!]
+  pagination: AIPaginationInfo
+}
+
+type Query {
+  aiHello: String!
+  getUserChatThreads(pagination: PaginationInputA): GetChatThreadsResponse!
+  getChatMessages(threadId: String!, pagination: PaginationInputA): GetChatMessagesResponse!
+}
+
+input PaginationInputA {
+  page: Int! = 1
+  limit: Int! = 10
+}
+
+type Mutation {
+  sendMessage(input: SendMessageInput!): SendMessageResponse!
+}
+
+input SendMessageInput {
+  auctionId: String!
+  text: String!
+  language: String
+}

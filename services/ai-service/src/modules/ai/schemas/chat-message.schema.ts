@@ -11,7 +11,7 @@ export class ChatMessage extends Document {
   threadId: Types.ObjectId;
 
   @Field(() => ChatRole)
-  @Prop({ required: true, enum: ChatRole })
+  @Prop({ required: true, enum: ChatRole, type: String })
   role: ChatRole;
 
   @Field(() => String)
