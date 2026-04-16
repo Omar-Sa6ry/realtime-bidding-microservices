@@ -20,7 +20,7 @@ type Config struct {
 func LoadConfig() *Config {
 	return &Config{
 		MongoURI:            getEnv("MONGO_URI", "mongodb://localhost:27017"),
-		DBName:              getEnv("DB_NAME", "bidding_auction_db"),
+		DBName:              getEnv("DB_NAME", "bidding-auction_service_dev"),
 		Port:                getEnv("PORT_AUCTION", "3002"),
 		NatsURL:             getEnv("NATS_URL", "nats://localhost:4222"),
 		JWTSecret:           getEnv("JWT_SECRET", "f3c12be5d179b8d5690d4735a0b48b5d68e7b68e3cda6b3"),

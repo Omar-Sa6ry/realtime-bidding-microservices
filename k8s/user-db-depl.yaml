@@ -52,6 +52,7 @@ spec:
   resources:
     requests:
       storage: 2Gi
+  storageClassName: standard
 ---
 apiVersion: v1
 kind: Service
