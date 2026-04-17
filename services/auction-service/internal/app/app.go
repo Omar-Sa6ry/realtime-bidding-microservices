@@ -33,7 +33,8 @@ import (
 
 type App struct {
 	cfg            *config.Config
-	auctionService service.AuctionService
+	AuctionService service.AuctionService
+	Repo           domain.AuctionRepository
 	userClient     user_client.UserClient
 	natsPublisher  broker.Publisher
 	grpcServer     *grpc.Server
@@ -62,9 +63,9 @@ func (a *App) Setup() error {
 	a.disconnectMongo = disconnect
 
 	db := client.Database(a.cfg.DBName)
-	repo := repository.NewMongoAuctionRepository(db)
+	a.Repo = repository.NewMongoAuctionRepository(db)
 
-	if err := repo.EnsureIndexes(context.Background()); err != nil {
+	if err := a.Repo.EnsureIndexes(context.Background()); err != nil {
 		logger.Error("AuctionApp", "Failed to ensure MongoDB indexes", err)
 	}
 
@@ -85,13 +86,13 @@ func (a *App) Setup() error {
 	}
 
 	// Initialize Service Layer
-	a.auctionService = service.NewAuctionService(repo, cldService, a.natsPublisher, a.userClient)
+	a.AuctionService = service.NewAuctionService(a.Repo, cldService, a.natsPublisher, a.userClient)
 
 	// Start Background Workers (Cron)
 	a.startCronJobs()
 
 	// Setup gRPC Server
-	if err := a.setupGRPCServer(repo); err != nil {
+	if err := a.setupGRPCServer(a.Repo); err != nil {
 		return err
 	}
 
@@ -141,7 +142,7 @@ func (a *App) setupGRPCServer(repo domain.AuctionRepository) error {
 }
 
 func (a *App) setupHTTPServer() {
-	graphConfig := graph.Config{Resolvers: &graph.Resolver{AuctionService: a.auctionService}}
+	graphConfig := graph.Config{Resolvers: &graph.Resolver{AuctionService: a.AuctionService}}
 	graphConfig.Directives.Auth = graph.AuthDirective
 
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graphConfig))

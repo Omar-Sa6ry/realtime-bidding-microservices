@@ -19,7 +19,7 @@ func (a *App) startCronJobs() {
 		defer cancel()
 
 		logger.Info("CronWorker", "Checking Auction Lifecycles...")
-		if err := a.auctionService.ProcessLifecycleTransitions(ctx); err != nil {
+		if err := a.AuctionService.ProcessLifecycleTransitions(ctx); err != nil {
 			logger.Error("CronWorker", "Lifecycle Error", err)
 		}
 	})
