@@ -51,12 +51,12 @@ func (s *BiddingService) PlaceBid(ctx context.Context, auctionID string, amount 
 	}
 
 	if !valResp.IsActive {
-		return nil, fmt.Errorf(translation.T(ctx, "auction_not_active"))
+		return nil, fmt.Errorf("%s", translation.T(ctx, "auction_not_active"))
 	}
 	
 	prevBid, _ := s.GetHighestBid(ctx, auctionID)
 	if prevBid != nil && prevBid.UserID == userID {
-		return nil, fmt.Errorf(translation.T(ctx, "already_highest_bidder"))
+		return nil, fmt.Errorf("%s", translation.T(ctx, "already_highest_bidder"))
 	}
 
 	resp, err := s.userClient.UpdateBalance(ctx, userID, amount, user_client.TransactionDeduct)
@@ -64,7 +64,7 @@ func (s *BiddingService) PlaceBid(ctx context.Context, auctionID string, amount 
 		return nil, fmt.Errorf("%s: %w", translation.T(ctx, "failed_to_place_bid"), err)
 	}
 	if !resp.Success {
-		return nil, fmt.Errorf(translation.T(ctx, "insufficient_balance"))
+		return nil, fmt.Errorf("%s", translation.T(ctx, "insufficient_balance"))
 	}
 
 	bid := &domains.Bid{
@@ -118,7 +118,7 @@ func (s *BiddingService) GetHighestBid(ctx context.Context, auctionID string) (*
 
 	resp, err := s.auctionClient.GetAuction(ctx, auctionID)
 	if err != nil || !resp.Exists {
-		return nil, fmt.Errorf(translation.T(ctx, "auction_not_found"))
+		return nil, fmt.Errorf("%s", translation.T(ctx, "auction_not_found"))
 	}
 
 	bid, err := s.redisRepo.GetHighestBid(ctx, auctionID)
@@ -133,7 +133,7 @@ func (s *BiddingService) GetHighestBid(ctx context.Context, auctionID string) (*
 func (s *BiddingService) GetAuctionHistory(ctx context.Context, auctionID string, pagination *model.PaginationInput) ([]*domains.Bid, int64, error) {
 	resp, err := s.auctionClient.GetAuction(ctx, auctionID)
 	if err != nil || !resp.Exists {
-		return nil, 0, fmt.Errorf(translation.T(ctx, "auction_not_found"))
+		return nil, 0, fmt.Errorf("%s", translation.T(ctx, "auction_not_found"))
 	}
 	
 	limit := int64(10)
@@ -153,7 +153,7 @@ func (s *BiddingService) GetAuctionHistory(ctx context.Context, auctionID string
 func (s *BiddingService) GetMyBids(ctx context.Context, pagination *model.PaginationInput) ([]*domains.Bid, int64, error) {
 	userID := Middlewares.GetUserIDFromContext(ctx)
 	if userID == "" {
-		return nil, 0, fmt.Errorf(translation.T(ctx, "unauthorized"))
+		return nil, 0, fmt.Errorf("%s", translation.T(ctx, "unauthorized"))
 	}
 
 	limit := int64(10)
