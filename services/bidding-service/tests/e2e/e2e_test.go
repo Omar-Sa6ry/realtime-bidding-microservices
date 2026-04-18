@@ -32,6 +32,8 @@ type BiddingE2ESuite struct {
 	redisContainer    *redis.RedisContainer
 	mockUserServer    *grpc.Server
 	mockAuctionServer *grpc.Server
+	mockUserService   *mocks.MockUserService
+	mockAuctionService *mocks.MockAuctionService
 	natsConn          *nats_lib.Conn
 
 	biddingApp *app.App
@@ -64,13 +66,13 @@ func (s *BiddingE2ESuite) SetupSuite() {
 	// Start Mock gRPC Servers
 	lisUser, _ := net.Listen("tcp", "localhost:50053")
 	s.mockUserServer = grpc.NewServer()
-	mockUserService := &mocks.MockUserService{}
-	pb_user.RegisterUserServiceServer(s.mockUserServer, mockUserService)
+	s.mockUserService = &mocks.MockUserService{}
+	pb_user.RegisterUserServiceServer(s.mockUserServer, s.mockUserService)
 
 	lisAuction, _ := net.Listen("tcp", "localhost:50054")
 	s.mockAuctionServer = grpc.NewServer()
-	mockAuctionService := &mocks.MockAuctionService{}
-	pb_auction.RegisterAuctionServiceServer(s.mockAuctionServer, mockAuctionService)
+	s.mockAuctionService = &mocks.MockAuctionService{}
+	pb_auction.RegisterAuctionServiceServer(s.mockAuctionServer, s.mockAuctionService)
 
 	go s.mockUserServer.Serve(lisUser)
 	go s.mockAuctionServer.Serve(lisAuction)
@@ -95,10 +97,13 @@ func (s *BiddingE2ESuite) SetupSuite() {
 	go s.biddingApp.Start()
 
 	// Setup NATS connection for verification
-	s.natsConn, _ = nats_lib.Connect(natsURI)
+	var nerr error
+	s.natsConn, nerr = nats_lib.Connect(natsURI)
+	s.Require().NoError(nerr, "Failed to connect to NATS for verification")
+
 	s.testToken = s.generateToken("test-user-id")
 
-	time.Sleep(1 * time.Second) // Wait for startup
+	time.Sleep(2 * time.Second) // Wait for startup
 }
 
 func (s *BiddingE2ESuite) generateToken(userID string) string {
@@ -131,53 +136,201 @@ func (s *BiddingE2ESuite) TearDownSuite() {
 }
 
 func (s *BiddingE2ESuite) TestPlaceBid() {
-	auctionID := "auction-1"
-	amount := 1500.0
+	s.Run("Success", func() {
+		auctionID := "auction-success"
+		amount := 1500.0
 
-	// Subscribe to NATS to verify bid event
-	sub, _ := s.natsConn.SubscribeSync("bid.created")
-	defer sub.Unsubscribe()
+		// Reset Mocks for success
+		s.mockUserService.UpdateBalanceFunc = nil
+		s.mockAuctionService.ValidateAuctionForBidFunc = nil
+		s.mockAuctionService.GetAuctionFunc = nil
 
-	mutation := fmt.Sprintf(`
-	mutation {
-		placeBid(auctionId: "%s", amount: %f) {
-			id
-			auctionId
-			amount
-			status
+		sub, _ := s.natsConn.SubscribeSync("bid.created")
+		defer sub.Unsubscribe()
+
+		mutation := fmt.Sprintf(`
+		mutation {
+			placeBid(auctionId: "%s", amount: %f) {
+				success
+				message
+				data {
+					id
+					auction { id }
+					amount
+					status
+				}
+			}
+		}`, auctionID, amount)
+
+		reqBody, _ := json.Marshal(map[string]string{"query": mutation})
+		req, _ := http.NewRequest("POST", "http://localhost:4003/graphql", bytes.NewBuffer(reqBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+s.testToken)
+
+		resp, err := http.DefaultClient.Do(req)
+		s.Require().NoError(err)
+		defer resp.Body.Close()
+
+		var result struct {
+			Data struct {
+				PlaceBid struct {
+					Success bool   `json:"success"`
+					Data    struct {
+						ID      string `json:"id"`
+						Auction struct {
+							ID string `json:"id"`
+						} `json:"auction"`
+						Amount float64 `json:"amount"`
+						Status string  `json:"status"`
+					} `json:"data"`
+				} `json:"placeBid"`
+			} `json:"data"`
 		}
-	}`, auctionID, amount)
+		json.NewDecoder(resp.Body).Decode(&result)
 
-	reqBody, _ := json.Marshal(map[string]string{"query": mutation})
-	req, _ := http.NewRequest("POST", "http://localhost:4003/graphql", bytes.NewBuffer(reqBody))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+s.testToken)
+		s.True(result.Data.PlaceBid.Success)
+		s.Equal(auctionID, result.Data.PlaceBid.Data.Auction.ID)
+		s.Equal(amount, result.Data.PlaceBid.Data.Amount)
 
-	resp, err := http.DefaultClient.Do(req)
-	s.Require().NoError(err)
-	defer resp.Body.Close()
+		// Verify NATS event
+		msg, err := sub.NextMsg(2 * time.Second)
+		s.Require().NoError(err, "NATS event not received")
+		s.Contains(string(msg.Data), auctionID)
+	})
 
-	var result struct {
-		Data struct {
-			PlaceBid struct {
-				ID        string  `json:"id"`
-				AuctionId string  `json:"auctionId"`
-				Amount    float64 `json:"amount"`
-				Status    string  `json:"status"`
-			} `json:"placeBid"`
-		} `json:"data"`
-	}
-	json.NewDecoder(resp.Body).Decode(&result)
+	s.Run("InsufficientBalance", func() {
+		// Reset Mocks
+		s.mockUserService.UpdateBalanceFunc = nil
+		s.mockAuctionService.ValidateAuctionForBidFunc = nil
+		
+		s.mockUserService.UpdateBalanceFunc = func(ctx context.Context, in *pb_user.UpdateBalanceRequest) (*pb_user.UpdateBalanceResponse, error) {
+			return &pb_user.UpdateBalanceResponse{Success: false, Message: "Insufficient balance"}, nil
+		}
 
-	s.NotEmpty(result.Data.PlaceBid.ID)
-	s.Equal(auctionID, result.Data.PlaceBid.AuctionId)
-	s.Equal(amount, result.Data.PlaceBid.Amount)
-	s.Equal("ACCEPTED", result.Data.PlaceBid.Status)
+		mutation := `mutation { placeBid(auctionId: "any", amount: 100) { success message } }`
+		reqBody, _ := json.Marshal(map[string]string{"query": mutation})
+		req, _ := http.NewRequest("POST", "http://localhost:4003/graphql", bytes.NewBuffer(reqBody))
+		req.Header.Set("Authorization", "Bearer "+s.testToken)
+		req.Header.Set("Content-Type", "application/json")
 
-	// Verify NATS event
-	msg, err := sub.NextMsg(2 * time.Second)
-	s.Require().NoError(err)
-	s.Contains(string(msg.Data), auctionID)
+		resp, err := http.DefaultClient.Do(req)
+		s.Require().NoError(err)
+		defer resp.Body.Close()
+
+		var result struct {
+			Data struct {
+				PlaceBid struct {
+					Success bool   `json:"success"`
+					Message string `json:"message"`
+				} `json:"placeBid"`
+			} `json:"data"`
+		}
+		json.NewDecoder(resp.Body).Decode(&result)
+
+		s.False(result.Data.PlaceBid.Success)
+		s.Contains(result.Data.PlaceBid.Message, "Insufficient balance")
+	})
+
+	s.Run("AuctionNotActive", func() {
+		// Reset Mocks
+		s.mockUserService.UpdateBalanceFunc = nil
+		s.mockAuctionService.ValidateAuctionForBidFunc = nil
+		
+		s.mockAuctionService.ValidateAuctionForBidFunc = func(ctx context.Context, in *pb_auction.ValidateAuctionRequest) (*pb_auction.ValidateAuctionResponse, error) {
+			return &pb_auction.ValidateAuctionResponse{IsActive: false}, nil
+		}
+
+		mutation := `mutation { placeBid(auctionId: "inactive", amount: 100) { success message } }`
+		reqBody, _ := json.Marshal(map[string]string{"query": mutation})
+		req, _ := http.NewRequest("POST", "http://localhost:4003/graphql", bytes.NewBuffer(reqBody))
+		req.Header.Set("Authorization", "Bearer "+s.testToken)
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := http.DefaultClient.Do(req)
+		s.Require().NoError(err)
+		defer resp.Body.Close()
+
+		var result struct {
+			Data struct {
+				PlaceBid struct {
+					Success bool   `json:"success"`
+					Message string `json:"message"`
+				} `json:"placeBid"`
+			} `json:"data"`
+		}
+		json.NewDecoder(resp.Body).Decode(&result)
+
+		s.False(result.Data.PlaceBid.Success)
+		s.Contains(result.Data.PlaceBid.Message, "active auctions")
+	})
+
+	s.Run("AlreadyHighestBidder", func() {
+		// Reset Mocks
+		s.mockUserService.UpdateBalanceFunc = nil
+		s.mockAuctionService.ValidateAuctionForBidFunc = nil
+		
+		auctionID := "already-highest"
+		s.mockAuctionService.ValidateAuctionForBidFunc = nil
+
+		s.mockAuctionService.GetAuctionFunc = func(ctx context.Context, in *pb_auction.GetAuctionRequest) (*pb_auction.GetAuctionResponse, error) {
+			return &pb_auction.GetAuctionResponse{
+				Exists: true,
+				Status: "ACTIVE",
+				CurrentPrice: 1000,
+				SellerId: "other-user",
+			}, nil
+		}
+		
+		mutation := fmt.Sprintf(`mutation { placeBid(auctionId: "%s", amount: 1200) { success message } }`, auctionID)
+		reqBody, _ := json.Marshal(map[string]string{"query": mutation})
+		
+		// First bid (Success)
+		req1, _ := http.NewRequest("POST", "http://localhost:4003/graphql", bytes.NewBuffer(reqBody))
+		req1.Header.Set("Authorization", "Bearer "+s.testToken)
+		req1.Header.Set("Content-Type", "application/json")
+		resp1, err1 := http.DefaultClient.Do(req1)
+		s.Require().NoError(err1)
+		resp1.Body.Close()
+
+		// Second bid (Should fail with already_highest_bidder)
+		req2, _ := http.NewRequest("POST", "http://localhost:4003/graphql", bytes.NewBuffer(reqBody))
+		req2.Header.Set("Authorization", "Bearer "+s.testToken)
+		req2.Header.Set("Content-Type", "application/json")
+		resp2, err2 := http.DefaultClient.Do(req2)
+		s.Require().NoError(err2)
+		defer resp2.Body.Close()
+
+		var result struct {
+			Data struct {
+				PlaceBid struct {
+					Success bool   `json:"success"`
+					Message string `json:"message"`
+				} `json:"placeBid"`
+			} `json:"data"`
+		}
+		json.NewDecoder(resp2.Body).Decode(&result)
+
+		s.False(result.Data.PlaceBid.Success)
+		s.Contains(result.Data.PlaceBid.Message, "already the highest bidder")
+	})
+
+	s.Run("Unauthorized", func() {
+		mutation := `mutation { placeBid(auctionId: "any", amount: 100) { success } }`
+		reqBody, _ := json.Marshal(map[string]string{"query": mutation})
+		req, _ := http.NewRequest("POST", "http://localhost:4003/graphql", bytes.NewBuffer(reqBody))
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, _ := http.DefaultClient.Do(req)
+		var result struct {
+			Errors []struct {
+				Message string `json:"message"`
+			} `json:"errors"`
+		}
+		json.NewDecoder(resp.Body).Decode(&result)
+
+		s.NotEmpty(result.Errors)
+		s.Contains(result.Errors[0].Message, "UNAUTHENTICATED")
+	})
 }
 
 func TestBiddingE2E(t *testing.T) {
