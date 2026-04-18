@@ -14,6 +14,7 @@ import (
 	nats_lib "github.com/nats-io/nats.go"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/app"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/config"
+	domains "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/domains"
 	pb_auction "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/protos/auction"
 	pb_user "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/protos/user"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/tests/mocks"
@@ -325,6 +326,263 @@ func (s *BiddingE2ESuite) TestPlaceBid() {
 			Errors []struct {
 				Message string `json:"message"`
 			} `json:"errors"`
+		}
+		json.NewDecoder(resp.Body).Decode(&result)
+
+		s.NotEmpty(result.Errors)
+		s.Contains(result.Errors[0].Message, "UNAUTHENTICATED")
+	})
+}
+
+func (s *BiddingE2ESuite) TestGetHighestBid() {
+	auctionID := "auction-highest-test"
+
+	s.Run("Success_FromCache", func() {
+		s.mockAuctionService.GetAuctionFunc = func(ctx context.Context, in *pb_auction.GetAuctionRequest) (*pb_auction.GetAuctionResponse, error) {
+			return &pb_auction.GetAuctionResponse{Exists: true, Status: "ACTIVE"}, nil
+		}
+		s.mockUserService.UpdateBalanceFunc = nil
+		s.mockAuctionService.ValidateAuctionForBidFunc = nil
+
+		// Place a bid
+		mutation := fmt.Sprintf(`mutation { placeBid(auctionId: "%s", amount: 2000) { success } }`, auctionID)
+		reqBody, _ := json.Marshal(map[string]string{"query": mutation})
+		req, _ := http.NewRequest("POST", "http://localhost:4003/graphql", bytes.NewBuffer(reqBody))
+		req.Header.Set("Authorization", "Bearer "+s.testToken)
+		req.Header.Set("Content-Type", "application/json")
+		resp, _ := http.DefaultClient.Do(req)
+		resp.Body.Close()
+
+		// Get Highest Bid
+		query := fmt.Sprintf(`{ getHighestBid(auctionId: "%s") { success data { amount } } }`, auctionID)
+		reqBody, _ = json.Marshal(map[string]string{"query": query})
+		req, _ = http.NewRequest("POST", "http://localhost:4003/graphql", bytes.NewBuffer(reqBody))
+		req.Header.Set("Content-Type", "application/json")
+		
+		resp, _ = http.DefaultClient.Do(req)
+		var result struct {
+			Data struct {
+				GetHighestBid struct {
+					Success bool `json:"success"`
+					Data    struct {
+						Amount float64 `json:"amount"`
+					} `json:"data"`
+				} `json:"getHighestBid"`
+			} `json:"data"`
+		}
+		json.NewDecoder(resp.Body).Decode(&result)
+
+		s.True(result.Data.GetHighestBid.Success)
+		s.Equal(2000.0, result.Data.GetHighestBid.Data.Amount)
+	})
+
+	s.Run("Success_DBFallback", func() {
+		auctionIDFallback := "auction-fallback"
+		s.mockAuctionService.GetAuctionFunc = func(ctx context.Context, in *pb_auction.GetAuctionRequest) (*pb_auction.GetAuctionResponse, error) {
+			return &pb_auction.GetAuctionResponse{Exists: true, Status: "ACTIVE"}, nil
+		}
+
+		bid := &domains.Bid{
+			ID:        "bid-manual",
+			AuctionID: auctionIDFallback,
+			UserID:    "user-1",
+			Amount:    3000.0,
+			Status:    "ACCEPTED",
+			CreatedAt: time.Now(),
+		}
+		s.biddingApp.MongoRepo.PlaceBid(s.ctx, bid)
+
+		query := fmt.Sprintf(`{ getHighestBid(auctionId: "%s") { success data { amount } } }`, auctionIDFallback)
+		reqBody, _ := json.Marshal(map[string]string{"query": query})
+		req, _ := http.NewRequest("POST", "http://localhost:4003/graphql", bytes.NewBuffer(reqBody))
+		req.Header.Set("Content-Type", "application/json")
+		
+		resp, _ := http.DefaultClient.Do(req)
+		var result struct {
+			Data struct {
+				GetHighestBid struct {
+					Success bool `json:"success"`
+					Data    struct {
+						Amount float64 `json:"amount"`
+					} `json:"data"`
+				} `json:"getHighestBid"`
+			} `json:"data"`
+		}
+		json.NewDecoder(resp.Body).Decode(&result)
+
+		s.True(result.Data.GetHighestBid.Success)
+		s.Equal(3000.0, result.Data.GetHighestBid.Data.Amount)
+	})
+
+	s.Run("AuctionNotFound", func() {
+		s.mockAuctionService.GetAuctionFunc = func(ctx context.Context, in *pb_auction.GetAuctionRequest) (*pb_auction.GetAuctionResponse, error) {
+			return &pb_auction.GetAuctionResponse{Exists: false}, nil
+		}
+
+		query := `{ getHighestBid(auctionId: "non-existent") { success message } }`
+		reqBody, _ := json.Marshal(map[string]string{"query": query})
+		req, _ := http.NewRequest("POST", "http://localhost:4003/graphql", bytes.NewBuffer(reqBody))
+		req.Header.Set("Content-Type", "application/json")
+		
+		resp, _ := http.DefaultClient.Do(req)
+		var result struct {
+			Data struct {
+				GetHighestBid struct {
+					Success bool   `json:"success"`
+					Message string `json:"message"`
+				} `json:"getHighestBid"`
+			} `json:"data"`
+		}
+		json.NewDecoder(resp.Body).Decode(&result)
+
+		s.False(result.Data.GetHighestBid.Success)
+		s.Contains(result.Data.GetHighestBid.Message, "not found")
+	})
+
+	s.Run("NoBidsFound", func() {
+		auctionIDNoBids := "auction-no-bids"
+		s.mockAuctionService.GetAuctionFunc = func(ctx context.Context, in *pb_auction.GetAuctionRequest) (*pb_auction.GetAuctionResponse, error) {
+			return &pb_auction.GetAuctionResponse{Exists: true, Status: "ACTIVE"}, nil
+		}
+
+		query := fmt.Sprintf(`{ getHighestBid(auctionId: "%s") { success data { id } } }`, auctionIDNoBids)
+		reqBody, _ := json.Marshal(map[string]string{"query": query})
+		req, _ := http.NewRequest("POST", "http://localhost:4003/graphql", bytes.NewBuffer(reqBody))
+		req.Header.Set("Content-Type", "application/json")
+		
+		resp, _ := http.DefaultClient.Do(req)
+		defer resp.Body.Close()
+		var result struct {
+			Data struct {
+				GetHighestBid struct {
+					Success bool `json:"success"`
+					Data    *struct {
+						ID string `json:"id"`
+					} `json:"data"`
+				} `json:"getHighestBid"`
+			} `json:"data"`
+		}
+		json.NewDecoder(resp.Body).Decode(&result)
+
+		s.False(result.Data.GetHighestBid.Success)
+		s.Nil(result.Data.GetHighestBid.Data)
+	})
+}
+
+func (s *BiddingE2ESuite) TestGetAuctionHistory() {
+	auctionID := "auction-history-test"
+
+	s.Run("Success", func() {
+		s.mockAuctionService.GetAuctionFunc = func(ctx context.Context, in *pb_auction.GetAuctionRequest) (*pb_auction.GetAuctionResponse, error) {
+			return &pb_auction.GetAuctionResponse{Exists: true, Status: "ACTIVE"}, nil
+		}
+
+		for i := 1; i <= 3; i++ {
+			bid := &domains.Bid{
+				ID:        fmt.Sprintf("bid-hist-%d", i),
+				AuctionID: auctionID,
+				UserID:    "user-hist",
+				Amount:    float64(1000 * i),
+				Status:    "ACCEPTED",
+				CreatedAt: time.Now().Add(time.Duration(i) * time.Minute),
+			}
+			s.biddingApp.MongoRepo.PlaceBid(s.ctx, bid)
+		}
+
+		query := fmt.Sprintf(`{ getAuctionHistory(auctionId: "%s", pagination: { limit: 2, page: 1 }) { success data { amount } totalItems } }`, auctionID)
+		reqBody, _ := json.Marshal(map[string]string{"query": query})
+		req, _ := http.NewRequest("POST", "http://localhost:4003/graphql", bytes.NewBuffer(reqBody))
+		req.Header.Set("Content-Type", "application/json")
+		
+		resp, _ := http.DefaultClient.Do(req)
+		var result struct {
+			Data struct {
+				GetAuctionHistory struct {
+					Success    bool `json:"success"`
+					Data       []struct { Amount float64 `json:"amount"` } `json:"data"`
+					TotalItems int  `json:"totalItems"`
+				} `json:"getAuctionHistory"`
+			} `json:"data"`
+		}
+		json.NewDecoder(resp.Body).Decode(&result)
+
+		s.True(result.Data.GetAuctionHistory.Success)
+		s.Len(result.Data.GetAuctionHistory.Data, 2)
+		s.Equal(3, result.Data.GetAuctionHistory.TotalItems)
+	})
+
+	s.Run("AuctionNotFound", func() {
+		s.mockAuctionService.GetAuctionFunc = func(ctx context.Context, in *pb_auction.GetAuctionRequest) (*pb_auction.GetAuctionResponse, error) {
+			return &pb_auction.GetAuctionResponse{Exists: false}, nil
+		}
+
+		query := `{ getAuctionHistory(auctionId: "non-existent") { success message } }`
+		reqBody, _ := json.Marshal(map[string]string{"query": query})
+		req, _ := http.NewRequest("POST", "http://localhost:4003/graphql", bytes.NewBuffer(reqBody))
+		req.Header.Set("Content-Type", "application/json")
+		
+		resp, _ := http.DefaultClient.Do(req)
+		var result struct {
+			Data struct {
+				GetAuctionHistory struct {
+					Success bool   `json:"success"`
+					Message string `json:"message"`
+				} `json:"getAuctionHistory"`
+			} `json:"data"`
+		}
+		json.NewDecoder(resp.Body).Decode(&result)
+
+		s.False(result.Data.GetAuctionHistory.Success)
+		s.Contains(result.Data.GetAuctionHistory.Message, "not found")
+	})
+}
+
+func (s *BiddingE2ESuite) TestGetMyBids() {
+	userA := "user-a"
+	userB := "user-b"
+
+	s.Run("Success_UserA_Bids", func() {
+		s.biddingApp.MongoRepo.PlaceBid(s.ctx, &domains.Bid{ID: "bid-a-1", UserID: userA, AuctionID: "auc-1", Amount: 500, CreatedAt: time.Now()})
+		s.biddingApp.MongoRepo.PlaceBid(s.ctx, &domains.Bid{ID: "bid-a-2", UserID: userA, AuctionID: "auc-2", Amount: 600, CreatedAt: time.Now()})
+		s.biddingApp.MongoRepo.PlaceBid(s.ctx, &domains.Bid{ID: "bid-b-1", UserID: userB, AuctionID: "auc-1", Amount: 700, CreatedAt: time.Now()})
+
+		query := `{ getMyBids(pagination: { limit: 10, page: 1 }) { success data { id userId } totalItems } }`
+		reqBody, _ := json.Marshal(map[string]string{"query": query})
+		req, _ := http.NewRequest("POST", "http://localhost:4003/graphql", bytes.NewBuffer(reqBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+s.generateToken(userA))
+		
+		resp, _ := http.DefaultClient.Do(req)
+		var result struct {
+			Data struct {
+				GetMyBids struct {
+					Success    bool `json:"success"`
+					Data       []struct {
+						ID     string `json:"id"`
+						UserID string `json:"userId"`
+					} `json:"data"`
+					TotalItems int `json:"totalItems"`
+				} `json:"getMyBids"`
+			} `json:"data"`
+		}
+		json.NewDecoder(resp.Body).Decode(&result)
+
+		s.True(result.Data.GetMyBids.Success)
+		s.Equal(2, result.Data.GetMyBids.TotalItems)
+		for _, b := range result.Data.GetMyBids.Data {
+			s.Equal(userA, b.UserID)
+		}
+	})
+
+	s.Run("Unauthorized", func() {
+		query := `{ getMyBids(pagination: { limit: 10 }) { success } }`
+		reqBody, _ := json.Marshal(map[string]string{"query": query})
+		req, _ := http.NewRequest("POST", "http://localhost:4003/graphql", bytes.NewBuffer(reqBody))
+		req.Header.Set("Content-Type", "application/json")
+		
+		resp, _ := http.DefaultClient.Do(req)
+		var result struct {
+			Errors []struct { Message string `json:"message"` } `json:"errors"`
 		}
 		json.NewDecoder(resp.Body).Decode(&result)
 
