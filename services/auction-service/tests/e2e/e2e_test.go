@@ -308,6 +308,223 @@ func (s *AuctionE2ESuite) TestUnauthorized() {
 	s.True(isFailed, "The request should have failed due to invalid token")
 }
 
+func (s *AuctionE2ESuite) seedAuction(title string, sellerID string, status domain.AuctionStatus) string {
+	auc := &domain.Auction{
+		ID:           primitive.NewObjectID(),
+		Title:        title,
+		Description:  "Seeded auction",
+		StartingPrice: 100.0,
+		CurrentPrice:  100.0,
+		Currency:      "USD",
+		Status:        status,
+		StartTime:     time.Now().Add(-time.Hour),
+		EndTime:       time.Now().Add(time.Hour),
+		SellerID:      sellerID,
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
+	}
+	err := s.auctionApp.Repo.Create(s.ctx, auc)
+	s.Require().NoError(err)
+	return auc.ID.Hex()
+}
+
+func (s *AuctionE2ESuite) TestFindAuctionWithSeller() {
+	// 1. Seed an auction
+	sellerID := "seller-123"
+	auctionID := s.seedAuction("Vintage Camera", sellerID, domain.StatusActive)
+
+	// 2. Query auction with seller field (triggers Dataloader -> gRPC)
+	query := fmt.Sprintf(`
+	query {
+		findAuctionByID(id: "%s") {
+			data {
+				id
+				title
+				seller {
+					id
+					firstname
+					lastname
+					email
+				}
+			}
+		}
+	}`, auctionID)
+
+	requestBody, _ := json.Marshal(map[string]string{"query": query})
+	req, _ := http.NewRequest("POST", "http://localhost:4001/graphql", bytes.NewBuffer(requestBody))
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	s.Require().NoError(err)
+	defer resp.Body.Close()
+
+	var result struct {
+		Data struct {
+			FindAuctionByID struct {
+				Data struct {
+					ID     string `json:"id"`
+					Title  string `json:"title"`
+					Seller struct {
+						ID        string `json:"id"`
+						Firstname string `json:"firstname"`
+						Lastname  string `json:"lastname"`
+					} `json:"seller"`
+				} `json:"data"`
+			} `json:"findAuctionByID"`
+		} `json:"data"`
+	}
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	s.Require().NoError(err)
+
+	// 3. Verify Seller data from Mock (Mocks are hardcoded in mocks/user_service_mock.go)
+	s.Equal(auctionID, result.Data.FindAuctionByID.Data.ID)
+	s.Equal("Vintage Camera", result.Data.FindAuctionByID.Data.Title)
+	s.Equal(sellerID, result.Data.FindAuctionByID.Data.Seller.ID)
+	s.NotEmpty(result.Data.FindAuctionByID.Data.Seller.Firstname)
+}
+
+func (s *AuctionE2ESuite) TestUpdateAndDeleteAuction() {
+	// 1. Create auction through GraphQL
+	startTime := time.Now().Add(time.Hour).Format(time.RFC3339)
+	endTime := time.Now().Add(2 * time.Hour).Format(time.RFC3339)
+	createMutation := fmt.Sprintf(`
+	mutation {
+		createAuction(input: {
+			title: "Original Title",
+			description: "Desc",
+			startingPrice: 10,
+			currency: "USD",
+			startTime: "%s",
+			endTime: "%s"
+		}) {
+			success
+			data { id }
+		}
+	}`, startTime, endTime)
+
+	reqBody, _ := json.Marshal(map[string]string{"query": createMutation})
+	req, _ := http.NewRequest("POST", "http://localhost:4001/graphql", bytes.NewBuffer(reqBody))
+	req.Header.Set("Authorization", "Bearer "+s.testToken)
+	req.Header.Set("Content-Type", "application/json")
+	
+	resp, _ := http.DefaultClient.Do(req)
+	var createRes struct {
+		Data struct { CreateAuction struct { Data struct { ID string } } }
+	}
+	json.NewDecoder(resp.Body).Decode(&createRes)
+	auctionID := createRes.Data.CreateAuction.Data.ID
+	s.NotEmpty(auctionID)
+	resp.Body.Close()
+
+	// 2. Update Auction
+	updateMutation := fmt.Sprintf(`
+	mutation {
+		updateAuction(id: "%s", input: { title: "Updated Title" }) {
+			success
+		}
+	}`, auctionID)
+
+	reqBody, _ = json.Marshal(map[string]string{"query": updateMutation})
+	req, _ = http.NewRequest("POST", "http://localhost:4001/graphql", bytes.NewBuffer(reqBody))
+	req.Header.Set("Authorization", "Bearer "+s.testToken)
+	req.Header.Set("Content-Type", "application/json")
+	
+	resp, _ = http.DefaultClient.Do(req)
+	var updateRes struct {
+		Data struct { UpdateAuction struct { Success bool } }
+	}
+	json.NewDecoder(resp.Body).Decode(&updateRes)
+	s.True(updateRes.Data.UpdateAuction.Success)
+	resp.Body.Close()
+
+	// Verify Update in DB
+	updated, _ := s.auctionApp.Repo.FindByID(s.ctx, auctionID)
+	s.Equal("Updated Title", updated.Title)
+
+	// 3. Delete Auction
+	deleteMutation := fmt.Sprintf(`mutation { deleteAuction(id: "%s") { success } }`, auctionID)
+	reqBody, _ = json.Marshal(map[string]string{"query": deleteMutation})
+	req, _ = http.NewRequest("POST", "http://localhost:4001/graphql", bytes.NewBuffer(reqBody))
+	req.Header.Set("Authorization", "Bearer "+s.testToken)
+	req.Header.Set("Content-Type", "application/json")
+	
+	resp, _ = http.DefaultClient.Do(req)
+	var deleteRes struct {
+		Data struct { DeleteAuction struct { Success bool } }
+	}
+	json.NewDecoder(resp.Body).Decode(&deleteRes)
+	s.True(deleteRes.Data.DeleteAuction.Success)
+	resp.Body.Close()
+
+	// Verify Deleted from DB
+	deleted, _ := s.auctionApp.Repo.FindByID(s.ctx, auctionID)
+	s.Nil(deleted)
+}
+
+func (s *AuctionE2ESuite) TestFindAuctionsPaginationAndFilters() {
+	// 1. Seed multiple auctions
+	for i := 0; i < 5; i++ {
+		s.seedAuction(fmt.Sprintf("Item %d", i), "user-1", domain.StatusActive)
+	}
+	s.seedAuction("Closed Item", "user-1", domain.StatusEnded)
+
+	// 2. Test Pagination (Limit 2)
+	query := `query { findAuctions(pagination: { limit: 2, page: 1 }) { data { title } totalItems } }`
+	reqBody, _ := json.Marshal(map[string]string{"query": query})
+	resp, _ := http.Post("http://localhost:4001/graphql", "application/json", bytes.NewBuffer(reqBody))
+	
+	var result struct {
+		Data struct {
+			FindAuctions struct {
+				Data []struct { Title string }
+				TotalItems int `json:"totalItems"`
+			} `json:"findAuctions"`
+		} `json:"data"`
+	}
+	json.NewDecoder(resp.Body).Decode(&result)
+	s.Len(result.Data.FindAuctions.Data, 2)
+	// Total items might be more than 5 because of previous tests
+	s.GreaterOrEqual(result.Data.FindAuctions.TotalItems, 6)
+
+	// 3. Test Status Filter (ENDED)
+	query = `query { findAuctions(input: { status: ENDED }) { data { title status } } }`
+	reqBody, _ = json.Marshal(map[string]string{"query": query})
+	resp, _ = http.Post("http://localhost:4001/graphql", "application/json", bytes.NewBuffer(reqBody))
+	
+	var filterRes struct {
+		Data struct { FindAuctions struct { Data []struct { Title string; Status string } } }
+	}
+	json.NewDecoder(resp.Body).Decode(&filterRes)
+	for _, a := range filterRes.Data.FindAuctions.Data {
+		s.Equal("ENDED", a.Status)
+	}
+}
+
+func (s *AuctionE2ESuite) TestCrossUserAuthorization() {
+	// 1. User A creates an auction
+	auctionID := s.seedAuction("User A Item", "user-a", domain.StatusActive)
+
+	// 2. User B (different token) tries to delete it
+	userBToken := s.generateToken("user-b")
+	deleteMutation := fmt.Sprintf(`mutation { deleteAuction(id: "%s") { success message } }`, auctionID)
+	
+	reqBody, _ := json.Marshal(map[string]string{"query": deleteMutation})
+	req, _ := http.NewRequest("POST", "http://localhost:4001/graphql", bytes.NewBuffer(reqBody))
+	req.Header.Set("Authorization", "Bearer "+userBToken)
+	req.Header.Set("Content-Type", "application/json")
+	
+	resp, _ := http.DefaultClient.Do(req)
+	var result struct {
+		Data struct { DeleteAuction struct { Success bool; Message string } }
+	}
+	json.NewDecoder(resp.Body).Decode(&result)
+
+	// 3. Verify Failure
+	s.False(result.Data.DeleteAuction.Success)
+	s.Contains(result.Data.DeleteAuction.Message, "not the seller")
+}
+
 func TestAuctionE2E(t *testing.T) {
 	suite.Run(t, new(AuctionE2ESuite))
 }
