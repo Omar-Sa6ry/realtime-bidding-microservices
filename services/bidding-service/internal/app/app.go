@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
@@ -16,86 +17,99 @@ import (
 	middlewares 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/middlewares"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/pkg/logger"
 	"github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/pkg/translation"
+	domains "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/domains"
 	repositories "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/repositories"
 	services "github.com/Omar-Sa6ry/realtime-bidding-microservices/services/bidding-service/internal/services"
 )
 
 type App struct {
-	cfg            *config.Config
-	biddingService *services.BiddingService
-	natsPublisher  broker.Publisher
-	userClient     user_client.UserClient
-	auctionClient  user_client.AuctionClient
+	cfg             *config.Config
+	BiddingService  *services.BiddingService
+	MongoRepo       domains.BiddingRepository
+	RedisRepo       domains.BiddingRepository
+	NatsPublisher   broker.Publisher
+	UserClient      user_client.UserClient
+	AuctionClient   user_client.AuctionClient
+	httpServer      *http.Server
+	natsListener    *broker.NatsListener
+	disconnectMongo func()
+	disconnectRedis func()
 }
 
 func New() *App {
+	return NewWithConfig(config.LoadConfig())
+}
+
+func NewWithConfig(cfg *config.Config) *App {
 	return &App{
-		cfg: config.LoadConfig(),
+		cfg: cfg,
 	}
 }
 
-func (a *App) Run() {
-	logger.Info("BiddingApp", "Initializing Bidding Service...")
+func (a *App) Setup() error {
+	logger.Info("BiddingApp", "Setting up Bidding Service...")
 
-	// 1 Initialize Translation
+	// Initialize Translation
 	translation.Init()
 
-	// 2 Initialize MongoDB
-	mongoClient, disconnectMongo := databases.InitMongoDB(a.cfg.MongoURI)
-	defer disconnectMongo()
+	// Initialize MongoDB
+	if a.MongoRepo == nil {
+		mongoClient, disconnectMongo := databases.InitMongoDB(a.cfg.MongoURI)
+		a.disconnectMongo = disconnectMongo
+		mongoDB := mongoClient.Database(a.cfg.DBName)
+		a.MongoRepo = repositories.NewMongoBiddingRepository(mongoDB)
 
-	mongoDB := mongoClient.Database(a.cfg.DBName)
-	mongoRepo := repositories.NewMongoBiddingRepository(mongoDB)
-
-	// Ensure Indexes
-	if err := mongoRepo.EnsureIndexes(context.Background()); err != nil {
-		logger.Error("BiddingApp", "Failed to ensure MongoDB indexes", err)
+		// Ensure Indexes
+		if err := a.MongoRepo.EnsureIndexes(context.Background()); err != nil {
+			logger.Error("BiddingApp", "Failed to ensure MongoDB indexes", err)
+		}
 	}
 
-	// 3 Initialize Redis
-	redisClient, disconnectRedis := databases.InitRedis(a.cfg.RedisHost, a.cfg.RedisPort)
-	defer disconnectRedis()
+	// Initialize Redis
+	if a.RedisRepo == nil {
+		redisClient, disconnectRedis := databases.InitRedis(a.cfg.RedisHost, a.cfg.RedisPort)
+		a.disconnectRedis = disconnectRedis
+		a.RedisRepo = repositories.NewRedisBiddingRepository(redisClient)
+	}
 
-	redisRepo := repositories.NewRedisBiddingRepository(redisClient)
-
-	// 4 Initialize NATS
+	// Initialize NATS
 	var err error
-	a.natsPublisher, err = broker.NewNatsPublisher(a.cfg.NatsURL)
-	if err != nil {
-		logger.Warn("BiddingApp", fmt.Sprintf("Failed to connect to NATS: %v Events will not be published.", err))
+	if a.NatsPublisher == nil {
+		a.NatsPublisher, err = broker.NewNatsPublisher(a.cfg.NatsURL)
+		if err != nil {
+			logger.Warn("BiddingApp", fmt.Sprintf("Failed to connect to NATS: %v Events will not be published.", err))
+		}
 	}
 
-	// 5 Initialize gRPC Clients
-	a.userClient, err = user_client.NewUserClient(a.cfg.UserServiceURL)
-	if err != nil {
-		log.Fatalf("Failed to initialize User gRPC Client: %v", err)
+	// Initialize gRPC Clients
+	if a.UserClient == nil {
+		a.UserClient, err = user_client.NewUserClient(a.cfg.UserServiceURL)
+		if err != nil {
+			return fmt.Errorf("failed to initialize User gRPC Client: %w", err)
+		}
 	}
 
-	a.auctionClient, err = user_client.NewAuctionClient(a.cfg.AuctionServiceURL)
-	if err != nil {
-		log.Fatalf("Failed to initialize Auction gRPC Client: %v", err)
+	if a.AuctionClient == nil {
+		a.AuctionClient, err = user_client.NewAuctionClient(a.cfg.AuctionServiceURL)
+		if err != nil {
+			return fmt.Errorf("failed to initialize Auction gRPC Client: %w", err)
+		}
 	}
 
-	// 6 Initialize Bidding Service
-	a.biddingService = services.NewBiddingService(redisRepo, mongoRepo, a.natsPublisher, a.userClient, a.auctionClient)
-
-	// 7 Initialize NATS Listener for auction.ended events
-	natsListener, err := broker.NewNatsListener(a.cfg.NatsURL, a.biddingService.ResolveAuction)
-	if err != nil {
-		logger.Warn("BiddingApp", fmt.Sprintf("Failed to start NATS listener: %v", err))
-	} else {
-		defer natsListener.Close()
+	// Initialize Bidding Service
+	if a.BiddingService == nil {
+		a.BiddingService = services.NewBiddingService(a.RedisRepo, a.MongoRepo, a.NatsPublisher, a.UserClient, a.AuctionClient)
 	}
 
-	// 8 Setup GraphQL
+	// Setup GraphQL
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{
-		Resolvers: &graph.Resolver{BiddingService: a.biddingService},
+		Resolvers: &graph.Resolver{BiddingService: a.BiddingService},
 		Directives: graph.DirectiveRoot{
 			Auth: graph.AuthDirective,
 		},
 	}))
 
-	// 9 Setup Router & Middlewares
+	// Setup Router & Middlewares
 	mux := http.NewServeMux()
 	mux.Handle("/", playground.Handler("GraphQL playground", "/graphql"))
 
@@ -105,8 +119,55 @@ func (a *App) Run() {
 
 	mux.Handle("/graphql", handler)
 
+	a.httpServer = &http.Server{
+		Addr:    ":" + a.cfg.Port,
+		Handler: mux,
+	}
+
+	return nil
+}
+
+func (a *App) Start() {
+	// Start NATS Listener for auction.ended events
+	var err error
+	a.natsListener, err = broker.NewNatsListener(a.cfg.NatsURL, a.BiddingService.ResolveAuction)
+	if err != nil {
+		logger.Warn("BiddingApp", fmt.Sprintf("Failed to start NATS listener: %v", err))
+	}
+
 	logger.Info("BiddingApp", "Server is running on port "+a.cfg.Port)
-	if err := http.ListenAndServe(":"+a.cfg.Port, mux); err != nil {
+	if err := a.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		logger.Error("BiddingApp", "Server failed", err)
 	}
+}
+
+func (a *App) Shutdown() {
+	logger.Info("BiddingApp", "Shutting down Bidding Service...")
+
+	if a.httpServer != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = a.httpServer.Shutdown(ctx)
+	}
+
+	if a.natsListener != nil {
+		a.natsListener.Close()
+	}
+
+	if a.disconnectMongo != nil {
+		a.disconnectMongo()
+	}
+
+	if a.disconnectRedis != nil {
+		a.disconnectRedis()
+	}
+
+	logger.Info("BiddingApp", "Bidding Service exited gracefully")
+}
+
+func (a *App) Run() {
+	if err := a.Setup(); err != nil {
+		log.Fatal(err)
+	}
+	a.Start()
 }
