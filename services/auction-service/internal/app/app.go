@@ -32,14 +32,15 @@ import (
 )
 
 type App struct {
-	cfg            *config.Config
-	AuctionService service.AuctionService
-	Repo           domain.AuctionRepository
-	userClient     user_client.UserClient
-	natsPublisher  broker.Publisher
-	grpcServer     *grpc.Server
-	httpServer     *http.Server
-	disconnectMongo func()
+	cfg               *config.Config
+	AuctionService    service.AuctionService
+	Repo              domain.AuctionRepository
+	CloudinaryService service.CloudinaryService
+	userClient        user_client.UserClient
+	natsPublisher     broker.Publisher
+	grpcServer        *grpc.Server
+	httpServer        *http.Server
+	disconnectMongo   func()
 }
 
 func New() *App {
@@ -70,9 +71,12 @@ func (a *App) Setup() error {
 	}
 
 	// Initialize Clients (Cloudinary, gRPC, NATS)
-	cldService, err := service.NewCloudinaryService(a.cfg.CloudinaryCloudName, a.cfg.CloudinaryAPIKey, a.cfg.CloudinaryAPISecret)
-	if err != nil {
-		return fmt.Errorf("failed to initialize CloudinaryService: %w", err)
+	var err error
+	if a.CloudinaryService == nil {
+		a.CloudinaryService, err = service.NewCloudinaryService(a.cfg.CloudinaryCloudName, a.cfg.CloudinaryAPIKey, a.cfg.CloudinaryAPISecret)
+		if err != nil {
+			return fmt.Errorf("failed to initialize CloudinaryService: %w", err)
+		}
 	}
 
 	a.userClient, err = user_client.NewUserClient(a.cfg.UserServiceURL)
@@ -86,7 +90,7 @@ func (a *App) Setup() error {
 	}
 
 	// Initialize Service Layer
-	a.AuctionService = service.NewAuctionService(a.Repo, cldService, a.natsPublisher, a.userClient)
+	a.AuctionService = service.NewAuctionService(a.Repo, a.CloudinaryService, a.natsPublisher, a.userClient)
 
 	// Start Background Workers (Cron)
 	a.startCronJobs()
