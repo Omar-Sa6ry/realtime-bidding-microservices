@@ -34,6 +34,7 @@ describe('UserService', () => {
 
   const mockTransactionRepository = {
     save: jest.fn(),
+    create: jest.fn().mockImplementation((obj) => obj),
   };
 
   const mockRedisService = {

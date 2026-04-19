@@ -14,7 +14,7 @@ subscription {
 mutation {
   sendMessage(
     input: {
-      auctionId: "65f1234567890abcdef12345"
+      auctionId: "69e4d739ab2478611ae474a7"
       text: "Could you tell me the details of this auction? And is the price suitable for my balance?"
     }
   ) {
@@ -40,7 +40,7 @@ query {
 }
 
 query {
-  getChatMessages(threadId: "69ce09396afcac69532f3aea") {
+  getChatMessages(threadId: "69e4d889836193ff62294ca3") {
     success
     message
     timeStamp

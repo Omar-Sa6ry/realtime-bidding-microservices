@@ -1,13 +1,16 @@
-mutation{
-  register(createUserDto:{
-    firstName:"Omar" 
-    country:"egypt" 
-    password:"O9M1a8r5+=2004" 
-    email:"omarsdabry@gmail.com"
-    lastName:"sabry"}){
-    data{
+O9Mmutation {
+  register(
+    createUserDto: {
+      firstName: "Omar"
+      country: "egypt"
+      password: "ni7CV1a5+=2004"
+      email: "omarsdabry@gmail.com"
+      lastName: "sabry"
+    }
+  ) {
+    data {
       token
-      user{
+      user {
         firstName
         lastName
         email
@@ -17,11 +20,8 @@ mutation{
   }
 }
 
-mutation  {
-  login(loginDto: {
-    email: "omar@bidding.dev",
-    password: "Password123!"
-  }) {
+mutation {
+  login(loginDto: { email: "omarsdabry@gmail.com", password: "Password123!" }) {
     statusCode
     message
     data {
@@ -32,7 +32,7 @@ mutation  {
         lastName
         country
         createdAt
-        
+
         email
         balance
       }
@@ -40,35 +40,34 @@ mutation  {
   }
 }
 
-
 mutation {
   changePassword(
-    changePasswordDto: { password: "O123456789m-", newPassword: "O12345hgtehight-" }
+    changePasswordDto: {
+      password: "ni7CV1a5+=2004"
+      newPassword: "O12345hgtehight-"
+    }
   ) {
     success
     message
     data {
-      
       id
       firstName
       email
-      }}
+    }
   }
-
+}
 
 mutation {
-  forgotPassword(email:"omarsabry@gmail.com") {
+  forgotPassword(email: "omarsdabry@gmail.com") {
     statusCode
     message
   }
 }
 
-
-
 mutation {
   resetPassword(
     resetPasswordDto: {
-      token: "31a68f136bf4de00617d17908565018a82053362dd88b0244abd5936ac12a923"
+      token: "31a68f136bf4de00617d1790856cc5018a82053362dd88b0244abd5936cac12a923"
       password: "O12345hgtehight-"
     }
   ) {
@@ -76,12 +75,15 @@ mutation {
   }
 }
 
-mutation  {
-  roleBasedLogin(loginDto: {
-    email: "omar@bidding.dev",
-    password: "Password123!",
-    rememberMe:true
-  },role:ADMIN) {
+mutation {
+  roleBasedLogin(
+    loginDto: {
+      email: "omar@bidding.dev"
+      password: "Password123!"
+      rememberMe: true
+    }
+    role: ADMIN
+  ) {
     statusCode
     message
     data {
@@ -92,23 +94,10 @@ mutation  {
         lastName
         country
         createdAt
-        
+
         email
         balance
       }
     }
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

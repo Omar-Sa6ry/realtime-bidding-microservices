@@ -1,0 +1,5 @@
+mutation {
+  rechargeWallet(amount: 5000) {
+    data
+  }
+}

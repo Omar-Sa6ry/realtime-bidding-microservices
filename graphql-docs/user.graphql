@@ -1,6 +1,3 @@
-
-
-
 query {
   getUserByOfMe {
     success
@@ -11,14 +8,12 @@ query {
       firstName
       lastName
       email
-    
     }
   }
 }
 
-
 query {
-  getUserById(id: { UserId: "01K5EJKN01W3Y0K0MY7V473RZR" }) {
+  getUserById(id: { UserId: "01KPJSGYC1XNRH3DP7Y1D20CDP" }) {
     success
     statusCode
     message
@@ -27,14 +22,12 @@ query {
       firstName
       lastName
       email
-    
     }
   }
 }
 
-
 query {
-  getUserByEmail(email: { email: "omarsabry.dev@gmail.com" }) {
+  getUserByEmail(email: { email: "omarsdabry2@gmail.com" }) {
     success
     statusCode
     message
@@ -48,68 +41,63 @@ query {
   }
 }
 
-query{
-getUsers{
+query {
+  getUsers {
     success
     message
     items {
       id
       firstName
       email
-    }
-  }
-}
-
-query{
-getUsers(page:1,limit:10){
-    success
-    message
-    items {
-      id
-      firstName
-      email
-    }
-  }
-}
-
-mutation {
-  updateUser(updateUserDto: {id:"01K5EJVPE2K7BT5YRHFZF1PHPE" lastName: "Ahmed sabry" }) {
-    success
-    statusCode
-    message
-    data {
-      id
- 
-      email
-    }
-  }
-}
-
-
-mutation{
-  UpdateUserRoleToAdmin(id:{UserId:"01K5EJVPE2K7BT5YRHFZF1PHPE"}){
-    success
-    statusCode
-    message
-    data{
-        id
-        firstName
-        lastName
-        email
     }
   }
 }
 
 query {
-  deleteUser(id:{UserId:"01K5EJT5AXVT3HF5Q0KPMWWDTV"}) {
+  getUsers(page: 1, limit: 10) {
     success
-    statusCode
     message
+    items {
+      id
+      firstName
+      email
+    }
   }
 }
 
 mutation {
-  rechargeWallet(amount: 200) {
-    data
+  updateUser(
+    updateUserDto: { id: "01KPJSGYC1XNRH3DP7Y1D20CDP", lastName: "Ahmed sabry" }
+  ) {
+    success
+    statusCode
+    message
+    data {
+      id
+
+      email
+    }
+  }
+}
+
+mutation {
+  UpdateUserRoleToAdmin(id: { UserId: "01K5EJVPE2K7BT5YRHFZF1PHPE" }) {
+    success
+    statusCode
+    message
+    data {
+      id
+      firstName
+      lastName
+      email
+    }
+  }
+}
+
+query {
+  deleteUser(id: { UserId: "01KPJSGYC1XNRH3DP7Y1D20CDP" }) {
+    success
+    statusCode
+    message
   }
 }

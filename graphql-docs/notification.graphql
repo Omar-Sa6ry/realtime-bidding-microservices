@@ -9,22 +9,6 @@ subscription {
 }
 
 query {
-  getNotificationById(id: "69c82a53f182ed594213fea8") {
-    message
-    success
-    timeStamp
-    statusCode
-    data {
-      id
-      title
-      message
-      isRead
-      createdAt
-    }
-  }
-}
-
-query {
   getUserNotifications {
     message
     success
@@ -52,7 +36,7 @@ query {
 }
 
 mutation {
-  markNotificationAsRead(id: "69c82a53f182ed594213fea8") {
+  markNotificationAsRead(id: "69e4d7822879fcaf69cafe78") {
     message
     success
     timeStamp
@@ -89,7 +73,7 @@ mutation {
 }
 
 mutation {
-  deleteNotification(id: "69c82a46f182ed594213fea5") {
+  deleteNotification(id: "69e4d7822879fcaf69cafe78") {
     message
     success
     timeStamp

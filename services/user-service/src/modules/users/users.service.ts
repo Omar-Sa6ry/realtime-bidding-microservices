@@ -202,7 +202,7 @@ export class UserService {
     user.balance = balance;
     await this.userRepo.save(user);
 
-    this.transactionRepo.save({
+    const transaction = this.transactionRepo.create({
       userId,
       amount: parsedAmount,
       type: dbType,
@@ -212,6 +212,7 @@ export class UserService {
           ? 'Bid placement'
           : 'Bid refund / Auction settlement',
     });
+    await this.transactionRepo.save(transaction);
 
     await this.notifyUpdate(user);
 
@@ -258,13 +259,14 @@ export class UserService {
     user.balance = Number(user.balance) + amount;
     await this.userRepo.save(user);
 
-    await this.transactionRepo.save({
+    const transaction = this.transactionRepo.create({
       userId,
       amount,
       type: DBTransactionType.CREDIT,
       status: TransactionStatus.COMPLETED,
       description: 'Wallet recharge',
     });
+    await this.transactionRepo.save(transaction);
 
     await this.notifyUpdate(user);
 

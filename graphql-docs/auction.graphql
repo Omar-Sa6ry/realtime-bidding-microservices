@@ -4,9 +4,9 @@ mutation {
       title: "Cron Test Auction"
       description: "Testing automatic status transition"
       startingPrice: 50.0
-      currency: "USD"
-      startTime: "2026-03-20T22:06:00+02:00"
-      endTime: "2026-03-29T22:07:00+02:00"
+      currency: "EGP"
+      startTime: "2025-04-18T22:06:00+02:00"
+      endTime: "2027-09-29T22:07:00+02:00"
     }
   ) {
     success
@@ -27,13 +27,14 @@ mutation {
 }
 
 query {
-  findAuctionByID(id: "69c3959061b3e307b021c026") {
+  findAuctionByID(id: "69e4ca24ae0b9188f436eb9b") {
     success
     message
     statusCode
     data {
       id
       title
+      status
       seller {
         lastname
         email
@@ -46,7 +47,7 @@ query {
 query {
   findAuctions(
     pagination: { page: 1, limit: 10 }
-    input: { title: "Vintage", status: ACTIVE }
+    input: { title: "Vintage" }
   ) {
     success
     statusCode
@@ -71,7 +72,7 @@ query {
 
 mutation {
   updateAuction(
-    id: "69b5e583e7387e7a5cc8fd99"
+    id: "69e4c4d5ae0b9188f436eb97"
     input: { title: "Updated Title", startingPrice: 600.0 }
   ) {
     success
@@ -90,7 +91,7 @@ mutation {
 }
 
 mutation {
-  deleteAuction(id: "69b5e583e7387e7a5cc8fd99") {
+  deleteAuction(id: "69e4c541ae0b9188f436eb99") {
     success
     message
     data {
