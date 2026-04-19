@@ -15,7 +15,7 @@ async function initApp(): Promise<void> {
   if (initialized) return;
   initialized = true;
 
-  console.log('\n[E2E Setup] Bootstrapping NestJS Application (singleton)...');
+  console.log('\nBootstrapping NestJS Application');
 
   const moduleFixture: TestingModule = await Test.createTestingModule({
     imports: [AppModule],
@@ -33,23 +33,24 @@ async function initApp(): Promise<void> {
   await app.init();
 
   (global as any).__APP__ = app;
-  console.log('[E2E Setup] ✅ App ready.  Shared across all suites.\n');
+  console.log('App ready, Shared across all suites.\n');
 }
 
-// ── Jest hooks ─────────────────────────────────────────────────────────────
-// 5 min per individual test (container ops can be slow)
+
 jest.setTimeout(300000);
 
 beforeAll(async () => {
-  // Containers are already running (started by globalSetup).
-  // Just ensure the NestJS app is booted.
   await initApp();
 });
 
-// No afterAll here — the app and containers are torn down by globalTeardown.js
-// which runs once after ALL suites complete.
 
-// ── Helper exported for spec files ─────────────────────────────────────────
+afterAll(async () => {
+  const app = (global as any).__APP__;
+  if (app) {
+    await app.close();
+  }
+});
+
 export const getApp = (): INestApplication => {
   return (global as any).__APP__;
 };

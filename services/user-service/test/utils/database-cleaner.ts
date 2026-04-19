@@ -15,9 +15,10 @@ export const cleanDatabase = async (dataSource: DataSource) => {
 
     if (tableNames.length === 0) return;
 
-    for (const { table_name } of tableNames) {
-      await dataSource.query(`TRUNCATE TABLE "${table_name}" CASCADE;`);
-    }
+    const tables = tableNames
+      .map(({ table_name }) => `"${table_name}"`)
+      .join(', ');
+    await dataSource.query(`TRUNCATE TABLE ${tables} CASCADE;`);
   } catch (error) {
     console.error('Error cleaning test database:', error.message);
   }

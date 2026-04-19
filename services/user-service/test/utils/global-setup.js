@@ -11,15 +11,15 @@ module.exports = async function globalSetup() {
   process.env.JWT_EXPIRES_IN = '3600';
   process.env.REDIS_MAX_RETRIES = '0';
 
-  console.log('\n[Global Setup] Starting PostgreSQL Testcontainer...');
+  console.log('\nStarting PostgreSQL Testcontainer');
   const postgresContainer = await new PostgreSqlContainer('postgres:15-alpine')
     .withDatabase('smart_cv_test')
     .withUsername('testuser')
     .withPassword('testpassword')
-    .withWaitStrategy(Wait.forListeningPorts())
+    .withWaitStrategy(Wait.forListeningPorts().withStartupTimeout(300000))
     .start();
 
-  console.log('[Global Setup] Starting Redis Testcontainer...');
+  console.log('Starting Redis Testcontainer...');
   const redisContainer = await new GenericContainer('redis:alpine')
     .withExposedPorts(6379)
     .start();
