@@ -1,98 +1,168 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Notification Service
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## Overview
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+The Notification Service is a critical component of the real-time bidding microservices architecture, responsible for orchestrating multidimensional delivery of system alerts, auction updates, and real-time user engagement. It functions as a centralized notification engine that aggregates events from the internal message bus (NATS), processes them through a context-aware strategy layer, and delivers updates via GraphQL Subscriptions (WebSockets) and persistent storage.
 
-## Description
+Designed with high availability and low latency in mind, the service ensures that stakeholders receive immediate feedback on auction states, bid status, and system-wide notifications, maintaining a consistent state across the distributed system.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Internal Architecture
 
-## Project setup
+The service adheres to NestJS modular design principles combined with an interface-driven approach to ensure loose coupling and high cohesion:
 
-```bash
-$ npm install
+- **Modules Layer**: Segregates business domains (Auction, User, Notification) and infrastructure concerns (gRPC, PubSub).
+- **Strategy Pattern**: Implemented within the notification module to encapsulate content generation logic for diverse event types (e.g., `BidCreatedStrategy`, `OutbidStrategy`).
+- **Repository Pattern**: Abstracts database operations, ensuring the domain logic remains independent of the underlying persistence layer (Mongoose/MongoDB).
+- **Adapter Layer**: Facilitates communication with external services through gRPC clients and third-party delivery systems (e.g., Email).
+- **Context Management**: Robust GraphQL context factory handles authentication across both HTTP and WebSocket transports.
+
+```text
+src/
+├── common/             # Shared filters, interceptors, and translation modules
+├── modules/
+│   ├── notification/   # Core domain: logic, repositories, and strategies
+│   ├── grpc/           # Client configuration for User and Auction services
+│   ├── pubsub/         # Redis-backed Pub/Sub for real-time broadcasts
+│   └── user/           # User-related domain context and DTOs
+└── main.ts             # Service entry point and microservice configuration
 ```
 
-## Compile and run the project
+## Tech Stack & Dependencies
 
+### Core Frameworks
+- **NestJS**: Enterprise-grade Node.js framework for scalable server-side applications.
+- **GraphQL**: Apollo Federation v2 for distributed schema management.
+- **gRPC**: High-performance RPC framework for internal service-to-service communication.
+
+### Persistence & Messaging
+- **MongoDB (Mongoose)**: Document-oriented database for notification persistence.
+- **Redis**: High-speed in-memory store utilized for GraphQL subscriptions and caching.
+- **NATS**: Distributed messaging system for asynchronous event-driven communication.
+
+### Key Libraries
+- **@bts-soft/notifications**: Internal framework for standardized notification handling.
+- **@bidding-micro/shared**: Shared domain entities and utility functions.
+- **ioredis**: Robust Redis client for Node.js.
+- **nestjs-i18n**: Internationalization support for localized notification content.
+
+## Prerequisites
+
+- **Node.js**: v18.x or higher
+- **Docker & Docker Compose**: For containerized deployment and dependency management
+- **MongoDB**: v6.0+ instance
+- **NATS Server**: For event-driven orchestration
+- **Redis**: v7.0+ for Pub/Sub functionality
+
+## Environment Variables
+
+| Variable | Type | Purpose | Sample Value |
+| :--- | :--- | :--- | :--- |
+| `PORT_NOTIFICATION` | Number | Service listener port | `3004` |
+| `MONGO_URI` | String | MongoDB connection string | `mongodb://user:pass@mongo:27017/notifications` |
+| `NATS_URL` | String | NATS server connection URL | `nats://nats-srv:4222` |
+| `REDIS_HOST` | String | Redis server hostname | `redis-srv` |
+| `REDIS_PORT` | Number | Redis server port | `6379` |
+| `USER_GRPC_URL` | String | User Service gRPC endpoint | `user-srv:50051` |
+| `AUCTION_GRPC_URL` | String | Auction Service gRPC endpoint | `auction-srv:50052` |
+
+## Setup & Execution
+
+### Bare-Metal Local Execution
+
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. Configure external dependencies (MongoDB, NATS, Redis).
+3. Start the service in development mode:
+   ```bash
+   npm run start:dev
+   ```
+
+### Containerized Execution (Docker)
+
+Build and run the service using the provided Dockerfile:
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+docker build -t notification-service .
+docker run -p 3004:3004 --env-file .env notification-service
 ```
 
-## Run tests
+### Orchestration via Skaffold
 
+Integration with Kubernetes is managed via Skaffold for rapid development:
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+skaffold dev --modules=notification-service
 ```
 
-## Deployment
+## Communication Protocols & Contracts
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+### gRPC Consumption
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+The service consumes the following gRPC contracts for data enrichment:
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
+- **User Service (`user.proto`)**: Fetches user identity and preferences.
+- **Auction Service (`auction.proto`)**: Validates auction status and retrieves metadata for notifications.
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### GraphQL API
 
-## Resources
+The service exposes a Federated GraphQL Subgraph with the following primary operations:
 
-Check out a few resources that may come in handy when working with NestJS:
+#### Queries
+- `getUserNotifications`: Retrieves a paginated list of notifications for the authenticated user.
+- `getUnreadNotificationCount`: Returns the count of unread notifications.
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+#### Mutations
+- `markNotificationAsRead`: Updates a specific notification status.
+- `markAllNotificationsAsRead`: Batch updates for user notifications.
+- `deleteNotification`: Removes a specific notification record.
 
-## Support
+#### Subscriptions (Real-time)
+- `notificationCreated`: Real-time stream of new notifications via WebSockets.
+- `aiMessageChunk`: Stream for AI-generated localized content chunks.
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## Event-Driven Architecture (Message Broker)
 
-## Stay in touch
+The service subscribes to internal system events via NATS to trigger notification workflows:
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+| Subject | Payload Structure | Triggered Action |
+| :--- | :--- | :--- |
+| `bid.created` | `{ auctionId, userId, amount }` | Persists bid confirmation and notifies user |
+| `bid.outbid` | `{ auctionId, userId, oldMaxAmount }` | Alerts the previous high bidder |
+| `auction.ended` | `{ auctionId, winnerId, finalAmount }` | Notifies the winner and participants |
+| `bid.won` | `{ auctionId, winnerId, amount }` | Specific notification for auction victory |
+| `ai.message.chunk` | `{ chunk, isFinal, threadId, userId }` | Broadcasts real-time AI response fragments |
 
-## License
+## Data & Caching Strategy
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+### MongoDB Persistence
+The `Notification` entity stores immutable notification history, categorized by type and associated with a unique user ID. TTL indexes are recommended for high-volume environments to manage storage lifecycle.
+
+### Redis Pub/Sub
+Redis is the backbone of the service's real-time capabilities. It handles:
+- **Subscription Broadcasting**: Synchronizing notifications across multiple service instances for WebSocket delivery.
+- **Caching**: Storing ephemeral session-related data to reduce database load during peak traffic.
+
+## Testing Strategy
+
+### Unit Testing
+Unit tests focus on isolating domain logic and strategies. Mock objects are utilized for the Repository and gRPC adapters through NestJS Dependency Injection.
+- Command: `npm run test`
+
+### End-to-End (E2E) Testing
+E2E tests validate the complete notification pipeline, from NATS event consumption to GraphQL Subscription delivery.
+- **Infrastructure**: Utilizes **Testcontainers** to spawn ephemeral instances of MongoDB, NATS, and Redis during the test lifecycle.
+- **Execution**: Ensures integration between the NestJS app, message broker, and databases is consistent.
+- Command: `npm run test:e2e`
+
+## Build & CI/CD Scripts
+
+The following scripts facilitate development and deployment workflows:
+
+| Script | Command | Description |
+| :--- | :--- | :--- |
+| `build` | `nest build` | Compiles the TypeScript source to production-ready JS |
+| `start:dev` | `nest start --watch` | Launches service with hot-reload for development |
+| `test` | `jest` | Executes the unit test suite |
+| `test:e2e` | `jest --config ./test/jest-e2e.json` | Executes the full E2E integration tests |
+| `lint` | `eslint "{src,test}/**/*.ts" --fix` | Performs static code analysis and auto-formatting |
+| `format` | `prettier --write "src/**/*.ts"` | Ensures consistent code styling |
